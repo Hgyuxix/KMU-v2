@@ -1,0 +1,27 @@
+{
+    "success": false,
+    "data": {
+        "nik": "",
+        "nama_lengkap": "",
+        "tempat_lahir": "BOGOR",
+        "tanggal_lahir": "2002-10-30",
+        "jenis_kelamin": "",
+        "alamat": "KEDUNG BADAK NO.16",
+        "rt": "008",
+        "rw": "002",
+        "kelurahan": "KEDUNG BADAK",
+        "kecamatan": "\"TANAH SAREAL",
+        "agama": "",
+        "status_perkawinan": "Belum Kawin",
+        "pekerjaan": "06-11-2020",
+        "kewarganegaraan": "SEUMUR HIDUP"
+    },
+    "validation": {
+        "errors": [
+            "NIK tidak ditemukan."
+        ],
+        "warnings": [
+            "Nama belum berhasil dibaca."
+        ]
+    }
+}
