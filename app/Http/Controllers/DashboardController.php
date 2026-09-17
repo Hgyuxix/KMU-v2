@@ -113,6 +113,31 @@ class DashboardController extends Controller
         );
     }
 
+    public function markComplete(Request $request, Permohonan $permohonan){
+        abort_unless(
+            $permohonan->status === 'disetujui',
+            409,
+            'Pengajuan hanya dapat ditandai selesai jika statusnya sudah disetujui.'
+        );
+
+        abort_unless(
+            $permohonan->nomor_surat,
+            409,
+            'Nomor surat belum diterbitkan.'
+        );
+
+        $permohonan->update([
+            'status' => 'selesai',
+            'selesai_oleh' => $request->user()->id,
+            'selesai_at' => now(),
+        ]);
+
+        return back()->with(
+            'success',
+            'Pengajuan ditandai selesai.'
+        );
+    }
+
     /**
      * Kecamatan buka/liat file dokumen persyaratan yang diupload kelurahan.
      */

@@ -24,12 +24,15 @@ class Permohonan extends Model
         'alasan_penolakan',
         'nomor_surat',
         'catatan_revisi',
+        'sesesai_oleh',
+        'selesai_at',
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
         'data_surat' => 'array',
         'diproses_at' => 'datetime',
+        'selesai_at' => 'datetime',
     ];
 
     public function layanan(): BelongsTo
@@ -55,6 +58,11 @@ class Permohonan extends Model
     public function dokumenPersyaratans(): HasMany
     {
         return $this->hasMany(DokumenPersyaratan::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class)->latest();
     }
 
 }

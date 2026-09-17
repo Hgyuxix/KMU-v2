@@ -55,8 +55,8 @@ class PermohonanController extends Controller
     public function store(
         Request $request,
         Layanan $layanan,
-        NikEncryptionService $nikEncryptionService
-    ) {
+        NikEncryptionService $nikEncryptionService)
+        {
         abort_if(!$layanan->aktif, 404);
 
         abort_if(
@@ -356,7 +356,7 @@ class PermohonanController extends Controller
             ->route('permohonan.preview', $permohonan)
             ->with(
                 'success',
-                'Surat berhasil dibuat.'
+                'Pengajuan berhasil dikirim dan menunggu proses verifikasi dari pihak Kecamatan.'
             );
     }
 
@@ -367,9 +367,21 @@ class PermohonanController extends Controller
     */
 
     public function preview(
+        Request $request,
         Permohonan $permohonan,
-        SuratGenerator $suratGenerator
-    ) {
+        SuratGenerator $suratGenerator)
+        {
+        $user = $request->user();
+
+        abort_unless(
+            $user->isKecamatan()
+            || (
+                $user->isKelurahan()
+                && $permohonan->kelurahan_id === $user->kelurahan_id
+            ),
+            403
+        );
+
         $permohonan->load([
             'layanan',
             'dokumenPersyaratans',
@@ -383,8 +395,7 @@ class PermohonanController extends Controller
         ));
     }
 
-    public function lihatDokumen(DokumenPersyaratan $dokumen)
-    {
+    public function lihatDokumen(DokumenPersyaratan $dokumen){
         $permohonan = $dokumen->permohonan;
         $user = request()->user();
 
@@ -401,8 +412,7 @@ class PermohonanController extends Controller
         );
     }
 
-    public function editRevisi(Request $request, Permohonan $permohonan)
-    {
+    public function editRevisi(Request $request, Permohonan $permohonan){
         $user = $request->user();
 
         abort_unless(
@@ -435,8 +445,8 @@ class PermohonanController extends Controller
     public function updateRevisi(
         Request $request,
         Permohonan $permohonan,
-        NikEncryptionService $nikEncryptionService
-    ) {
+        NikEncryptionService $nikEncryptionService)
+        {
         $user = $request->user();
 
         abort_unless(
@@ -502,10 +512,12 @@ class PermohonanController extends Controller
                 ->implode(',');
 
             $rules[$fieldName] = [
-                ($needsNewFile || $isMissingRequired) ? 'required' : 'nullable',
+                ($needsNewFile || $isMissingRequired)
+                    ? 'required'
+                    : 'nullable',
                 'file',
-                'mimes:pdf,jpg,jpeg,png',
-                'max:8192',
+                'mimes:' . $extensions,
+                'max:' . $persyaratan->maks_size,
             ];
         }
 
@@ -548,6 +560,13 @@ class PermohonanController extends Controller
             $existing = $permohonan->dokumenPersyaratans()
                 ->where('persyaratan_id', $persyaratan->id)
                 ->first();
+
+            if ($existing && $existing->status === 'sesuai') {
+                abort(
+                    409,
+                    'Dokumen yang sudah dinyatakan sesuai tidak dapat diganti.'
+                );
+            }
 
             if ($existing) {
                 Storage::disk('local')->delete($existing->file_path);

@@ -1,9 +1,15 @@
 *.log
 .DS_Store
-.env
-.env.*
+
+# Environment
+/.env
+/.env.*
+!/.env.example
+
 .env.backup
 .env.production
+
+# IDE / editor
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -13,15 +19,41 @@
 /.vscode
 /.zed
 /auth.json
+
+# Dependencies / build
 /node_modules
+/vendor
 /public/build
 /public/hot
 /public/storage
+
+# Laravel runtime
 /storage/*.key
 /storage/pail
 /storage/framework/
 /storage/logs/
-/vendor
+/storage/app/private/
+/storage/app/tmp-ocr/
+/storage/app/public/
+
+# Local database
+/database/database.sqlite
+/kec_magelang
+
+# OCR output / debug
+/ocr/hasil_ktp.json
+/ocr/hasil_ktp_v3.json
+/ocr/hasil_ocr.txt
+/ocr/ocr_debug.txt
+
+# Local archive
+/kmuv2.zip
+*.zip
+
+# OS
+Thumbs.db
+
+# Laravel / Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
+

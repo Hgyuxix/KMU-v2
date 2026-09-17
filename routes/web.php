@@ -50,10 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:kecamatan')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/pengajuan/{permohonan}', [DashboardController::class, 'show'])->name('dashboard.pengajuan.show');
-        Route::patch('/dashboard/pengajuan/{permohonan}/approve', [DashboardController::class, 'approve'])->name('dashboard.pengajuan.approve');
         Route::get('/dashboard/dokumen/{dokumen}/lihat', [DashboardController::class, 'lihatDokumen'])->name('dashboard.dokumen.lihat');
+        Route::patch('/dashboard/pengajuan/{permohonan}/approve', [DashboardController::class, 'approve'])->name('dashboard.pengajuan.approve');
         Route::patch('/dashboard/dokumen/{dokumen}/status', [DashboardController::class, 'updateDokumenStatus'])->name('dashboard.dokumen.status');
         Route::patch('/dashboard/pengajuan/{permohonan}/revisi',[DashboardController::class, 'requestRevision'])->name('dashboard.pengajuan.revisi');
+        Route::patch('/dashboard/pengajuan/{permohonan}/selesai',[DashboardController::class, 'markComplete'])->name('dashboard.pengajuan.selesai');
     });
 
 });

@@ -356,14 +356,26 @@
                         accept="{{ collect(explode(',', $persyaratan->tipe_file))
                             ->map(fn($ext) => '.'.trim($ext))
                             ->implode(',') }}"
+                        @if($dokumen && $dokumen->status === 'sesuai')
+                            disabled
+                        @endif
+                        @if(
+                            ($dokumen && $dokumen->status === 'tidak_sesuai')
+                            || (!$dokumen && $persyaratan->wajib)
+                        )
+                            required
+                        @endif
                     >
 
-                    @if($dokumen && $dokumen->status === 'tidak_sesuai')
+                    @if($dokumen && $dokumen->status === 'sesuai')
+                        <div class="hint" style="color:#087443;">
+                            Dokumen sudah dinyatakan sesuai oleh Kecamatan dan tidak perlu diganti.
+                        </div>
+                    @elseif($dokumen && $dokumen->status === 'tidak_sesuai')
                         <div class="hint" style="color:#b91c1c;">
                             Upload file baru untuk mengganti dokumen ini.
                         </div>
                     @endif
-
                 </div>
 
             @endforeach

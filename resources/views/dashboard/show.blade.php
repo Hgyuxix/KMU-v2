@@ -108,14 +108,25 @@
 
                             @if(in_array($permohonan->status, ['diajukan', 'revisi']))
                                 <form method="POST" action="{{ route('dashboard.dokumen.status', $dokumen) }}">
-                                    @csrf @method('PATCH')
+                                    @csrf
+                                    @method('PATCH')
                                     <input type="hidden" name="status" value="sesuai">
-                                    <button type="submit" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #d7dce3;background:#fff;cursor:pointer">✓ Tandai Sesuai</button>
+                                    <button
+                                        type="submit"
+                                        style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #d7dce3;background:#fff;cursor:pointer">
+
+                                        ✓ Tandai Sesuai
+                                    </button>
                                 </form>
                                 <form method="POST" action="{{ route('dashboard.dokumen.status', $dokumen) }}">
-                                    @csrf @method('PATCH')
+                                    @csrf
+                                    @method('PATCH')
                                     <input type="hidden" name="status" value="tidak_sesuai">
-                                    <button type="submit" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #d7dce3;background:#fff;cursor:pointer">✕ Tandai Tidak Sesuai</button>
+                                    <button
+                                        type="submit"
+                                        style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #d7dce3;background:#fff;cursor:pointer">
+                                        ✕ Tandai Tidak Sesuai
+                                    </button>
                                 </form>
                             @endif
                         </div>
@@ -128,7 +139,33 @@
 
             <div class="actions">
                 <a class="secondary-btn" href="{{ route('dashboard') }}">Kembali</a>
-                <a class="primary-btn" href="{{ route('permohonan.preview', $permohonan) }}">Preview & Cetak Surat →</a>
+
+                @if(in_array($permohonan->status, ['disetujui', 'selesai']))
+                    <a
+                        class="primary-btn"
+                        href="{{ route('permohonan.preview', $permohonan) }}"
+                    >
+                        Preview & Cetak Surat →
+                    </a>
+                @endif
+
+                @if($permohonan->status === 'disetujui')
+                    <form
+                        method="POST"
+                        action="{{ route('dashboard.pengajuan.selesai', $permohonan) }}"
+                        style="display:inline"
+                    >
+                        @csrf
+                        @method('PATCH')
+
+                        <button
+                            class="primary-btn"
+                            type="submit"
+                        >
+                            ✓ Tandai Pengajuan Selesai
+                        </button>
+                    </form>
+                @endif
             </div>
 
             <section class="dashboard-panel" style="max-width:1100px;margin:20px auto">
@@ -226,25 +263,6 @@
                         <div>
                             <span class="info-label">Tanggal</span>
                             <strong>{{ $permohonan->diproses_at?->format('d F Y, H:i') }}</strong>
-                        </div>
-                    </div>
-
-                @else
-
-                    <div class="info-grid">
-                        <div>
-                            <span class="info-label">Ditolak oleh</span>
-                            <strong>{{ $permohonan->pemroses->name ?? '-' }}</strong>
-                        </div>
-
-                        <div>
-                            <span class="info-label">Tanggal</span>
-                            <strong>{{ $permohonan->diproses_at?->format('d F Y, H:i') }}</strong>
-                        </div>
-
-                        <div style="grid-column:1/-1">
-                            <span class="info-label">Alasan</span>
-                            <strong>{{ $permohonan->alasan_penolakan }}</strong>
                         </div>
                     </div>
 

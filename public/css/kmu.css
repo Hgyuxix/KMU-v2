@@ -738,6 +738,11 @@ textarea {
     color: #a16207;
 }
 
+.status-revisi {
+    background: #de4747;
+    color: #a16207;
+}
+
 .status-diproses {
     background: #eff5ff;
     color: #1458c7;
