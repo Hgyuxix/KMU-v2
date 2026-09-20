@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\VerifikasiController;
 
 Route::get('/', function () {
@@ -22,9 +23,7 @@ Route::get('/layanan/{layanan}', [LayananController::class, 'show'])->name('laya
 Route::get('/verifikasi/{nomorSurat}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
-        return view('auth.login');
-    })->name('login');
+    Route::get('/login', function () {return view('auth.login');})->name('login');
 
     Route::post('/login', [AuthController::class, 'login'])->name('login.process');
 });
@@ -32,6 +31,15 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/users',[UserManagementController::class, 'index'])->name('admin.users.index');
+        Route::get('/admin/users/create',[UserManagementController::class, 'create'])->name('admin.users.create');
+        Route::post('/admin/users',[UserManagementController::class, 'store'])->name('admin.users.store');
+        Route::get('/admin/users/{user}/edit',[UserManagementController::class, 'edit'])->name('admin.users.edit');
+        Route::patch('/admin/users/{user}',[UserManagementController::class, 'update'])->name('admin.users.update');
+        Route::patch('/admin/users/{user}/toggle-status',[UserManagementController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+    });
 
     Route::middleware('role:kelurahan')->group(function () {
         Route::get('/kelurahan/pengajuan', [PermohonanController::class, 'index'])->name('kelurahan.index');
@@ -55,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/dashboard/dokumen/{dokumen}/status', [DashboardController::class, 'updateDokumenStatus'])->name('dashboard.dokumen.status');
         Route::patch('/dashboard/pengajuan/{permohonan}/revisi',[DashboardController::class, 'requestRevision'])->name('dashboard.pengajuan.revisi');
         Route::patch('/dashboard/pengajuan/{permohonan}/selesai',[DashboardController::class, 'markComplete'])->name('dashboard.pengajuan.selesai');
+        Route::patch('/dashboard/pengajuan/{permohonan}/buka-kembali',[DashboardController::class, 'reopenForRevision'])->name('dashboard.pengajuan.reopen');
     });
 
 });

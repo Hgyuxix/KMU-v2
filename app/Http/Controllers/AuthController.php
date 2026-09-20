@@ -25,16 +25,42 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        $role = Auth::user()->role;
+        $user = Auth::user();
 
-        if (!in_array($role, ['kelurahan', 'kecamatan'], true)) {
+        if (!$user->is_active) {
             Auth::logout();
+
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return back()->withErrors(['email' => 'Akun tidak memiliki akses ke sistem.']);
+
+            return back()
+                ->withErrors([
+                    'email' => 'Akun Anda sedang dinonaktifkan. Hubungi administrator.',
+                ])
+                ->withInput($request->only('email'));
         }
 
-        $home = $role === 'kecamatan' ? route('dashboard') : route('kelurahan.index');
+        $role = $user->role;
+
+        if (!in_array($role, ['admin', 'kelurahan', 'kecamatan'], true)) {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors([
+                    'email' => 'Akun tidak memiliki akses ke sistem.',
+                ])
+                ->withInput($request->only('email'));
+        }
+
+        $home = match ($role) {
+            'admin' => route('admin.users.index'),
+            'kecamatan' => route('dashboard'),
+            'kelurahan' => route('kelurahan.index'),
+        };
+
         return redirect($home);
 
     }

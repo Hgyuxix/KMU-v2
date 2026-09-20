@@ -265,8 +265,150 @@
                             <strong>{{ $permohonan->diproses_at?->format('d F Y, H:i') }}</strong>
                         </div>
                     </div>
+                    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e5e7eb">
+                        <h3 style="margin:0 0 6px">
+                            Koreksi Pengajuan
+                        </h3>
+
+                        <p style="margin:0 0 12px;color:#64748b;font-size:13px">
+                            Pengajuan sudah disetujui. Jika ditemukan kesalahan sebelum proses selesai,
+                            pengajuan dapat dibuka kembali untuk diperbaiki oleh Kelurahan.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('dashboard.pengajuan.reopen', $permohonan) }}"
+                            style="max-width:700px"
+                        >
+                            @csrf
+                            @method('PATCH')
+
+                            <label for="catatan_reopen">
+                                Catatan koreksi
+                            </label>
+
+                            <textarea
+                                id="catatan_reopen"
+                                name="catatan_revisi"
+                                rows="3"
+                                required
+                                maxlength="2000"
+                                placeholder="Jelaskan kesalahan yang ditemukan dan bagian yang perlu diperbaiki..."
+                                style="width:100%;margin:6px 0 10px"
+                            >{{ old('catatan_revisi') }}</textarea>
+
+                            @error('catatan_revisi')
+                                <div class="hint" style="color:#b91c1c;margin-bottom:10px">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+
+                            <button
+                                type="submit"
+                                class="secondary-btn"
+                            >
+                                ↻ Buka Kembali untuk Revisi
+                            </button>
+                        </form>
+                    </div>
 
                 @endif
+            </section>
+            <section class="dashboard-panel audit-panel" style="max-width:1100px;margin:20px auto">
+                <div class="panel-title-row">
+                    <div>
+                        <h2>Riwayat Audit</h2>
+                        <p>
+                            Riwayat aktivitas pengajuan dan pemeriksaan dokumen.
+                        </p>
+                    </div>
+                </div>
+
+                @php
+                    $aksiLabel = [
+                        'pengajuan_dibuat' => 'Pengajuan dibuat',
+                        'permohonan_revisi' => 'Pengajuan dikembalikan untuk revisi',
+                        'kirim_ulang' => 'Pengajuan dikirim ulang',
+                        'permohonan_disetujui' => 'Pengajuan disetujui',
+                        'permohonan_selesai' => 'Pengajuan ditandai selesai',
+                        'dokumen_status_diubah' => 'Status dokumen diperbarui',
+                        'perubahan_status' => 'Status pengajuan diubah',
+                    ];
+                @endphp
+
+                @forelse($permohonan->auditLogs as $log)
+                    <div class="audit-item">
+                        <div class="audit-marker">
+                            @if($log->aksi === 'dokumen_status_diubah')
+                                📄
+                            @elseif($log->aksi === 'permohonan_disetujui')
+                                ✓
+                            @elseif($log->aksi === 'permohonan_revisi')
+                                ↻
+                            @elseif($log->aksi === 'permohonan_selesai')
+                                ✓
+                            @elseif($log->aksi === 'pengajuan_dibuat')
+                                +
+                            @else
+                                •
+                            @endif
+                        </div>
+
+                        <div class="audit-content">
+                            <div class="audit-head">
+                                <strong>
+                                    {{ $aksiLabel[$log->aksi] ?? ucwords(str_replace('_', ' ', $log->aksi)) }}
+                                </strong>
+
+                                <span class="audit-time">
+                                    {{ $log->created_at->format('d F Y, H:i') }}
+                                </span>
+                            </div>
+
+                            <div class="audit-user">
+                                Oleh:
+                                <strong>{{ $log->user->name ?? 'Sistem' }}</strong>
+                            </div>
+
+                            @if($log->dokumenPersyaratan)
+                                <div class="audit-document">
+                                    Dokumen:
+                                    <strong>
+                                        {{ $log->dokumenPersyaratan->persyaratan->nama ?? 'Dokumen Persyaratan' }}
+                                    </strong>
+                                </div>
+                            @endif
+
+                            @if($log->status_sebelum || $log->status_sesudah)
+                                <div class="audit-status">
+                                    @if($log->status_sebelum)
+                                        <span class="status-badge" style="background:#f1f4f8;color:#64748b">
+                                            {{ ucfirst(str_replace('_', ' ', $log->status_sebelum)) }}
+                                        </span>
+                                    @endif
+
+                                    <span style="color:#94a3b8">→</span>
+
+                                    @if($log->status_sesudah)
+                                        <span class="status-badge status-{{ $log->status_sesudah }}">
+                                            {{ ucfirst(str_replace('_', ' ', $log->status_sesudah)) }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if($log->catatan)
+                                <div class="audit-note">
+                                    {{ $log->catatan }}
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-inline">
+                        Belum ada aktivitas yang tercatat.
+                    </div>
+                @endforelse
             </section>
         </main>
     </body>

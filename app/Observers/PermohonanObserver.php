@@ -64,6 +64,9 @@ class PermohonanObserver
             ['diajukan', 'revisi'] =>
                 'permohonan_revisi',
 
+            ['disetujui', 'revisi'] =>
+                'permohonan_dibuka_kembali',
+
             ['revisi', 'diajukan'] =>
                 'kirim_ulang',
 
@@ -86,6 +89,10 @@ class PermohonanObserver
             'permohonan_revisi' =>
                 $permohonan->catatan_revisi
                     ?: 'Pengajuan dikembalikan untuk revisi.',
+
+            'permohonan_dibuka_kembali' =>
+                $permohonan->catatan_revisi
+                    ?: 'Pengajuan yang sebelumnya disetujui dibuka kembali untuk revisi.',
 
             'kirim_ulang' =>
                 'Pengajuan diperbaiki dan dikirim ulang ke Kecamatan.',

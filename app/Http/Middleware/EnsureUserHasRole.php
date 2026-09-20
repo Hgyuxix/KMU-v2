@@ -26,6 +26,7 @@ class EnsureUserHasRole
             }
 
             $home = match ($user->role) {
+                'admin'     => route('admin.users.index'),
                 'kecamatan' => route('dashboard'),
                 'kelurahan'  => route('layanan.index'),
                 default      => route('login'),

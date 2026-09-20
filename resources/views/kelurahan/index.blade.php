@@ -105,8 +105,6 @@
                                     </span>
                                     @if($permohonan->status === 'revisi')
                                         <div class="alert alert-warning">
-                                            <strong>Pengajuan perlu direvisi</strong>
-
                                             <p>
                                                 {{ $permohonan->catatan_revisi }}
                                             </p>

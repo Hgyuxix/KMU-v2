@@ -99,6 +99,33 @@
                 object-fit:contain;
                 margin:2mm auto
             }
+
+            @media print {
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+
+                html,
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background: #fff;
+                }
+
+                .toolbar {
+                    display: none !important;
+                }
+
+                .paper {
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 0;
+                    padding: 15mm 17mm;
+                    box-shadow: none;
+                    overflow: visible;
+                }
+            }
         </style>
     </head>
 
@@ -250,7 +277,7 @@
                 style="color:#94a3b8;font-size:12px;margin-top:10px"
             >
                 Otomatis kembali dalam
-                <spanid="countdown-number">10</spanid=> detik...
+                <span id="countdown-number">10</span> detik...
             </p>
         </div>
         <script>

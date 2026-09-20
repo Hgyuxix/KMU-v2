@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Layanan;
+use App\Models\AuditLog;
 use App\Models\Kelurahan;
 use App\Models\Permohonan;
-use App\Models\DokumenPersyaratan;
-use App\Services\SuratGenerator;
 use Illuminate\Http\Request;
+use App\Services\SuratGenerator;
+use App\Models\DokumenPersyaratan;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
@@ -54,7 +55,7 @@ class DashboardController extends Controller
 
     public function show(Permohonan $permohonan)
     {
-        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans.persyaratan']);
+        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans.persyaratan', 'auditLogs.user', 'auditLogs.dokumenPersyaratan.persyaratan']);
         return view('dashboard.show', compact('permohonan'));
     }
 
@@ -138,11 +139,52 @@ class DashboardController extends Controller
         );
     }
 
+    public function reopenForRevision(
+        Request $request,
+        Permohonan $permohonan) {
+        abort_unless(
+            $permohonan->status === 'disetujui',
+            409,
+            'Pengajuan hanya dapat dibuka kembali setelah disetujui dan sebelum selesai.'
+        );
+
+        $data = $request->validate([
+            'catatan_revisi' => [
+                'required',
+                'string',
+                'max:2000',
+            ],
+        ]);
+
+        $permohonan->update([
+            'status' => 'revisi',
+            'catatan_revisi' => $data['catatan_revisi'],
+
+            // Persetujuan sebelumnya tidak lagi menjadi persetujuan aktif.
+            'diproses_oleh' => null,
+            'diproses_at' => null,
+
+            // Nomor surat lama tidak dipakai lagi.
+            // Setelah diajukan ulang dan di-ACC, nomor baru akan dibuat.
+            'nomor_surat' => null,
+
+            // Pastikan tracking selesai tidak terbawa.
+            'selesai_oleh' => null,
+            'selesai_at' => null,
+        ]);
+
+        return redirect()
+            ->route('dashboard.pengajuan.show', $permohonan)
+            ->with(
+                'success',
+                'Pengajuan dibuka kembali untuk revisi.'
+            );
+    }
+
     /**
      * Kecamatan buka/liat file dokumen persyaratan yang diupload kelurahan.
      */
-    public function lihatDokumen(DokumenPersyaratan $dokumen)
-    {
+    public function lihatDokumen(DokumenPersyaratan $dokumen){
         $dokumen->load('permohonan');
 
         abort_unless(
@@ -168,29 +210,56 @@ class DashboardController extends Controller
      */
     public function updateDokumenStatus(
         Request $request,
-        DokumenPersyaratan $dokumen
-    ) {
-        $dokumen->load('permohonan');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dokumen hanya boleh diperiksa selama pengajuan
-        | masih berada pada tahap pemeriksaan.
-        |--------------------------------------------------------------------------
-        */
+        DokumenPersyaratan $dokumen) {
+        $dokumen->load([
+            'permohonan',
+            'persyaratan',
+        ]);
 
         abort_unless(
-            in_array($dokumen->permohonan->status, ['diajukan', 'revisi']),
+            in_array(
+                $dokumen->permohonan->status,
+                ['diajukan', 'revisi']
+            ),
             409,
-            'Dokumen tidak dapat diperiksa karena pengajuan sudah tidak dalam tahap pemeriksaan.'
+            'Status dokumen tidak dapat diubah pada tahap ini.'
         );
 
         $data = $request->validate([
-            'status' => ['required', 'in:sesuai,tidak_sesuai'],
+            'status' => [
+                'required',
+                'in:sesuai,tidak_sesuai',
+            ],
         ]);
 
+        $statusSebelum = $dokumen->status;
+        $statusSesudah = $data['status'];
+
+        // Tidak perlu membuat audit baru kalau status sebenarnya tidak berubah.
+        if ($statusSebelum === $statusSesudah) {
+            return back()->with(
+                'success',
+                'Status dokumen tidak berubah.'
+            );
+        }
+
         $dokumen->update([
-            'status' => $data['status'],
+            'status' => $statusSesudah,
+        ]);
+
+        \App\Models\AuditLog::create([
+            'permohonan_id' => $dokumen->permohonan_id,
+            'dokumen_persyaratan_id' => $dokumen->id,
+            'user_id' => $request->user()->id,
+            'aksi' => 'dokumen_status_diubah',
+            'status_sebelum' => $statusSebelum,
+            'status_sesudah' => $statusSesudah,
+            'catatan' => sprintf(
+                'Dokumen "%s" diubah dari "%s" menjadi "%s".',
+                $dokumen->persyaratan->nama,
+                $statusSebelum ?? 'belum_dicek',
+                $statusSesudah
+            ),
         ]);
 
         return back()->with(
