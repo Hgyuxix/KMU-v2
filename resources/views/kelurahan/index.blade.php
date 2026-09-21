@@ -11,11 +11,15 @@
 <body>
     <nav class="kmu-nav">
         <a class="kmu-brand" href="{{ route('layanan.index') }}">
-            <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+            <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
             <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
         </a>
 
         <div class="kmu-navlinks">
+            <div class="user-chip">
+                <span class="dot"></span>
+                <span>{{ auth()->user()->name ?? 'Staf Kelurahan' }}</span>
+            </div>
             <a href="{{ route('layanan.index') }}">Beranda</a>
             <a class="active" href="{{ route('kelurahan.index') }}">Pengajuan Saya</a>
             <form method="POST" action="{{ route('logout') }}" style="display:inline">
@@ -53,6 +57,11 @@
                 <div class="stat-value">{{ $stats->disetujui }}</div>
                 <div class="stat-note">Surat resmi terbit</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-label">Selesai</div>
+                <div class="stat-value">{{ $stats->selesai }}</div>
+                <div class="stat-note">Pengajuan telah selesai</div>
+            </div>
 
         </div>
 
@@ -69,6 +78,7 @@
                             <option value="diajukan" @selected(request('status') === 'diajukan')>Diajukan</option>
                             <option value="disetujui" @selected(request('status') === 'disetujui')>Disetujui</option>
                             <option value="revisi" @selected(request('status') === 'revisi')>Revisi</option>
+                            <option value="selesai" @selected(request('status') === 'selesai')>Selesai</option>
                         </select>
                 </div>
                 <div class="filter-actions">
@@ -101,13 +111,17 @@
                                 <td>{{ $permohonan->layanan->nama }}</td>
                                 <td>
                                     <span class="status-badge status-{{ $permohonan->status }}">
+                                        @switch($permohonan->status)
+                                            @case('diajukan') ⏳ @break
+                                            @case('revisi') ! @break
+                                            @case('disetujui') ✓ @break
+                                            @case('selesai') ✓ @break
+                                        @endswitch
                                         {{ ucfirst($permohonan->status) }}
                                     </span>
-                                    @if($permohonan->status === 'revisi')
-                                        <div class="alert alert-warning">
-                                            <p>
-                                                {{ $permohonan->catatan_revisi }}
-                                            </p>
+                                    @if($permohonan->status === 'revisi' && $permohonan->catatan_revisi)
+                                        <div class="revision-note">
+                                            {{ $permohonan->catatan_revisi }}
                                         </div>
                                     @endif
                                 </td>

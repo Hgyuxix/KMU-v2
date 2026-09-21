@@ -9,26 +9,33 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\VerifikasiController;
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return auth()->user()->role === 'kecamatan'
-            ? redirect()->route('dashboard')
-            : redirect()->route('layanan.index');
+    if (!auth()->check()) {
+        return redirect()->route('login');
     }
 
-    return redirect()->route('login');
+    return match (auth()->user()->role) {
+        'admin'     => redirect()->route('admin.users.index'),
+        'kecamatan' => redirect()->route('dashboard'),
+        'kelurahan' => redirect()->route('kelurahan.index'),
+        default     => redirect()->route('login'),
+    };
 });
 
 Route::get('/layanan', [LayananController::class, 'index'])->name('layanan.index');
 Route::get('/layanan/{layanan}', [LayananController::class, 'show'])->name('layanan.show');
-Route::get('/verifikasi/{nomorSurat}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
+Route::get('/verifikasi/{nomorSurat}', [VerifikasiController::class, 'show'])
+    ->where('nomorSurat', '.*')
+    ->name('verifikasi.show');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {return view('auth.login');})->name('login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
-    Route::post('/login', [AuthController::class, 'login'])->name('login.process');
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login.process');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -47,7 +54,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/layanan/{layanan}/ajukan', [PermohonanController::class, 'store'])->name('permohonan.store');
         Route::get('/kelurahan/pengajuan/{permohonan}/revisi',[PermohonanController::class, 'editRevisi'])->name('kelurahan.pengajuan.revisi');
         Route::patch('/kelurahan/pengajuan/{permohonan}/revisi',[PermohonanController::class, 'updateRevisi'])->name('kelurahan.pengajuan.revisi.update');
-        Route::post('/kelurahan/ocr-ktp', [\App\Http\Controllers\OcrController::class, 'scanKtp'])->name('kelurahan.ocr-ktp');
+        Route::post('/kelurahan/ocr-ktp', [\App\Http\Controllers\OcrController::class, 'scanKtp'])
+            ->middleware('throttle:10,1')
+            ->name('kelurahan.ocr-ktp');
     });
 
     Route::middleware('role:kelurahan,kecamatan')->group(function () {

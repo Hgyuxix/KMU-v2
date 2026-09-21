@@ -55,15 +55,15 @@ class DashboardController extends Controller
 
     public function show(Permohonan $permohonan)
     {
-        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans.persyaratan', 'auditLogs.user', 'auditLogs.dokumenPersyaratan.persyaratan']);
+        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans.persyaratan', 'auditLogs.user', 'auditLogs.dokumenPersyaratan.persyaratan', 'pemroses', 'penyelesai']);
         return view('dashboard.show', compact('permohonan'));
     }
 
     public function approve(Request $request, Permohonan $permohonan){
         abort_unless(
-            in_array($permohonan->status, ['diajukan', 'revisi']),
+            $permohonan->status === 'diajukan',
             409,
-            'Pengajuan ini tidak berada pada status yang dapat disetujui.'
+            'Pengajuan hanya dapat disetujui pada status diajukan.'
         );
 
         $permohonan->load([
@@ -201,7 +201,10 @@ class DashboardController extends Controller
 
         return Storage::disk('local')->response(
             $dokumen->file_path,
-            $dokumen->file_original_name
+            $dokumen->file_original_name,
+            [
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
 
@@ -217,12 +220,9 @@ class DashboardController extends Controller
         ]);
 
         abort_unless(
-            in_array(
-                $dokumen->permohonan->status,
-                ['diajukan', 'revisi']
-            ),
+            $dokumen->permohonan->status === 'diajukan',
             409,
-            'Status dokumen tidak dapat diubah pada tahap ini.'
+            'Status dokumen hanya dapat diubah saat pengajuan sedang diperiksa.'
         );
 
         $data = $request->validate([
@@ -270,9 +270,9 @@ class DashboardController extends Controller
 
     public function requestRevision(Request $request, Permohonan $permohonan){
         abort_unless(
-            in_array($permohonan->status, ['diajukan', 'revisi']),
+            $permohonan->status === 'diajukan',
             409,
-            'Pengajuan ini tidak berada pada status yang dapat direvisi.'
+            'Pengajuan hanya dapat dikembalikan untuk revisi saat berstatus diajukan.'
         );
 
         $data = $request->validate([

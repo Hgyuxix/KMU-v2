@@ -10,10 +10,14 @@
     <body>
         <nav class="kmu-nav">
             <a class="kmu-brand" href="{{ route('layanan.index') }}">
-                <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+                <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
+                <div class="user-chip">
+                    <span class="dot"></span>
+                    <span>{{ auth()->user()->name ?? 'Staf Kecamatan' }}</span>
+                </div>
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active" href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline">
@@ -136,7 +140,15 @@
                             </td>
                             <td>RT {{ $permohonan->rt }} / RW {{ $permohonan->rw }}</td>
                             <td>
-                                <span class="status-badge status-{{ $permohonan->status }}">{{ ucfirst($permohonan->status) }}</span>
+                                <span class="status-badge status-{{ $permohonan->status }}">
+                                    @switch($permohonan->status)
+                                        @case('diajukan') ⏳ @break
+                                        @case('revisi') ! @break
+                                        @case('disetujui') ✓ @break
+                                        @case('selesai') ✓ @break
+                                    @endswitch
+                                    {{ ucfirst($permohonan->status) }}
+                                </span>
                             </td>
                             <td>{{ $permohonan->created_at->format('d/m/Y H:i') }}</td>
                             <td>

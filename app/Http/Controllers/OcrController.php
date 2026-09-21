@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
@@ -19,67 +20,95 @@ class OcrController extends Controller
     public function scanKtp(Request $request)
     {
         $request->validate([
-            'foto_ktp' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:8192'],
+            'foto_ktp' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:8192',
+                'dimensions:min_width=200,min_height=100,max_width=6000,max_height=6000',
+            ],
         ]);
 
-        $pythonBin = config('services.ocr.python_bin', 'python3');
+        $this->cleanupExpiredTempFiles();
 
-        $response = [
-            'success' => false,
-            'message' => 'Gagal memproses foto KTP.',
-        ];
+        $pythonBin = (string) config('services.ocr.python_bin', 'python3');
+        $tesseractCmd = config('services.ocr.tesseract_cmd');
 
-        $statusCode = 422;
-        $keepTempFile = false;
+        $tempDir = storage_path('app/tmp-ocr');
         $tempPath = null;
+        $keepTempFile = false;
 
-        // ==========================================
-        // PRE-FLIGHT CHECK
-        // ==========================================
-        $check = new Process([
-            $pythonBin,
-            '-c',
-            'import cv2, pytesseract, numpy; print("OK")',
-        ]);
-
-        $check->setTimeout(15);
-        $check->run();
-
-        if (!$check->isSuccessful()) {
-            Log::error('OCR KTP: pre-flight check gagal', [
-                'python_bin' => $pythonBin,
-                'error_output' => $check->getErrorOutput(),
+        if (!is_dir($tempDir) && !mkdir($tempDir, 0775, true) && !is_dir($tempDir)) {
+            Log::error('OCR KTP: gagal membuat direktori temp', [
+                'temp_dir' => $tempDir,
             ]);
 
-            $response['message'] =
-                "Python/library OCR belum siap di server. "
-                . "python_bin yang dipakai: \"{$pythonBin}\". "
-                . 'Detail: ' . trim($check->getErrorOutput());
-
-            return response()->json($response, $statusCode);
-        }
-
-        // ==========================================
-        // SIMPAN FOTO KE TEMP
-        // ==========================================
-        $tempDir = storage_path('app/tmp-ocr');
-
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0775, true);
+            return response()->json([
+                'success' => false,
+                'message' => 'Server tidak dapat menyiapkan proses OCR. Silakan isi data secara manual.',
+            ], 500);
         }
 
         $file = $request->file('foto_ktp');
 
-        $filename = Str::random(20) . '.' . $file->extension();
-        $file->move($tempDir, $filename);
-
-        $tempPath = $tempDir . DIRECTORY_SEPARATOR . $filename;
-
         try {
-            // ==========================================
-            // JALANKAN OCR
-            // ==========================================
+            /*
+            |--------------------------------------------------------------------------
+            | PRE-FLIGHT CHECK (Cached to eliminate repetitive subprocess overhead)
+            |--------------------------------------------------------------------------
+            */
+            $isPreflightOk = Cache::remember('ocr_preflight_ok', 3600, function () use ($pythonBin) {
+                $check = new Process([
+                    $pythonBin,
+                    '-c',
+                    'import cv2, pytesseract, numpy; print("OK")',
+                ]);
+
+                $check->setTimeout(15);
+                $check->run();
+
+                return $check->isSuccessful();
+            });
+
+            if (!$isPreflightOk) {
+                Cache::forget('ocr_preflight_ok');
+
+                Log::error('OCR KTP: pre-flight check gagal', [
+                    'python_bin' => $pythonBin,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Layanan OCR sedang tidak tersedia. Silakan isi data secara manual.',
+                ], 503);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | SIMPAN FOTO KE TEMP
+            |--------------------------------------------------------------------------
+            */
+            $filename = Str::random(32) . '.' . strtolower($file->extension());
+            $file->move($tempDir, $filename);
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . $filename;
+
+            /*
+            |--------------------------------------------------------------------------
+            | JALANKAN OCR
+            |--------------------------------------------------------------------------
+            */
             $scriptPath = base_path('ocr/ocr_ktp_v3.py');
+
+            if (!is_file($scriptPath)) {
+                Log::error('OCR KTP: script OCR tidak ditemukan', [
+                    'script' => $scriptPath,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konfigurasi OCR belum lengkap. Silakan isi data secara manual.',
+                ], 500);
+            }
 
             $process = new Process([
                 $pythonBin,
@@ -87,9 +116,9 @@ class OcrController extends Controller
                 $tempPath,
             ]);
 
-            if ($tesseractCmd = config('services.ocr.tesseract_cmd')) {
+            if ($tesseractCmd) {
                 $process->setEnv([
-                    'TESSERACT_CMD' => $tesseractCmd,
+                    'TESSERACT_CMD' => (string) $tesseractCmd,
                 ]);
             }
 
@@ -99,70 +128,116 @@ class OcrController extends Controller
             if (!$process->isSuccessful()) {
                 Log::error('OCR KTP gagal dijalankan', [
                     'python_bin' => $pythonBin,
-                    'command' => $process->getCommandLine(),
-                    'error_output' => $process->getErrorOutput(),
+                    'stderr' => trim($process->getErrorOutput()),
                 ]);
 
-                $response['message'] =
-                    'Gagal memproses foto KTP. Detail: '
-                    . trim($process->getErrorOutput());
-
-                return response()->json($response, $statusCode);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Foto KTP gagal diproses. Silakan cek foto atau isi data secara manual.',
+                ], 422);
             }
 
-            // ==========================================
-            // PARSE HASIL OCR
-            // ==========================================
+            /*
+            |--------------------------------------------------------------------------
+            | PARSE HASIL OCR
+            |--------------------------------------------------------------------------
+            */
             $output = trim($process->getOutput());
-            $result = json_decode($output, true);
 
-            if (!is_array($result)) {
-                Log::error('OCR KTP: output tidak valid', [
-                    'raw_output' => $output,
+            try {
+                $result = json_decode(
+                    $output,
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                );
+            } catch (\JsonException $e) {
+                Log::error('OCR KTP: output JSON tidak valid', [
+                    'exception' => $e->getMessage(),
                 ]);
 
-                $response['message'] =
-                    'Hasil OCR tidak terbaca. Silakan isi manual.';
-
-                return response()->json($response, $statusCode);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hasil OCR tidak valid. Silakan isi data secara manual.',
+                ], 422);
             }
 
-            // ==========================================
-            // SIMPAN TOKEN FILE OCR
-            // ==========================================
-            $ocrToken = Str::random(40);
+            if (
+                !is_array($result) ||
+                !isset($result['data']) ||
+                !is_array($result['data'])
+            ) {
+                Log::error('OCR KTP: struktur hasil tidak sesuai', [
+                    'result_keys' => is_array($result) ? array_keys($result) : [],
+                ]);
 
-            $request->session()->put(
-                'ocr_ktp.' . $ocrToken,
-                [
-                    'path' => $tempPath,
-                    'original_name' => $file->getClientOriginalName(),
-                    'expires_at' => now()->addMinutes(30)->timestamp,
-                ]
-            );
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hasil OCR tidak lengkap. Silakan isi data secara manual.',
+                ], 422);
+            }
 
-            // File jangan dihapus oleh finally karena
-            // akan dipakai sebagai dokumen KTP saat submit.
-            $keepTempFile = true;
+            /*
+            |--------------------------------------------------------------------------
+            | SIMPAN TOKEN FILE OCR HANYA BILA HASIL MASIH LAYAK DIPAKAI
+            |--------------------------------------------------------------------------
+            */
+            $ocrSuccess = (bool) ($result['success'] ?? false);
+            $ocrToken = null;
 
-            // ==========================================
-            // RESPONSE SUKSES
-            // ==========================================
+            if ($ocrSuccess) {
+                $ocrToken = Str::random(40);
+
+                $request->session()->put(
+                    'ocr_ktp.' . $ocrToken,
+                    [
+                        'path' => $tempPath,
+                        'original_name' => $file->getClientOriginalName(),
+                        'expires_at' => now()->addMinutes(30)->timestamp,
+                        'user_id' => $request->user()->id,
+                    ]
+                );
+
+                // File akan dipindahkan menjadi dokumen KTP saat submit.
+                $keepTempFile = true;
+            }
+
             $result['ocr_file_token'] = $ocrToken;
             $result['ocr_file_name'] = $file->getClientOriginalName();
 
             return response()->json($result, 200);
 
         } finally {
-            // Kalau OCR gagal, file temp dibuang.
-            // Kalau OCR berhasil, file tetap ada karena
-            // akan dipindahkan saat form benar-benar disubmit.
             if (
                 !$keepTempFile &&
                 $tempPath &&
-                file_exists($tempPath)
+                is_file($tempPath)
             ) {
-                unlink($tempPath);
+                @unlink($tempPath);
+            }
+        }
+    }
+
+    /**
+     * Hapus file OCR sementara yang sudah melewati umur maksimum.
+     */
+    private function cleanupExpiredTempFiles(): void
+    {
+        $tempDir = storage_path('app/tmp-ocr');
+
+        if (!is_dir($tempDir)) {
+            return;
+        }
+
+        $cutoff = now()->subHour()->timestamp;
+
+        foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $path) {
+            if (
+                is_file($path) &&
+                @filemtime($path) !== false &&
+                @filemtime($path) < $cutoff
+            ) {
+                @unlink($path);
             }
         }
     }

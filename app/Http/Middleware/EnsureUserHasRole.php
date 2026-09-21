@@ -28,8 +28,8 @@ class EnsureUserHasRole
             $home = match ($user->role) {
                 'admin'     => route('admin.users.index'),
                 'kecamatan' => route('dashboard'),
-                'kelurahan'  => route('layanan.index'),
-                default      => route('login'),
+                'kelurahan' => route('kelurahan.index'),
+                default     => route('login'),
             };
 
             return redirect($home)->with(

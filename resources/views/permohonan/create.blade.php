@@ -11,10 +11,14 @@
     <body>
         <nav class="kmu-nav">
             <a class="kmu-brand" href="{{ route('layanan.index') }}">
-                <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+                <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
+                <div class="user-chip">
+                    <span class="dot"></span>
+                    <span>{{ auth()->user()->name ?? 'Staf Kelurahan' }}</span>
+                </div>
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active">Pengajuan</a>
                 <a href="{{ route('kelurahan.index') }}">Daftar Pengajuan Saya</a>
@@ -126,27 +130,39 @@
                     <h2>{{ count($fields)>0 ? '3' : '2' }}. Dokumen Persyaratan</h2>
                     <div class="required-note">Format dan ukuran file mengikuti aturan masing-masing persyaratan.</div>
                     @foreach($layanan->persyaratans as $persyaratan)
-                    <div class="form-group upload">
-                        <label>{{ $persyaratan->nama }}
-                            @if($persyaratan->wajib)
-                            <span>*</span>
-                            @else
-                            <small>(opsional)</small>
-                            @endif
-                        </label>
-                        <div class="hint">{{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }} · Maks. {{ $persyaratan->maks_size >= 1024 ? ($persyaratan->maks_size / 1024).' MB' : $persyaratan->maks_size.' KB' }}</div>
-                        @php
-                            $isKtp = str_contains(strtolower($persyaratan->nama), 'ktp');
-                        @endphp
-
+                    @php
+                        $isKtp = str_contains(strtolower($persyaratan->nama), 'ktp');
+                        $acceptAttr = collect(explode(',', $persyaratan->tipe_file))->map(fn($ext)=>'.'.trim($ext))->implode(',');
+                        $sizeHint = $persyaratan->maks_size >= 1024
+                            ? ($persyaratan->maks_size / 1024).' MB'
+                            : $persyaratan->maks_size.' KB';
+                    @endphp
+                    <div class="dropzone-card" id="dz-{{ $persyaratan->id }}">
                         <input
+                            class="dropzone-input"
                             type="file"
                             name="persyaratan[{{ $persyaratan->id }}]"
-                            accept="{{ collect(explode(',', $persyaratan->tipe_file))->map(fn($ext)=>'.'.trim($ext))->implode(',') }}"
-                            @unless($isKtp)
-                                {{ $persyaratan->wajib ? 'required' : '' }}
-                            @endunless
+                            accept="{{ $acceptAttr }}"
+                            @if($isKtp) data-ktp-upload="1" @endif
+                            data-max-size="{{ $persyaratan->maks_size }}"
+                            @if($persyaratan->wajib) required @endif
                         >
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">📎</div>
+                            <div class="dropzone-label">
+                                <strong>{{ $persyaratan->nama }}</strong>
+                                @if($persyaratan->wajib)
+                                    <span style="color:var(--danger)"> *</span>
+                                @else
+                                    <small style="color:var(--muted)"> (opsional)</small>
+                                @endif
+                            </div>
+                            <div class="dropzone-hint">
+                                {{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }} · Maks. {{ $sizeHint }}
+                            </div>
+                            <div class="dropzone-cta">Klik atau seret file ke sini</div>
+                            <div class="dropzone-preview" id="thumb-{{ $persyaratan->id }}" style="display:none"></div>
+                        </div>
                     </div>
                     @endforeach
                 </section>
@@ -196,6 +212,107 @@
                 }
 
                 // ==========================================
+                // DROPZONE CARDS — drag & drop + validation + preview
+                // ==========================================
+                function initDropzone(card) {
+                    var input = card.querySelector('.dropzone-input');
+                    var preview = card.querySelector('.dropzone-preview');
+                    var maxSizeKb = Number(input ? input.dataset.maxSize : 0);
+                    if (!input || !preview) return;
+
+                    function clearPreview() {
+                        preview.innerHTML = '';
+                        preview.style.display = 'none';
+                        card.classList.remove('has-file');
+                    }
+
+                    function showError(message) {
+                        preview.innerHTML =
+                            '<div class="upload-feedback is-error">⚠️ ' +
+                            message.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                            '</div>';
+                        preview.style.display = 'block';
+                        card.classList.remove('has-file');
+                    }
+
+                    function showFile(file) {
+                        if (!file) {
+                            clearPreview();
+                            return;
+                        }
+
+                        if (maxSizeKb > 0 && file.size > (maxSizeKb * 1024)) {
+                            input.value = '';
+                            showError('Ukuran file melebihi batas yang ditentukan.');
+                            return;
+                        }
+
+                        preview.innerHTML = '';
+
+                        if (file.type.indexOf('image/') === 0) {
+                            var reader = new FileReader();
+                            reader.onload = function(e) {
+                                var img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.alt = 'Pratinjau ' + file.name;
+                                preview.appendChild(img);
+
+                                var meta = document.createElement('div');
+                                meta.className = 'dropzone-file-meta';
+                                meta.style.marginTop = '8px';
+                                meta.innerHTML = '🖼️ <strong title=""></strong>';
+                                meta.querySelector('strong').textContent = file.name;
+                                preview.appendChild(meta);
+                                preview.style.display = 'block';
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            var meta = document.createElement('div');
+                            meta.className = 'dropzone-file-meta';
+                            meta.innerHTML = '📄 <strong title=""></strong>';
+                            meta.querySelector('strong').textContent = file.name;
+                            preview.appendChild(meta);
+                            preview.style.display = 'block';
+                        }
+
+                        card.classList.add('has-file');
+                    }
+
+                    input.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+
+                    input.addEventListener('change', function() {
+                        showFile(input.files[0]);
+                    });
+
+                    card.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        if (input.disabled) return;
+                        card.classList.add('dragover');
+                    });
+
+                    card.addEventListener('dragleave', function() {
+                        card.classList.remove('dragover');
+                    });
+
+                    card.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        card.classList.remove('dragover');
+
+                        if (input.disabled || !e.dataTransfer.files[0]) return;
+
+                        var file = e.dataTransfer.files[0];
+                        var dt = new DataTransfer();
+                        dt.items.add(file);
+                        input.files = dt.files;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                }
+
+                document.querySelectorAll('.dropzone-card').forEach(initDropzone);
+
+                // ==========================================
                 // OCR KTP - isi otomatis dari foto
                 // ==========================================
 
@@ -219,58 +336,104 @@
                             body: formData,
                             headers: { 'Accept': 'application/json' },
                         })
-                            .then(function (res) { return res.json(); })
-                            .then(function (json) {
-                                if (!json.success) {
-                                    ocrStatus.style.color = '#b91c1c';
-                                    ocrStatus.textContent = json.message || 'Sebagian data gagal terbaca, silakan lengkapi manual.';
-                                } else {
-                                    // Simpan token file OCR supaya saat submit
-                                    // file KTP bisa otomatis dijadikan dokumen KTP.
-                                    if (json.ocr_file_token) {
-                                        document.getElementById('ocr-ktp-token').value = json.ocr_file_token;
-                                    }
-
-                                    ocrStatus.style.color = '#087443';
-                                    ocrStatus.textContent = 'Berhasil dibaca - cek ulang datanya sebelum submit.';
-                                }
-
+                            .then(function (res) {
+                                return res.json().then(function (json) {
+                                    return {
+                                        ok: res.ok,
+                                        json: json
+                                    };
+                                });
+                            })
+                            .then(function (result) {
+                                var json = result.json || {};
                                 var data = json.data || {};
+                                var validation = json.validation || {};
 
-                                function fillIfEmpty(selector, value) {
+                                if (!result.ok && !json.data) {
+                                    ocrStatus.style.color = '#b91c1c';
+                                    ocrStatus.textContent =
+                                        json.message ||
+                                        'Foto KTP gagal diproses. Silakan isi data manual.';
+                                    return;
+                                }
+
+                                // Token hanya diberikan server jika file OCR aman
+                                // untuk dipakai sebagai dokumen KTP saat submit.
+                                if (json.ocr_file_token) {
+                                    document.getElementById('ocr-ktp-token').value = json.ocr_file_token;
+                                }
+
+                                // Tempelin foto yang sama (masih ada di memori browser)
+                                // ke kolom upload "Fotokopi KTP", biar gak perlu upload 2x.
+                                var ktpUploadInput = document.querySelector('input[data-ktp-upload="1"]');
+                                if (ktpUploadInput && file) {
+                                    var dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(file);
+                                    ktpUploadInput.files = dataTransfer.files;
+                                    ktpUploadInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+
+                                function fillIfValue(selector, value) {
                                     var el = document.querySelector(selector);
-                                    if (el && value) {
+                                    if (el && value !== undefined && value !== null && value !== '') {
                                         el.value = value;
-                                        el.dispatchEvent(new Event('input'));
+                                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                                        el.dispatchEvent(new Event('change', { bubbles: true }));
                                     }
                                 }
 
-                                fillIfEmpty('input[name="nama_lengkap"]', data.nama_lengkap);
-                                fillIfEmpty('input[name="nik"]', data.nik);
-                                fillIfEmpty('input[name="tanggal_lahir"]', data.tanggal_lahir);
-                                fillIfEmpty('input[name="rt"]', data.rt);
-                                fillIfEmpty('input[name="rw"]', data.rw);
-                                fillIfEmpty('input[name="data_surat[tempat_lahir]"]', data.tempat_lahir);
-                                fillIfEmpty('input[name="data_surat[alamat]"]', data.alamat);
-                                fillIfEmpty('input[name="data_surat[pekerjaan]"]', data.pekerjaan);
+                                fillIfValue('input[name="nama_lengkap"]', data.nama_lengkap);
+                                fillIfValue('input[name="nik"]', data.nik);
+                                fillIfValue('input[name="tanggal_lahir"]', data.tanggal_lahir);
+                                fillIfValue('input[name="rt"]', data.rt);
+                                fillIfValue('input[name="rw"]', data.rw);
+                                fillIfValue('input[name="data_surat[tempat_lahir]"]', data.tempat_lahir);
+                                fillIfValue('textarea[name="data_surat[alamat]"]', data.alamat);
+                                fillIfValue('input[name="data_surat[pekerjaan]"]', data.pekerjaan);
 
                                 var agamaSelect = document.querySelector('select[name="data_surat[agama]"]');
-                                if (agamaSelect && data.agama) agamaSelect.value = data.agama;
+                                if (agamaSelect && data.agama) {
+                                    agamaSelect.value = data.agama;
+                                    agamaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
 
                                 var genderSelect = document.querySelector('select[name="data_surat[jenis_kelamin]"]');
-                                if (genderSelect && data.jenis_kelamin) genderSelect.value = data.jenis_kelamin;
+                                if (genderSelect && data.jenis_kelamin) {
+                                    genderSelect.value = data.jenis_kelamin;
+                                    genderSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
 
-                                if (data.nik && data.nik.length !== 16) {
-                                    ocrStatus.style.color = '#b91c1c';
-                                    ocrStatus.textContent += ' (NIK kebaca ' + data.nik.length + ' digit, cek manual!)';
+                                var reviewFields = Array.isArray(validation.manual_review_fields)
+                                    ? validation.manual_review_fields
+                                    : [];
+
+                                if (reviewFields.length > 0) {
+                                    ocrStatus.style.color = '#9a6700';
+                                    ocrStatus.textContent =
+                                        'OCR selesai. Periksa dan koreksi: ' +
+                                        reviewFields.join(', ') +
+                                        ' sebelum submit.';
+                                } else {
+                                    ocrStatus.style.color = '#087443';
+                                    ocrStatus.textContent =
+                                        'OCR berhasil. Tetap cek ulang data sebelum submit.';
+                                }
+
+                                if (validation.nik_needs_review) {
+                                    var nikInput = document.querySelector('input[name="nik"]');
+                                    if (nikInput) {
+                                        nikInput.focus();
+                                    }
                                 }
                             })
                             .catch(function () {
                                 ocrStatus.style.color = '#b91c1c';
-                                ocrStatus.textContent = 'Gagal menghubungi server OCR. Isi manual saja.';
+                                ocrStatus.textContent =
+                                    'Gagal menghubungi server OCR. Isi data secara manual.';
                             });
                     });
                 }
+
             });
         </script>
     </body>

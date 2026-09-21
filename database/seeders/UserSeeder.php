@@ -32,5 +32,14 @@ class UserSeeder extends Seeder
             'role' => 'kecamatan',
             'kelurahan_id' => null,
         ]);
+
+        User::updateOrCreate(['email' => 'admin@kecmagelangutara.test'], [
+            'name' => 'Administrator KMU',
+            'email' => 'admin@kecmagelangutara.test',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'kelurahan_id' => null,
+            'is_active' => true,
+        ]);
     }
 }

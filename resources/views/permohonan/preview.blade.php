@@ -89,15 +89,18 @@
             .signature{
                 width:62mm;
                 margin-left:auto;
-                margin-top:10mm;
+                margin-top:4mm;
                 text-align:center;
-                font-size:9.5pt}
+                font-size:8.5pt;
+                line-height:1.25;
+            }
+
             .signature img{
                 display:block;
-                width:47mm;
-                height:27mm;
+                width:38mm;
+                height:18mm;
                 object-fit:contain;
-                margin:2mm auto
+                margin:1mm auto;
             }
 
             @media print {
@@ -118,12 +121,26 @@
                 }
 
                 .paper {
-                    width: 210mm;
-                    min-height: 297mm;
+                    width: 244mm;
+                    min-height: 345mm;
+                    height: 345mm;
                     margin: 0;
-                    padding: 15mm 17mm;
+                    padding: 9mm 17mm 7mm;
                     box-shadow: none;
-                    overflow: visible;
+                    overflow: hidden;
+                    zoom: 0.86;
+                }
+
+                .signature {
+                    margin-top: 3mm !important;
+                    font-size: 8pt !important;
+                    line-height: 1.2 !important;
+                }
+
+                .signature img {
+                    width: 34mm !important;
+                    height: 16mm !important;
+                    margin: 1mm auto !important;
                 }
             }
         </style>
@@ -140,7 +157,7 @@
         @if(in_array($permohonan->status, ['disetujui', 'selesai']))
         <div class="paper">
             <div class="kop">
-                <img class="logo" src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+                <img class="logo" src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <div class="kop-text">
                     <div class="pemerintah">PEMERINTAH KOTA MAGELANG</div>
                     <div class="kecamatan">KECAMATAN MAGELANG UTARA</div>

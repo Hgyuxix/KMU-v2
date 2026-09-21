@@ -32,7 +32,8 @@ class PermohonanController extends Controller
         $stats = Permohonan::selectRaw("
             COUNT(CASE WHEN status = 'diajukan' THEN 1 END) as diajukan,
             COUNT(CASE WHEN status = 'revisi' THEN 1 END) as revisi,
-            COUNT(CASE WHEN status = 'disetujui' THEN 1 END) as disetujui
+            COUNT(CASE WHEN status = 'disetujui' THEN 1 END) as disetujui,
+            COUNT(CASE WHEN status = 'selesai' THEN 1 END) as selesai
         ")->where('kelurahan_id', $kelurahanId)->first();
 
         return view('kelurahan.index', compact('permohonans', 'stats'));
@@ -87,6 +88,7 @@ class PermohonanController extends Controller
                 !empty($ocrSession['path']) &&
                 !empty($ocrSession['expires_at']) &&
                 $ocrSession['expires_at'] >= now()->timestamp &&
+                (!isset($ocrSession['user_id']) || $ocrSession['user_id'] === $request->user()->id) &&
                 file_exists($ocrSession['path'])
             ) {
                 /*
@@ -167,30 +169,22 @@ class PermohonanController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        foreach ($fields as $field => $label) {
-            $rules['data_surat.' . $field] = [
-                'required',
-                'string',
-                'max:1000',
-            ];
-        }
+        foreach ($fields as $field => $config) {
+            $type = is_array($config) ? ($config['type'] ?? 'text') : 'text';
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi khusus SKTM
-        |--------------------------------------------------------------------------
-        */
-
-        if ($layanan->id == 1) {
-            $rules['data_surat.jenis_kelamin'] = [
-                'required',
-                'in:Laki-laki,Perempuan',
-            ];
-
-            $rules['data_surat.agama'] = [
-                'required',
-                'in:Islam,Kristen,Katolik,Hindu,Buddha,Konghucu',
-            ];
+            if ($type === 'select' && isset($config['options']) && is_array($config['options'])) {
+                $rules['data_surat.' . $field] = [
+                    'required',
+                    'string',
+                    'in:' . implode(',', $config['options']),
+                ];
+            } else {
+                $rules['data_surat.' . $field] = [
+                    'required',
+                    'string',
+                    'max:1000',
+                ];
+            }
         }
 
         /*
@@ -287,10 +281,13 @@ class PermohonanController extends Controller
                         'local'
                     );
 
+                    $safeName = preg_replace('/[^\w\s\d\.\-_]/', '', basename($file->getClientOriginalName()));
+                    $safeName = trim($safeName) ?: ('dokumen_' . Str::random(8) . '.' . ($file->guessExtension() ?? 'bin'));
+
                     $permohonan->dokumenPersyaratans()->create([
                         'persyaratan_id' => $persyaratan->id,
                         'file_path' => $path,
-                        'file_original_name' => $file->getClientOriginalName(),
+                        'file_original_name' => $safeName,
                     ]);
                 }
             }
@@ -303,30 +300,39 @@ class PermohonanController extends Controller
             */
 
             if ($ocrFile && $ocrPersyaratan) {
-                $extension = pathinfo(
-                    $ocrFile['path'],
-                    PATHINFO_EXTENSION
-                );
+                $alreadyUploaded = $permohonan->dokumenPersyaratans()
+                    ->where('persyaratan_id', $ocrPersyaratan->id)
+                    ->exists();
 
-                $filename = 'ktp_' . Str::random(20) . '.' . $extension;
-
-                $path = Storage::disk('local')->putFileAs(
-                    'persyaratan/' . $permohonan->id,
-                    new File($ocrFile['path']),
-                    $filename
-                );
-
-                if (!$path) {
-                    throw new \RuntimeException(
-                        'Gagal menyimpan file KTP hasil OCR.'
+                if (!$alreadyUploaded) {
+                    $extension = pathinfo(
+                        $ocrFile['path'],
+                        PATHINFO_EXTENSION
                     );
-                }
 
-                $permohonan->dokumenPersyaratans()->create([
-                    'persyaratan_id' => $ocrPersyaratan->id,
-                    'file_path' => $path,
-                    'file_original_name' => $ocrFile['original_name'],
-                ]);
+                    $filename = 'ktp_' . Str::random(20) . '.' . $extension;
+
+                    $path = Storage::disk('local')->putFileAs(
+                        'persyaratan/' . $permohonan->id,
+                        new File($ocrFile['path']),
+                        $filename
+                    );
+
+                    if (!$path) {
+                        throw new \RuntimeException(
+                            'Gagal menyimpan file KTP hasil OCR.'
+                        );
+                    }
+
+                    $safeOcrName = preg_replace('/[^\w\s\d\.\-_]/', '', basename($ocrFile['original_name']));
+                    $safeOcrName = trim($safeOcrName) ?: ('ktp_' . Str::random(8) . '.' . $extension);
+
+                    $permohonan->dokumenPersyaratans()->create([
+                        'persyaratan_id' => $ocrPersyaratan->id,
+                        'file_path' => $path,
+                        'file_original_name' => $safeOcrName,
+                    ]);
+                }
             }
 
             return $permohonan;
@@ -387,7 +393,11 @@ class PermohonanController extends Controller
             'dokumenPersyaratans',
         ]);
 
-        $surat = $suratGenerator->generate($permohonan);
+        $surat = null;
+
+        if (in_array($permohonan->status, ['disetujui', 'selesai'], true)) {
+            $surat = $suratGenerator->generate($permohonan);
+        }
 
         return view('permohonan.preview', compact(
             'permohonan',
@@ -395,20 +405,37 @@ class PermohonanController extends Controller
         ));
     }
 
-    public function lihatDokumen(DokumenPersyaratan $dokumen){
-        $permohonan = $dokumen->permohonan;
+    public function lihatDokumen(DokumenPersyaratan $dokumen)
+    {
+        $dokumen->load('permohonan');
+
+        abort_unless(
+            $dokumen->permohonan,
+            404,
+            'Permohonan dokumen tidak ditemukan.'
+        );
+
         $user = request()->user();
 
         abort_if(
-            $user->isKelurahan() && $permohonan->kelurahan_id !== $user->kelurahan_id,
-            403
+            $user->isKelurahan()
+                && $dokumen->permohonan->kelurahan_id !== $user->kelurahan_id,
+            403,
+            'Anda tidak memiliki akses ke dokumen ini.'
         );
 
-        abort_unless(Storage::disk('local')->exists($dokumen->file_path), 404);
+        abort_unless(
+            Storage::disk('local')->exists($dokumen->file_path),
+            404,
+            'File dokumen tidak ditemukan.'
+        );
 
         return Storage::disk('local')->response(
             $dokumen->file_path,
-            $dokumen->file_original_name
+            $dokumen->file_original_name,
+            [
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
 
@@ -537,6 +564,8 @@ class PermohonanController extends Controller
             'diproses_at' => null,
             'alasan_penolakan' => null,
             'nomor_surat' => null,
+            'selesai_oleh' => null,
+            'selesai_at' => null,
         ];
 
         if ($request->filled('nik')) {
@@ -545,52 +574,72 @@ class PermohonanController extends Controller
             );
         }
 
-        $permohonan->update($updateData);
+        DB::transaction(function () use ($permohonan, $updateData, $layanan, $request) {
+            $permohonan->update($updateData);
 
-        foreach ($layanan->persyaratans as $persyaratan) {
-
-            $file = $request->file(
-                'persyaratan.' . $persyaratan->id
-            );
-
-            if (!$file) {
-                continue;
-            }
-
-            $existing = $permohonan->dokumenPersyaratans()
-                ->where('persyaratan_id', $persyaratan->id)
-                ->first();
-
-            if ($existing && $existing->status === 'sesuai') {
-                abort(
-                    409,
-                    'Dokumen yang sudah dinyatakan sesuai tidak dapat diganti.'
+            foreach ($layanan->persyaratans as $persyaratan) {
+                $file = $request->file(
+                    'persyaratan.' . $persyaratan->id
                 );
-            }
 
-            if ($existing) {
-                Storage::disk('local')->delete($existing->file_path);
+                if (!$file) {
+                    continue;
+                }
 
-                $existing->update([
-                    'file_path' => $file->store(
+                $existing = $permohonan->dokumenPersyaratans()
+                    ->where('persyaratan_id', $persyaratan->id)
+                    ->first();
+
+                if ($existing && $existing->status === 'sesuai') {
+                    abort(
+                        409,
+                        'Dokumen yang sudah dinyatakan sesuai tidak dapat diganti.'
+                    );
+                }
+
+                if ($existing) {
+                    $oldPath = $existing->file_path;
+
+                    $newPath = $file->store(
                         'persyaratan/' . $permohonan->id,
                         'local'
-                    ),
-                    'file_original_name' => $file->getClientOriginalName(),
-                    'status' => 'belum_dicek',
-                ]);
-            } else {
-                $permohonan->dokumenPersyaratans()->create([
-                    'persyaratan_id' => $persyaratan->id,
-                    'file_path' => $file->store(
-                        'persyaratan/' . $permohonan->id,
-                        'local'
-                    ),
-                    'file_original_name' => $file->getClientOriginalName(),
-                    'status' => 'belum_dicek',
-                ]);
+                    );
+
+                    if (!$newPath) {
+                        abort(
+                            500,
+                            'Dokumen baru gagal disimpan.'
+                        );
+                    }
+
+                    $safeName = preg_replace('/[^\w\s\d\.\-_]/', '', basename($file->getClientOriginalName()));
+                    $safeName = trim($safeName) ?: ('dokumen_' . Str::random(8) . '.' . ($file->guessExtension() ?? 'bin'));
+
+                    $existing->update([
+                        'file_path' => $newPath,
+                        'file_original_name' => $safeName,
+                        'status' => 'belum_dicek',
+                    ]);
+
+                    if ($oldPath !== $newPath) {
+                        Storage::disk('local')->delete($oldPath);
+                    }
+                } else {
+                    $safeName = preg_replace('/[^\w\s\d\.\-_]/', '', basename($file->getClientOriginalName()));
+                    $safeName = trim($safeName) ?: ('dokumen_' . Str::random(8) . '.' . ($file->guessExtension() ?? 'bin'));
+
+                    $permohonan->dokumenPersyaratans()->create([
+                        'persyaratan_id' => $persyaratan->id,
+                        'file_path' => $file->store(
+                            'persyaratan/' . $permohonan->id,
+                            'local'
+                        ),
+                        'file_original_name' => $safeName,
+                        'status' => 'belum_dicek',
+                    ]);
+                }
             }
-        }
+        });
 
         return redirect()
             ->route('kelurahan.index')

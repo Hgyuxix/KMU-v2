@@ -13,20 +13,25 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo('/login');
 
-        // User yang sudah login diarahkan ke home role-nya masing-masing
-        // supaya tidak perlu nabrak 403 dulu baru di-redirect.
+        // User yang sudah login diarahkan ke home role-nya masing-masing.
         $middleware->redirectUsersTo(function ($request) {
             $role = $request->user()?->role;
 
             return match ($role) {
+                'admin'     => route('admin.users.index'),
                 'kecamatan' => route('dashboard'),
-                'kelurahan'  => route('layanan.index'),
-                default      => route('login'),
+                'kelurahan' => route('kelurahan.index'),
+                default     => route('login'),
             };
         });
 
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'role'   => \App\Http\Middleware\EnsureUserHasRole::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
     })
 

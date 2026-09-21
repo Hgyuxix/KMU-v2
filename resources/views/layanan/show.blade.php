@@ -11,13 +11,25 @@
     <body>
         <nav class="kmu-nav">
             <a class="kmu-brand" href="{{ route('layanan.index') }}">
-                <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+                <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active" href="{{ route('layanan.index') }}">Layanan</a>
-                <a href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
+                @auth
+                    @if(auth()->user()->role === 'kelurahan')
+                        <a href="{{ route('kelurahan.index') }}">Pengajuan Saya</a>
+                    @else
+                        <a href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
+                    @endif
+                    <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                        @csrf
+                        <button class="nav-logout" type="submit">Keluar</button>
+                    </form>
+                @else
+                    <a class="kmu-login" href="{{ route('login') }}">Masuk</a>
+                @endauth
             </div>
         </nav>
 

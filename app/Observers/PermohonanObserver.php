@@ -19,7 +19,7 @@ class PermohonanObserver
 
         AuditLog::create([
             'permohonan_id' => $permohonan->id,
-            'user_id' => Auth::id(),
+            'user_id' => Auth::id() ?? $permohonan->dibuat_oleh,
             'aksi' => 'pengajuan_dibuat',
             'status_sebelum' => null,
             'status_sesudah' => $permohonan->status,
@@ -48,7 +48,7 @@ class PermohonanObserver
 
         AuditLog::create([
             'permohonan_id' => $permohonan->id,
-            'user_id' => Auth::id(),
+            'user_id' => Auth::id() ?? $permohonan->diproses_oleh ?? $permohonan->selesai_oleh ?? $permohonan->dibuat_oleh,
             'aksi' => $aksi,
             'status_sebelum' => $statusSebelum,
             'status_sesudah' => $statusSesudah,

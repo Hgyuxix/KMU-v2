@@ -11,7 +11,7 @@
 <body>
 <nav class="kmu-nav">
     <a class="kmu-brand" href="{{ route('layanan.index') }}">
-        <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+        <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
         <span>
             Pelayanan Administrasi<br>
             Kecamatan Magelang Utara
@@ -51,17 +51,12 @@
     </div>
 
     {{-- CATATAN KECAMATAN --}}
-    <div class="alert" style="
-        background:#fff7ed;
-        border:1px solid #fed7aa;
-        color:#9a3412;
-        margin-bottom:20px;
-    ">
-        <strong>Catatan Kecamatan</strong>
-
-        <p style="margin:8px 0 0;">
-            {{ $permohonan->catatan_revisi ?: 'Tidak ada catatan.' }}
-        </p>
+    <div class="revision-feedback">
+        <div class="feedback-icon">!</div>
+        <div>
+            <strong>Pengajuan dikembalikan untuk revisi</strong>
+            <p>{{ $permohonan->catatan_revisi ?: 'Kecamatan meminta perbaikan pada data atau dokumen pengajuan.' }}</p>
+        </div>
     </div>
 
     @if ($errors->any())
@@ -286,94 +281,129 @@
                 @php
                     $dokumen = $permohonan->dokumenPersyaratans
                         ->firstWhere('persyaratan_id', $persyaratan->id);
+
+                    $acceptAttr = collect(explode(',', $persyaratan->tipe_file))
+                        ->map(fn($ext) => '.' . trim($ext))
+                        ->implode(',');
+
+                    $sizeHint = $persyaratan->maks_size >= 1024
+                        ? ($persyaratan->maks_size / 1024) . ' MB'
+                        : $persyaratan->maks_size . ' KB';
+
+                    $needsReplacement = $dokumen && $dokumen->status === 'tidak_sesuai';
+                    $isLocked = $dokumen && $dokumen->status === 'sesuai';
                 @endphp
 
-                <div class="form-group upload">
+                <div
+                    class="form-group"
+                    style="margin-bottom:16px"
+                >
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+                        <div>
+                            <label style="margin-bottom:2px">
+                                {{ $persyaratan->nama }}
+                                @if($persyaratan->wajib)
+                                    <span>*</span>
+                                @else
+                                    <small style="color:var(--muted)">(opsional)</small>
+                                @endif
+                            </label>
+                            <div class="hint">
+                                {{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }}
+                                · Maks. {{ $sizeHint }}
+                            </div>
+                        </div>
 
-                    <label>
-                        {{ $persyaratan->nama }}
-
-                        @if($persyaratan->wajib)
-                            <span>*</span>
-                        @else
-                            <small>(opsional)</small>
+                        @if($dokumen)
+                            <span class="status-badge {{ $needsReplacement ? 'status-ditolak' : ($isLocked ? 'status-disetujui' : '') }}">
+                                @if($needsReplacement)
+                                    ✕ Tidak Sesuai
+                                @elseif($isLocked)
+                                    ✓ Sudah Sesuai
+                                @else
+                                    Belum Dicek
+                                @endif
+                            </span>
                         @endif
-                    </label>
-
-                    <div class="hint">
-                        {{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }}
-                        · Maks.
-                        {{ $persyaratan->maks_size >= 1024
-                            ? ($persyaratan->maks_size / 1024).' MB'
-                            : $persyaratan->maks_size.' KB'
-                        }}
                     </div>
 
                     @if($dokumen)
-
-                        <div style="
-                            padding:10px;
-                            margin:8px 0;
-                            border-radius:8px;
-                            background:#f8fafc;
-                        ">
-
-                            <strong>
-                                File saat ini:
-                            </strong>
-
-                            {{ $dokumen->file_original_name }}
-
-                            <br>
-
-                            @if($dokumen->status === 'sesuai')
-
-                                <span class="status-badge status-disetujui">
-                                    ✓ Sudah Sesuai
-                                </span>
-
-                            @elseif($dokumen->status === 'tidak_sesuai')
-
-                                <span class="status-badge status-ditolak">
-                                    ✕ Wajib Diganti
-                                </span>
-
-                            @else
-
-                                <span class="status-badge">
-                                    Belum Dicek
-                                </span>
-
-                            @endif
-
+                        <div class="document-current {{ $needsReplacement ? 'is-invalid' : '' }}">
+                            <div style="min-width:0;flex:1">
+                                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px">
+                                    Dokumen sebelumnya
+                                </div>
+                                <div class="file-name">{{ $dokumen->file_original_name }}</div>
+                            </div>
+                            <span style="font-size:12px">
+                                @if($isLocked)
+                                    🔒
+                                @elseif($needsReplacement)
+                                    🔁
+                                @else
+                                    •
+                                @endif
+                            </span>
                         </div>
-
                     @endif
 
-                    <input
-                        type="file"
-                        name="persyaratan[{{ $persyaratan->id }}]"
-                        accept="{{ collect(explode(',', $persyaratan->tipe_file))
-                            ->map(fn($ext) => '.'.trim($ext))
-                            ->implode(',') }}"
-                        @if($dokumen && $dokumen->status === 'sesuai')
-                            disabled
-                        @endif
-                        @if(
-                            ($dokumen && $dokumen->status === 'tidak_sesuai')
-                            || (!$dokumen && $persyaratan->wajib)
-                        )
-                            required
-                        @endif
+                    <div
+                        class="dropzone-card {{ $isLocked ? 'is-locked' : '' }}"
+                        id="edit-dz-{{ $persyaratan->id }}"
                     >
+                        <input
+                            class="dropzone-input"
+                            type="file"
+                            name="persyaratan[{{ $persyaratan->id }}]"
+                            accept="{{ $acceptAttr }}"
+                            data-max-size="{{ $persyaratan->maks_size }}"
+                            @disabled($isLocked)
+                            @if($needsReplacement || (!$dokumen && $persyaratan->wajib))
+                                required
+                            @endif
+                        >
 
-                    @if($dokumen && $dokumen->status === 'sesuai')
-                        <div class="hint" style="color:#087443;">
-                            Dokumen sudah dinyatakan sesuai oleh Kecamatan dan tidak perlu diganti.
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">
+                                @if($isLocked)
+                                    🔒
+                                @elseif($needsReplacement)
+                                    🔁
+                                @else
+                                    📎
+                                @endif
+                            </div>
+
+                            <div class="dropzone-label">
+                                @if($isLocked)
+                                    Dokumen sudah sesuai
+                                @elseif($needsReplacement)
+                                    Unggah dokumen pengganti
+                                @else
+                                    Unggah dokumen
+                                @endif
+                            </div>
+
+                            <div class="dropzone-hint">
+                                {{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }}
+                                · Maks. {{ $sizeHint }}
+                            </div>
+
+                            @unless($isLocked)
+                                <div class="dropzone-cta">Klik atau seret file ke sini</div>
+                            @endunless
+
+                            <div class="dropzone-preview" id="edit-thumb-{{ $persyaratan->id }}" style="display:none"></div>
                         </div>
-                    @elseif($dokumen && $dokumen->status === 'tidak_sesuai')
-                        <div class="hint" style="color:#b91c1c;">
-                            Upload file baru untuk mengganti dokumen ini.
+                    </div>
+
+                    @if($isLocked)
+                        <div class="upload-feedback is-success">
+                            ✓ Dokumen ini sudah dinyatakan sesuai oleh Kecamatan dan tidak perlu diunggah ulang.
+                        </div>
+                    @elseif($needsReplacement)
+                        <div class="revision-note">
+                            Dokumen ini ditandai <strong>Tidak Sesuai</strong>. Upload file baru untuk menggantinya.
                         </div>
                     @endif
                 </div>
@@ -430,9 +460,98 @@ document.addEventListener('DOMContentLoaded', function () {
             var digits = el.value.replace(/\D/g, '');
             el.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
+
         formatRupiah();
         el.addEventListener('input', formatRupiah);
     });
+
+    function initDropzone(card) {
+        var input = card.querySelector('.dropzone-input');
+        var preview = card.querySelector('.dropzone-preview');
+        var maxSizeKb = Number(input ? input.dataset.maxSize : 0);
+
+        if (!input || !preview || input.disabled) return;
+
+        function showError(message) {
+            preview.innerHTML =
+                '<div class="upload-feedback is-error">⚠️ ' +
+                message.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                '</div>';
+            preview.style.display = 'block';
+            card.classList.remove('has-file');
+        }
+
+        function renderFile(file) {
+            if (!file) return;
+
+            if (maxSizeKb > 0 && file.size > (maxSizeKb * 1024)) {
+                input.value = '';
+                showError('Ukuran file melebihi batas yang ditentukan.');
+                return;
+            }
+
+            preview.innerHTML = '';
+
+            if (file.type.indexOf('image/') === 0) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Pratinjau ' + file.name;
+                    preview.appendChild(img);
+
+                    var meta = document.createElement('div');
+                    meta.className = 'dropzone-file-meta';
+                    meta.style.marginTop = '8px';
+                    meta.innerHTML = '🖼️ <strong></strong>';
+                    meta.querySelector('strong').textContent = file.name;
+                    preview.appendChild(meta);
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                var meta = document.createElement('div');
+                meta.className = 'dropzone-file-meta';
+                meta.innerHTML = '📄 <strong></strong>';
+                meta.querySelector('strong').textContent = file.name;
+                preview.appendChild(meta);
+                preview.style.display = 'block';
+            }
+
+            card.classList.add('has-file');
+        }
+
+        input.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        input.addEventListener('change', function () {
+            renderFile(input.files[0]);
+        });
+
+        card.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            if (!input.disabled) card.classList.add('dragover');
+        });
+
+        card.addEventListener('dragleave', function () {
+            card.classList.remove('dragover');
+        });
+
+        card.addEventListener('drop', function (e) {
+            e.preventDefault();
+            card.classList.remove('dragover');
+
+            if (input.disabled || !e.dataTransfer.files[0]) return;
+
+            var dt = new DataTransfer();
+            dt.items.add(e.dataTransfer.files[0]);
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    }
+
+    document.querySelectorAll('.dropzone-card').forEach(initDropzone);
 
     var formEl = document.querySelector('form');
     if (formEl) {

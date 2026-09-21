@@ -9,7 +9,7 @@
 
     <body style="background:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center">
         <div style="max-width:420px;width:100%;margin:20px;background:#fff;border:1px solid #e5e9f0;border-radius:16px;padding:32px;text-align:center">
-            <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang" style="height:48px;margin-bottom:16px">
+            <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang" style="height:48px;margin-bottom:16px">
             @if($permohonan)
                 <div style="width:56px;height:56px;border-radius:999px;background:#eaf8f0;color:#087443;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">✓</div>
                 <h1 style="font-size:19px;margin:0 0 6px">Surat Ini Sah</h1>
@@ -45,7 +45,7 @@
             @else
                 <div style="width:56px;height:56px;border-radius:999px;background:#fef2f2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">✕</div>
                 <h1 style="font-size:19px;margin:0 0 6px">Surat Tidak Ditemukan</h1>
-                <p style="color:#64748b;font-size:13px;margin:0">Nomor surat <strong>{{ $nomorSurat }}</strong> tidak terdaftar atau belum disetujui. Kalau menurut lu ini salah, hubungi Kecamatan Magelang Utara.</p>
+                <p style="color:#64748b;font-size:13px;margin:0">Nomor surat <strong>{{ $nomorSurat }}</strong> tidak terdaftar atau belum disetujui. Jika menurut Anda hal ini merupakan kekeliruan, silakan hubungi Kantor Kecamatan Magelang Utara.</p>
             @endif
 
         </div>

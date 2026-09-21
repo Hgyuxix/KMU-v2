@@ -8,11 +8,19 @@ class VerifikasiController extends Controller
 {
     public function show(string $nomorSurat)
     {
+        $decodedNomorSurat = rawurldecode($nomorSurat);
+
         $permohonan = Permohonan::with(['layanan', 'kelurahan'])
-            ->where('nomor_surat', $nomorSurat)
-            ->where('status', 'disetujui')
+            ->where(function ($query) use ($nomorSurat, $decodedNomorSurat) {
+                $query->where('nomor_surat', $nomorSurat)
+                    ->orWhere('nomor_surat', $decodedNomorSurat);
+            })
+            ->whereIn('status', ['disetujui', 'selesai'])
             ->first();
 
-        return view('verifikasi.show', compact('permohonan', 'nomorSurat'));
+        return view('verifikasi.show', [
+            'permohonan' => $permohonan,
+            'nomorSurat' => $decodedNomorSurat,
+        ]);
     }
 }

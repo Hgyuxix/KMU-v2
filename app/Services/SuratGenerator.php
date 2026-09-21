@@ -95,16 +95,16 @@ class SuratGenerator
             'penandatangan.jabatan'
         );
 
-        $namaLurah = $permohonan->kelurahan->nama_lurah
+        $namaLurah = $permohonan->kelurahan?->nama_lurah
             ?: '[NAMA LURAH BELUM DIISI]';
 
-        $nipLurah = $permohonan->kelurahan->nip_lurah
+        $nipLurah = $permohonan->kelurahan?->nip_lurah
             ?: '[NIP LURAH BELUM DIISI]';
 
-        $namaSekretaris = $permohonan->kelurahan->nama_sekretaris
+        $namaSekretaris = $permohonan->kelurahan?->nama_sekretaris
             ?: '[NAMA SEKRETARIS BELUM DIISI]';
 
-        $nipSekretaris = $permohonan->kelurahan->nip_sekretaris
+        $nipSekretaris = $permohonan->kelurahan?->nip_sekretaris
             ?: '[NIP SEKRETARIS BELUM DIISI]';
 
         // ==========================================
@@ -125,7 +125,7 @@ class SuratGenerator
 
             '{{ tanggal_lahir }}' => $permohonan
                 ->tanggal_lahir
-                ->translatedFormat('d F Y'),
+                ?->translatedFormat('d F Y') ?? '-',
 
             '{{ rt }}' => e(
                 $permohonan->rt
@@ -174,11 +174,13 @@ class SuratGenerator
         // ==========================================
 
         foreach ($data as $key => $value) {
+            $formattedValue = is_array($value)
+                ? implode(', ', $value)
+                : (string) ($value ?? '');
 
             $replacements[
                 '{{ ' . $key . ' }}'
-            ] = e($value);
-
+            ] = e($formattedValue);
         }
 
         return str_replace(

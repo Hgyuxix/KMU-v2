@@ -24,7 +24,7 @@ class Permohonan extends Model
         'alasan_penolakan',
         'nomor_surat',
         'catatan_revisi',
-        'sesesai_oleh',
+        'selesai_oleh',
         'selesai_at',
     ];
 
@@ -53,6 +53,11 @@ class Permohonan extends Model
     public function pemroses(): BelongsTo
     {
         return $this->belongsTo(User::class, 'diproses_oleh');
+    }
+
+    public function penyelesai(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'selesai_oleh');
     }
 
     public function dokumenPersyaratans(): HasMany

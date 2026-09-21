@@ -10,7 +10,7 @@
     <body class="auth-page">
         <div class="auth-shell">
             <div class="auth-brand">
-                <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+                <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <div><strong>Kecamatan Magelang Utara</strong><span>Pelayanan Administrasi</span></div>
             </div>
             <div class="auth-card">

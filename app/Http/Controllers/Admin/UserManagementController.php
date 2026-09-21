@@ -77,6 +77,12 @@ class UserManagementController extends Controller
 
     public function edit(User $user)
     {
+        abort_if(
+            $user->isAdmin(),
+            403,
+            'Akun admin tidak dapat diubah melalui halaman manajemen pengguna.'
+        );
+
         $kelurahans = Kelurahan::orderBy('nama')->get();
 
         return view(
@@ -87,6 +93,12 @@ class UserManagementController extends Controller
 
     public function update(Request $request, User $user)
     {
+        abort_if(
+            $user->isAdmin(),
+            403,
+            'Akun admin tidak dapat diubah melalui halaman manajemen pengguna.'
+        );
+
         $data = $request->validate([
             'name' => [
                 'required',

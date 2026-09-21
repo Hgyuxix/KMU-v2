@@ -12,7 +12,7 @@
 
     <nav class="kmu-nav">
         <a class="kmu-brand" href="{{ route('admin.users.index') }}">
-            <img src="{{ asset('assets/logo-kota-magelang.jpg') }}" alt="Logo Kota Magelang">
+            <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
             <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
         </a>
 

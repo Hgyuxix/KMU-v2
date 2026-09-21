@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 _tesseract_cmd = os.environ.get("TESSERACT_CMD")
 if _tesseract_cmd:
-    pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
+    pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd.strip('"\'')
 
 
 # =========================================================
@@ -135,18 +135,14 @@ def clean_val(v):
 
 
 def normalize_nik(raw_nik):
-    replacements = {
-        "O": "0", "o": "0", "D": "0",
-        "I": "1", "l": "1", "|": "1",
-        "B": "8", "b": "8",
-        "S": "5", "s": "5",
-        "e": "2", "E": "2",
-        "z": "2", "Z": "2",
-    }
-    res = raw_nik
-    for k, v in replacements.items():
-        res = res.replace(k, v)
-    return re.sub(r"\D", "", res)
+    """
+    Normalisasi ringan untuk validasi saja.
+    PENTING: tidak melakukan substitusi O->0, I->1, S->5, dll.
+    Karakter hasil OCR dipertahankan agar petugas dapat mengoreksinya.
+    """
+    if raw_nik is None:
+        return ""
+    return re.sub(r"[\\s:./_-]+", "", str(raw_nik)).strip()
 
 
 # =========================================================
@@ -156,15 +152,29 @@ def normalize_nik(raw_nik):
 def extract_nik(image, full_text=""):
     """
     Mengekstrak NIK dengan prioritas:
-    1. ROI Crop khusus baris NIK + whitelist angka Tesseract (--psm 6).
+    1. ROI khusus baris NIK + whitelist angka.
     2. Pola label NIK di teks lengkap.
-    3. Kandidat 16 digit alfanumerik ternormalisasi di teks lengkap.
+    3. Kandidat alfanumerik 15-20 karakter dari teks lengkap.
+
+    Hasil fallback TIDAK dikoreksi otomatis.
+    Contoh OCR "1234O678..." tetap dipertahankan apa adanya
+    supaya petugas dapat memeriksa dan memperbaiki NIK.
     """
     h, w = image.shape[:2]
-    # Area NIK berada di sekitar y: 13%-29%, x: 18%-78%
-    nik_crop = image[int(h * 0.13):int(h * 0.29), int(w * 0.18):int(w * 0.78)]
+
+    nik_crop = image[
+        int(h * 0.13):int(h * 0.29),
+        int(w * 0.18):int(w * 0.78)
+    ]
+
     gray = cv2.cvtColor(nik_crop, cv2.COLOR_BGR2GRAY)
-    g2x = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    g2x = cv2.resize(
+        gray,
+        None,
+        fx=2,
+        fy=2,
+        interpolation=cv2.INTER_CUBIC
+    )
 
     try:
         txt_roi = pytesseract.image_to_string(
@@ -172,26 +182,35 @@ def extract_nik(image, full_text=""):
             config="--psm 6 -c tessedit_char_whitelist=0123456789",
             lang="eng"
         ).strip()
+
         digits_roi = re.sub(r"\D", "", txt_roi)
+
         if len(digits_roi) == 16:
             return digits_roi
     except Exception:
         digits_roi = ""
 
-    # Cari dari baris label NIK di teks dokumen
+    # Cari dari baris label NIK di teks dokumen.
     for line in full_text.splitlines():
         if re.search(r"\b(?:NIK|N!K|N1K)\b", line, re.I):
-            val = re.sub(r"^.*?\b(?:NIK|N!K|N1K)\b[ :.\-_=—#+]*", "", line, flags=re.I)
-            norm = normalize_nik(val)
-            if len(norm) == 16:
-                return norm
+            val = re.sub(
+                r"^.*?\b(?:NIK|N!K|N1K)\b[ :./_-]*",
+                "",
+                line,
+                flags=re.I
+            )
+            raw = normalize_nik(val)
 
-    # Cari 16 digit alfanumerik bebas
+            if raw:
+                return raw
+
+    # Cari kandidat 15-20 karakter alfanumerik tanpa melakukan substitusi.
     candidates = re.findall(r"[A-Za-z0-9]{15,20}", full_text)
-    for c in candidates:
-        norm = normalize_nik(c)
-        if len(norm) == 16:
-            return norm
+
+    if candidates:
+        # Dahulukan kandidat yang panjangnya tepat 16 karakter.
+        exact = [c for c in candidates if len(c) == 16]
+        return exact[0] if exact else candidates[0]
 
     return digits_roi
 
@@ -327,19 +346,40 @@ def process_ktp(image):
     if not data["kewarganegaraan"] and (data["nama_lengkap"] or data["nik"]):
         data["kewarganegaraan"] = "WNI"
 
-    nik_valid = len(data["nik"]) == 16
-    name_found = bool(data["nama_lengkap"])
+    nik_raw = str(data.get("nik") or "")
+    nik_exact_digits = bool(re.fullmatch(r"\d{16}", nik_raw))
+
+    nik_digits_found = len(re.sub(r"\D", "", nik_raw))
+
+    manual_review_fields = []
+
+    if not nik_exact_digits:
+        manual_review_fields.append("nik")
+
+    if not data["nama_lengkap"]:
+        manual_review_fields.append("nama_lengkap")
+
+    if not data["tanggal_lahir"]:
+        manual_review_fields.append("tanggal_lahir")
+
+    if not data["alamat"]:
+        manual_review_fields.append("alamat")
+
+    if not (data["rt"] and data["rw"]):
+        manual_review_fields.append("rt_rw")
 
     validation = {
-        "nik_raw": nik,
-        "nik_cleaned": nik,
-        "nik_digits_found": len(nik),
-        "nik_valid": nik_valid,
-        "nik_needs_review": not nik_valid,
-        "name_found": name_found,
+        "nik_raw": nik_raw,
+        "nik_cleaned": re.sub(r"\D", "", nik_raw),
+        "nik_digits_found": nik_digits_found,
+        "nik_valid": nik_exact_digits,
+        "nik_needs_review": not nik_exact_digits,
+        "name_found": bool(data["nama_lengkap"]),
         "ttl_found": bool(data["tanggal_lahir"]),
         "address_found": bool(data["alamat"]),
         "rtrw_found": bool(data["rt"] and data["rw"]),
+        "manual_review_required": bool(manual_review_fields),
+        "manual_review_fields": manual_review_fields,
     }
 
     return data, validation, was_deskewed, method
@@ -347,19 +387,19 @@ def process_ktp(image):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage:\npy ocr_ktp_v3.py <path_gambar>")
+        print("Usage:\npy ocr_ktp_v3.py <path_gambar>", file=sys.stderr)
         sys.exit(1)
 
     image_path = Path(sys.argv[1])
 
     if not image_path.exists():
-        print(f"ERROR: file tidak ditemukan: {image_path}")
+        print(f"ERROR: file tidak ditemukan: {image_path}", file=sys.stderr)
         sys.exit(1)
 
     image = cv2.imread(str(image_path))
 
     if image is None:
-        print("ERROR: gambar gagal dibaca.")
+        print("ERROR: gambar gagal dibaca.", file=sys.stderr)
         sys.exit(1)
 
     data, validation, was_deskewed, method = process_ktp(image)
@@ -374,15 +414,8 @@ def main():
         },
     }
 
-    output_file = BASE_DIR / "hasil_ktp_v3.json"
-    output_file.write_text(
-        json.dumps(output, indent=4, ensure_ascii=False),
-        encoding="utf-8"
-    )
-
     # PENTING: stdout HARUS berisi JSON murni saja (diparse oleh Laravel json_decode)
     print(json.dumps(output, ensure_ascii=False))
-    print(f"Output JSON: {output_file}", file=sys.stderr)
 
 
 if __name__ == "__main__":

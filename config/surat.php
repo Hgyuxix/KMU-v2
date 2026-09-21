@@ -8,7 +8,6 @@ return [
     |--------------------------------------------------------------------------
     */
     1 => [
-
         'jenis_kelamin' => [
             'label' => 'Jenis Kelamin',
             'type' => 'select',
@@ -42,16 +41,15 @@ return [
         ],
 
         'alamat' => [
-            'label' => 'Alamat Lengkap',
+            'label' => 'Alamat',
             'type' => 'textarea',
         ],
 
         'keperluan' => [
             'label' => 'Keperluan Surat',
-            'type' => 'text',
+            'type' => 'textarea',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -59,13 +57,11 @@ return [
     |--------------------------------------------------------------------------
     */
     2 => [
-
         'keperluan' => [
             'label' => 'Keperluan Surat',
-            'type' => 'text',
+            'type' => 'textarea',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -73,13 +69,11 @@ return [
     |--------------------------------------------------------------------------
     */
     3 => [
-
         'keperluan' => [
-            'label' => 'Keperluan Domisili',
-            'type' => 'text',
+            'label' => 'Keperluan Surat',
+            'type' => 'textarea',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -87,9 +81,8 @@ return [
     |--------------------------------------------------------------------------
     */
     4 => [
-
         'nama_pasangan' => [
-            'label' => 'Nama Suami/Istri',
+            'label' => 'Nama Suami / Istri',
             'type' => 'text',
         ],
 
@@ -99,16 +92,14 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | 5. Santunan Kematian
     |--------------------------------------------------------------------------
     */
     5 => [
-
         'nama_almarhum' => [
-            'label' => 'Nama Almarhum/Almarhumah',
+            'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
         ],
 
@@ -118,11 +109,10 @@ return [
         ],
 
         'hubungan_ahli_waris' => [
-            'label' => 'Hubungan dengan Almarhum/Almarhumah',
+            'label' => 'Hubungan dengan Almarhum / Almarhumah',
             'type' => 'text',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -130,7 +120,6 @@ return [
     |--------------------------------------------------------------------------
     */
     6 => [
-
         'nama_pemberi_kuasa' => [
             'label' => 'Nama Pemberi Kuasa',
             'type' => 'text',
@@ -143,10 +132,9 @@ return [
 
         'keperluan' => [
             'label' => 'Keperluan Pengambilan Pensiun',
-            'type' => 'text',
+            'type' => 'textarea',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -154,7 +142,6 @@ return [
     |--------------------------------------------------------------------------
     */
     7 => [
-
         'pekerjaan' => [
             'label' => 'Pekerjaan',
             'type' => 'text',
@@ -162,7 +149,7 @@ return [
 
         'penghasilan_per_bulan' => [
             'label' => 'Penghasilan per Bulan',
-            'type' => 'money',
+            'type' => 'text',
         ],
 
         'sumber_penghasilan' => [
@@ -171,14 +158,12 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | 8. Surat Keterangan Izin Penggunaan Tanah
     |--------------------------------------------------------------------------
     */
     8 => [
-
         'nama_pemilik_tanah' => [
             'label' => 'Nama Pemilik Tanah',
             'type' => 'text',
@@ -201,25 +186,23 @@ return [
 
         'keperluan_penggunaan' => [
             'label' => 'Keperluan Penggunaan Tanah',
-            'type' => 'text',
+            'type' => 'textarea',
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
-    | 9. Surat Keterangan Janda/Duda
+    | 9. Surat Keterangan Janda / Duda
     |--------------------------------------------------------------------------
     */
     9 => [
-
         'nama_pasangan' => [
             'label' => 'Nama Pasangan',
             'type' => 'text',
         ],
 
         'status_janda_duda' => [
-            'label' => 'Status Janda/Duda',
+            'label' => 'Status',
             'type' => 'select',
             'options' => [
                 'Janda',
@@ -228,15 +211,10 @@ return [
         ],
 
         'sebab' => [
-            'label' => 'Sebab Menjadi Janda/Duda',
-            'type' => 'select',
-            'options' => [
-                'Cerai Hidup',
-                'Cerai Mati',
-            ],
+            'label' => 'Sebab',
+            'type' => 'textarea',
         ],
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -244,7 +222,6 @@ return [
     |--------------------------------------------------------------------------
     */
     10 => [
-
         'nama_lain' => [
             'label' => 'Nama pada Dokumen Lain',
             'type' => 'text',
@@ -261,14 +238,12 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | 11. Surat Keterangan Usaha
     |--------------------------------------------------------------------------
     */
     11 => [
-
         'nama_usaha' => [
             'label' => 'Nama Usaha',
             'type' => 'text',
@@ -284,20 +259,18 @@ return [
             'type' => 'textarea',
         ],
 
-        'lama_usaha' => [
-            'label' => 'Lama Berdiri Usaha',
+        'tanggal_berdiri_usaha' => [
+            'label' => 'Tanggal Berdiri Usaha',
             'type' => 'date',
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
-    | 12. Surat Pengantar Persyaratan Pendaftaran TNI/Polri
+    | 12. Surat Pengantar Persyaratan Pendaftaran TNI / Polri
     |--------------------------------------------------------------------------
     */
     12 => [
-
         'jenis_pendaftaran' => [
             'label' => 'Jenis Pendaftaran',
             'type' => 'select',
@@ -313,21 +286,19 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | 13. Surat Keterangan Persyaratan Pembetulan Sertifikat
     |--------------------------------------------------------------------------
     */
     13 => [
-
         'nomor_sertifikat' => [
             'label' => 'Nomor Sertifikat',
             'type' => 'text',
         ],
 
         'jenis_kesalahan' => [
-            'label' => 'Jenis/Keterangan Kesalahan',
+            'label' => 'Jenis / Keterangan Kesalahan',
             'type' => 'textarea',
         ],
 
@@ -337,16 +308,14 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
     | 14. Surat Keterangan Ahli Waris
     |--------------------------------------------------------------------------
     */
     14 => [
-
         'nama_almarhum' => [
-            'label' => 'Nama Almarhum/Almarhumah',
+            'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
         ],
 
@@ -361,14 +330,12 @@ return [
         ],
     ],
 
-
     /*
     |--------------------------------------------------------------------------
-    | 15. Surat Keterangan Wali Nikah/Hakim
+    | 15. Surat Keterangan Wali Nikah / Hakim
     |--------------------------------------------------------------------------
     */
     15 => [
-
         'nama_calon_mempelai' => [
             'label' => 'Nama Calon Mempelai',
             'type' => 'text',
