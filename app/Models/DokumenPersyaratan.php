@@ -13,6 +13,10 @@ class DokumenPersyaratan extends Model
         'file_path',
         'file_original_name',
         'status',
+        'uuid',
+        'jenis',
+        'menggantikan_id',
+        'file_hash',
     ];
 
     public function permohonan(): BelongsTo
@@ -23,5 +27,21 @@ class DokumenPersyaratan extends Model
     public function persyaratan(): BelongsTo
     {
         return $this->belongsTo(Persyaratan::class);
+    }
+
+    public function dokumenPengganti()
+    {
+        return $this->hasOne(
+            self::class,
+            'menggantikan_id'
+        );
+    }
+
+    public function dokumenYangDigantikan()
+    {
+        return $this->belongsTo(
+            self::class,
+            'menggantikan_id'
+        );
     }
 }

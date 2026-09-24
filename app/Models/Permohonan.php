@@ -26,6 +26,16 @@ class Permohonan extends Model
         'catatan_revisi',
         'selesai_oleh',
         'selesai_at',
+        'current_stage',
+        'no_kk',
+        'kasi_pemerintahan_oleh',
+        'kasi_pemerintahan_at',
+        'lurah_oleh',
+        'lurah_at',
+        'kasi_umum_oleh',
+        'kasi_umum_at',
+        'sekcam_oleh',
+        'sekcam_at',
     ];
 
     protected $casts = [
@@ -33,6 +43,10 @@ class Permohonan extends Model
         'data_surat' => 'array',
         'diproses_at' => 'datetime',
         'selesai_at' => 'datetime',
+        'kasi_pemerintahan_at' => 'datetime',
+        'lurah_at' => 'datetime',
+        'kasi_umum_at' => 'datetime',
+        'sekcam_at' => 'datetime',
     ];
 
     public function layanan(): BelongsTo

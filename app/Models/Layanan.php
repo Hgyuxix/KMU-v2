@@ -15,11 +15,13 @@ class Layanan extends Model
         'deskripsi',
         'tte',
         'aktif',
+        'alur_tte',
     ];
 
     protected $casts = [
         'tte' => 'boolean',
         'aktif' => 'boolean',
+        'alur_tte' => 'string',
     ];
 
     public function persyaratans(): HasMany
