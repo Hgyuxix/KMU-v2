@@ -50,6 +50,7 @@
 # Local archive
 /kmuv2.zip
 *.zip
+/implementation_plan.md
 
 # OS
 Thumbs.db
