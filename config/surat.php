@@ -98,6 +98,23 @@ return [
     |--------------------------------------------------------------------------
     */
     5 => [
+        'jenis_kelamin' => [
+            'label' => 'Jenis kelamin ahli waris',
+            'type' => 'select',
+            'options' => ['Laki-laki', 'Perempuan'],
+        ],
+        'tempat_lahir' => [
+            'label' => 'Tempat lahir ahli waris',
+            'type' => 'text',
+        ],
+        'pekerjaan' => [
+            'label' => 'Pekerjaan ahli waris',
+            'type' => 'text',
+        ],
+        'alamat' => [
+            'label' => 'Alamat ahli waris',
+            'type' => 'textarea',
+        ],
         'nama_almarhum' => [
             'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
@@ -349,6 +366,46 @@ return [
         'alasan_wali_hakim' => [
             'label' => 'Alasan Penggunaan Wali Hakim',
             'type' => 'textarea',
+        ],
+    ],
+
+    /* Form terpisah sesuai dokumen sumber Form Santunan Kematian.docx. */
+    16 => [
+        'alamat' => [
+            'label' => 'Alamat ahli waris',
+            'type' => 'textarea',
+        ],
+        'no_telp' => [
+            'label' => 'Nomor telepon / HP ahli waris',
+            'type' => 'text',
+        ],
+        'nama_almarhum' => [
+            'label' => 'Nama almarhum / almarhumah',
+            'type' => 'text',
+        ],
+        'nik_almarhum' => [
+            'label' => 'NIK almarhum / almarhumah',
+            'type' => 'text',
+        ],
+        'tanggal_lahir_almarhum' => [
+            'label' => 'Tempat dan tanggal lahir almarhum / almarhumah',
+            'type' => 'text',
+        ],
+        'alamat_almarhum' => [
+            'label' => 'Alamat almarhum / almarhumah',
+            'type' => 'textarea',
+        ],
+        'tempat_meninggal' => [
+            'label' => 'Tempat meninggal',
+            'type' => 'text',
+        ],
+        'tanggal_meninggal' => [
+            'label' => 'Tanggal meninggal',
+            'type' => 'date',
+        ],
+        'hubungan_ahli_waris' => [
+            'label' => 'Hubungan ahli waris dengan almarhum / almarhumah',
+            'type' => 'text',
         ],
     ],
 

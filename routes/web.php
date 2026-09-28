@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\ApprovalWorkflowController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\VerifikasiController;
 
@@ -16,7 +18,8 @@ Route::get('/', function () {
     return match (auth()->user()->role) {
         'admin'     => redirect()->route('admin.users.index'),
         'kecamatan' => redirect()->route('dashboard'),
-        'kelurahan' => redirect()->route('kelurahan.index'),
+        'kelurahan', 'fo' => redirect()->route('kelurahan.index'),
+        'kasi_pemerintahan', 'lurah', 'kasi_umum', 'sekcam', 'camat' => redirect()->route('workflow.index'),
         default     => redirect()->route('login'),
     };
 });
@@ -48,26 +51,39 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::patch('/admin/users/{user}/toggle-status',[UserManagementController::class, 'toggleStatus'])->name('admin.users.toggle-status');
     });
 
-    Route::middleware('role:kelurahan')->group(function () {
+    Route::middleware('role:kelurahan,fo')->group(function () {
         Route::get('/kelurahan/pengajuan', [PermohonanController::class, 'index'])->name('kelurahan.index');
         Route::get('/layanan/{layanan}/ajukan', [PermohonanController::class, 'create'])->name('permohonan.create');
         Route::post('/layanan/{layanan}/ajukan', [PermohonanController::class, 'store'])->name('permohonan.store');
         Route::get('/kelurahan/pengajuan/{permohonan}/revisi',[PermohonanController::class, 'editRevisi'])->name('kelurahan.pengajuan.revisi');
         Route::patch('/kelurahan/pengajuan/{permohonan}/revisi',[PermohonanController::class, 'updateRevisi'])->name('kelurahan.pengajuan.revisi.update');
+        Route::get('/kelurahan/pengajuan/{permohonan}/pernyataan/{persyaratan}', [PermohonanController::class, 'printCitizenStatement'])->name('permohonan.statement.print');
         Route::post('/kelurahan/ocr-ktp', [\App\Http\Controllers\OcrController::class, 'scanKtp'])
             ->middleware('throttle:10,1')
             ->name('kelurahan.ocr-ktp');
     });
 
-    Route::middleware('role:kelurahan,kecamatan')->group(function () {
+    Route::middleware('role:kelurahan,kecamatan,fo,kasi_pemerintahan,lurah,kasi_umum,sekcam,camat')->group(function () {
         Route::get('/permohonan/{permohonan}/preview', [PermohonanController::class, 'preview'])->name('permohonan.preview');
-        Route::get('/dokumen/{dokumen}/file', [PermohonanController::class, 'lihatDokumen'])->name('dokumen.file');
+        Route::get('/dokumen/{uuid}', [DokumenController::class, 'show'])
+            ->whereUuid('uuid')
+            ->name('dokumen.file');
     });
+
+    Route::middleware('role:kasi_pemerintahan,lurah,kasi_umum,sekcam,camat')->prefix('workflow')->name('workflow.')->group(function () {
+        Route::get('/', [ApprovalWorkflowController::class, 'index'])->name('index');
+        Route::get('/permohonan/{permohonan}', [ApprovalWorkflowController::class, 'show'])->name('show');
+        Route::patch('/permohonan/{permohonan}/approve', [ApprovalWorkflowController::class, 'approve'])->name('approve');
+        Route::patch('/permohonan/{permohonan}/revisi', [ApprovalWorkflowController::class, 'requestRevision'])->name('revisi');
+        Route::patch('/permohonan/{permohonan}/selesai', [ApprovalWorkflowController::class, 'markComplete'])->name('complete');
+        Route::patch('/dokumen/{uuid}/status', [ApprovalWorkflowController::class, 'updateDocumentStatus'])->whereUuid('uuid')->name('document.status');
+    });
+
+    Route::middleware('role:fo')->patch('/kelurahan/pengajuan/{permohonan}/kirim', [ApprovalWorkflowController::class, 'submit'])->name('workflow.submit');
 
     Route::middleware('role:kecamatan')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/pengajuan/{permohonan}', [DashboardController::class, 'show'])->name('dashboard.pengajuan.show');
-        Route::get('/dashboard/dokumen/{dokumen}/lihat', [DashboardController::class, 'lihatDokumen'])->name('dashboard.dokumen.lihat');
         Route::patch('/dashboard/pengajuan/{permohonan}/approve', [DashboardController::class, 'approve'])->name('dashboard.pengajuan.approve');
         Route::patch('/dashboard/dokumen/{dokumen}/status', [DashboardController::class, 'updateDokumenStatus'])->name('dashboard.dokumen.status');
         Route::patch('/dashboard/pengajuan/{permohonan}/revisi',[DashboardController::class, 'requestRevision'])->name('dashboard.pengajuan.revisi');

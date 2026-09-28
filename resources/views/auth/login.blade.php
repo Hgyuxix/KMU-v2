@@ -25,6 +25,8 @@
                     <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="nama@kecamatan.go.id" required autofocus>
                     <label for="password">Password</label>
                     <input id="password" type="password" name="password" placeholder="Masukkan password" required>
+                    <label for="captcha_answer">Verifikasi keamanan: {{ $captchaQuestion }}</label>
+                    <input id="captcha_answer" type="text" name="captcha_answer" inputmode="numeric" autocomplete="off" required>
                     <label class="check-row"><input type="checkbox" name="remember" value="1"> Ingat saya</label>
                     <button class="primary-btn full" type="submit">Masuk ke Sistem</button>
                 </form>

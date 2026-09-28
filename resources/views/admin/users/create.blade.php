@@ -75,7 +75,6 @@
                         name="name"
                         value="{{ old('name') }}"
                         required
-                        autofocus
                     >
                 </div>
 
@@ -101,19 +100,12 @@
                     <select id="role" name="role" required>
                         <option value="">Pilih role</option>
 
-                        <option
-                            value="kelurahan"
-                            @selected(old('role') === 'kelurahan')
-                        >
-                            Kelurahan
-                        </option>
-
-                        <option
-                            value="kecamatan"
-                            @selected(old('role') === 'kecamatan')
-                        >
-                            Kecamatan
-                        </option>
+                        <option value="fo" @selected(old('role') === 'fo')>Front Office (FO)</option>
+                        <option value="kasi_pemerintahan" @selected(old('role') === 'kasi_pemerintahan')>Kasi Pemerintahan</option>
+                        <option value="lurah" @selected(old('role') === 'lurah')>Lurah</option>
+                        <option value="kasi_umum" @selected(old('role') === 'kasi_umum')>Kasi Umum</option>
+                        <option value="sekcam" @selected(old('role') === 'sekcam')>Sekretaris Kecamatan</option>
+                        <option value="camat" @selected(old('role') === 'camat')>Camat</option>
                     </select>
                 </div>
 
@@ -139,7 +131,7 @@
                     </select>
 
                     <div class="hint">
-                        Wajib dipilih untuk akun Kelurahan.
+                        Wajib dipilih untuk akun FO, Kasi Pemerintahan, dan Lurah.
                     </div>
                 </div>
 
@@ -211,7 +203,7 @@
         const kelurahan = document.getElementById('kelurahan_id');
 
         function updateKelurahanField() {
-            const isKelurahan = role.value === 'kelurahan';
+            const isKelurahan = ['fo', 'kasi_pemerintahan', 'lurah'].includes(role.value);
 
             wrapper.style.display = isKelurahan ? 'block' : 'none';
             kelurahan.required = isKelurahan;

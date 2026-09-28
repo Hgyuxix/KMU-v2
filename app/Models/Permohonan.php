@@ -36,17 +36,21 @@ class Permohonan extends Model
         'kasi_umum_at',
         'sekcam_oleh',
         'sekcam_at',
+        'camat_oleh',
+        'camat_at',
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
         'data_surat' => 'array',
+        'no_kk' => 'encrypted',
         'diproses_at' => 'datetime',
         'selesai_at' => 'datetime',
         'kasi_pemerintahan_at' => 'datetime',
         'lurah_at' => 'datetime',
         'kasi_umum_at' => 'datetime',
         'sekcam_at' => 'datetime',
+        'camat_at' => 'datetime',
     ];
 
     public function layanan(): BelongsTo

@@ -23,7 +23,9 @@ class PermohonanObserver
             'aksi' => 'pengajuan_dibuat',
             'status_sebelum' => null,
             'status_sesudah' => $permohonan->status,
-            'catatan' => 'Pengajuan dibuat dan dikirim ke Kecamatan.',
+            'catatan' => $permohonan->current_stage === 'fo_input'
+                ? 'Draf permohonan dibuat dan menunggu dilengkapi FO.'
+                : 'Pengajuan dibuat dan dikirim untuk pemeriksaan.',
         ]);
     }
 
@@ -32,7 +34,41 @@ class PermohonanObserver
      */
     public function updated(Permohonan $permohonan): void
     {
-        if (!$permohonan->wasChanged('status')) {
+        $stageChanged = $permohonan->wasChanged('current_stage');
+        $statusChanged = $permohonan->wasChanged('status');
+
+        if (!$stageChanged && !$statusChanged) {
+            return;
+        }
+
+        if ($stageChanged) {
+            $stageLabels = [
+                'fo_input' => 'Input FO',
+                'kasi_pemerintahan_review' => 'Pemeriksaan Kasi Pemerintahan',
+                'lurah_review' => 'Pemeriksaan Lurah',
+                'kasi_umum_review' => 'Pemeriksaan Kasi Umum',
+                'sekcam_review' => 'Pemeriksaan Sekcam',
+                'camat_review' => 'Persetujuan Camat',
+                'selesai' => 'Selesai',
+            ];
+            $stageBefore = $permohonan->getOriginal('current_stage');
+            $stageAfter = $permohonan->current_stage;
+
+            AuditLog::create([
+                'permohonan_id' => $permohonan->id,
+                'user_id' => Auth::id() ?? $permohonan->dibuat_oleh,
+                'aksi' => 'tahap_diperbarui',
+                'status_sebelum' => $permohonan->status,
+                'status_sesudah' => $permohonan->status,
+                'catatan' => sprintf(
+                    'Tahap berpindah dari %s ke %s.',
+                    $stageLabels[$stageBefore] ?? $stageBefore ?? 'belum diatur',
+                    $stageLabels[$stageAfter] ?? $stageAfter
+                ),
+            ]);
+        }
+
+        if (!$statusChanged) {
             return;
         }
 

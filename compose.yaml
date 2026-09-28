@@ -1,0 +1,85 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kmu-v2-app
+    container_name: kmu-app
+    working_dir: /var/www/html
+    env_file:
+      - .env
+    environment:
+      OCR_PYTHON_BIN: /opt/ocr-venv/bin/python
+      TESSERACT_CMD: /usr/bin/tesseract
+    volumes:
+      - ./:/var/www/html
+      - kmu_vendor:/var/www/html/vendor
+      - kmu_node_modules:/var/www/html/node_modules
+    ports:
+      - "8000:8000"
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kmu-vite
+    working_dir: /var/www/html
+    env_file:
+      - .env
+    environment:
+      VITE_HOST: 0.0.0.0
+    volumes:
+      - ./:/var/www/html
+      - kmu_vendor:/var/www/html/vendor
+      - kmu_node_modules:/var/www/html/node_modules
+    ports:
+      - "5173:5173"
+    command: ["npm", "run", "dev", "--", "--host=0.0.0.0"]
+
+  test:
+    profiles: ["test"]
+    image: kmu-v2-app
+    working_dir: /var/www/html
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "true"
+      APP_KEY: "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      APP_NAME: "Kecamatan Magelang Utara"
+      APP_URL: http://localhost
+      APP_LOCALE: en
+      APP_FALLBACK_LOCALE: en
+      APP_FAKER_LOCALE: en_US
+      APP_MAINTENANCE_DRIVER: file
+      BCRYPT_ROUNDS: "4"
+      LOG_CHANNEL: single
+      LOG_STACK: single
+      LOG_DEPRECATIONS_CHANNEL: "null"
+      LOG_LEVEL: warning
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      DB_URL: ""
+      NIK_ENCRYPTION_KEY: "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE="
+      SESSION_DRIVER: array
+      SESSION_LIFETIME: "120"
+      SESSION_ENCRYPT: "false"
+      SESSION_PATH: /
+      SESSION_DOMAIN: ""
+      BROADCAST_CONNECTION: "null"
+      FILESYSTEM_DISK: local
+      QUEUE_CONNECTION: sync
+      CACHE_STORE: array
+      MAIL_MAILER: array
+      PULSE_ENABLED: "false"
+      TELESCOPE_ENABLED: "false"
+      NIGHTWATCH_ENABLED: "false"
+      OCR_PYTHON_BIN: /opt/ocr-venv/bin/python
+      TESSERACT_CMD: /usr/bin/tesseract
+    volumes:
+      - ./:/var/www/html
+      - kmu_vendor:/var/www/html/vendor
+    command: ["php", "artisan", "test"]
+
+volumes:
+  kmu_vendor:
+  kmu_node_modules:

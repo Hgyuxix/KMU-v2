@@ -45,12 +45,16 @@
         <h1>{{ $layanan->nama }}</h1>
 
         <p>
-            Perbaiki data atau dokumen sesuai catatan Kecamatan,
-            kemudian kirim ulang pengajuan.
+            @if($isFoDraft)
+                Lengkapi dokumen, cetak pernyataan untuk tanda tangan warga, lalu simpan draf sebelum mengirim ke Kasi Pemerintahan.
+            @else
+                Perbaiki data atau dokumen sesuai catatan revisi, kemudian kirim ulang pengajuan.
+            @endif
         </p>
     </div>
 
     {{-- CATATAN KECAMATAN --}}
+    @unless($isFoDraft)
     <div class="revision-feedback">
         <div class="feedback-icon">!</div>
         <div>
@@ -58,6 +62,7 @@
             <p>{{ $permohonan->catatan_revisi ?: 'Kecamatan meminta perbaikan pada data atau dokumen pengajuan.' }}</p>
         </div>
     </div>
+    @endunless
 
     @if ($errors->any())
         <div class="error">
@@ -87,11 +92,12 @@
             <div class="grid-2">
 
                 <div class="form-group">
-                    <label>
+                    <label for="nama_lengkap">
                         Nama Lengkap <span>*</span>
                     </label>
 
                     <input
+                        id="nama_lengkap"
                         type="text"
                         name="nama_lengkap"
                         value="{{ old('nama_lengkap', $permohonan->nama_lengkap) }}"
@@ -101,11 +107,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>
+                    <label for="nik">
                         NIK <span>*</span>
                     </label>
 
                     <input
+                        id="nik"
                         type="text"
                         name="nik"
                         maxlength="16"
@@ -122,11 +129,27 @@
                 </div>
 
                 <div class="form-group">
-                    <label>
+                    <label for="no_kk">Nomor Kartu Keluarga</label>
+                    <input
+                        id="no_kk"
+                        type="text"
+                        name="no_kk"
+                        value="{{ old('no_kk', $permohonan->no_kk) }}"
+                        maxlength="16"
+                        minlength="16"
+                        inputmode="numeric"
+                        autocomplete="off"
+                    >
+                    <div class="hint">Opsional, 16 digit. Disimpan terenkripsi.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tanggal_lahir">
                         Tanggal Lahir <span>*</span>
                     </label>
 
                     <input
+                        id="tanggal_lahir"
                         type="date"
                         name="tanggal_lahir"
                         value="{{ old('tanggal_lahir', $permohonan->tanggal_lahir?->format('Y-m-d')) }}"
@@ -135,11 +158,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>
+                    <label for="rt">
                         RT <span>*</span>
                     </label>
 
                     <input
+                        id="rt"
                         type="text"
                         name="rt"
                         value="{{ old('rt', $permohonan->rt) }}"
@@ -149,11 +173,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>
+                    <label for="rw">
                         RW <span>*</span>
                     </label>
 
                     <input
+                        id="rw"
                         type="text"
                         name="rw"
                         value="{{ old('rw', $permohonan->rw) }}"
@@ -182,6 +207,10 @@
                         );
                     @endphp
 
+                    @php
+                        $fieldId = 'data_surat_' . $field;
+                    @endphp
+
                     <div
                         class="form-group"
                         @if(($config['type'] ?? 'text') === 'textarea')
@@ -189,7 +218,7 @@
                         @endif
                     >
 
-                        <label>
+                        <label for="{{ $fieldId }}">
                             {{ $config['label'] }}
                             <span>*</span>
                         </label>
@@ -197,6 +226,7 @@
                         @if(($config['type'] ?? 'text') === 'select')
 
                             <select
+                                id="{{ $fieldId }}"
                                 name="data_surat[{{ $field }}]"
                                 required
                             >
@@ -215,6 +245,7 @@
                         @elseif(($config['type'] ?? 'text') === 'textarea')
 
                             <textarea
+                                id="{{ $fieldId }}"
                                 name="data_surat[{{ $field }}]"
                                 class="cap-sentence"
                                 required
@@ -225,6 +256,7 @@
                             <div class="input-money">
                                 <span>Rp</span>
                                 <input
+                                    id="{{ $fieldId }}"
                                     type="text"
                                     name="data_surat[{{ $field }}]"
                                     value="{{ $value }}"
@@ -237,6 +269,7 @@
                         @elseif(($config['type'] ?? 'text') === 'date')
 
                             <input
+                                id="{{ $fieldId }}"
                                 type="date"
                                 name="data_surat[{{ $field }}]"
                                 value="{{ $value }}"
@@ -246,6 +279,7 @@
                         @else
 
                             <input
+                                id="{{ $fieldId }}"
                                 type="{{ ($config['type'] ?? 'text') === 'number' ? 'number' : 'text' }}"
                                 name="data_surat[{{ $field }}]"
                                 value="{{ $value }}"
@@ -264,7 +298,7 @@
 
         @endif
 
-        {{-- DOKUMEN --}}
+        {{-- DOKUMEN PERSYARATAN --}}
         <section class="section-box">
 
             <h2>
@@ -279,8 +313,16 @@
             @foreach($layanan->persyaratans as $persyaratan)
 
                 @php
-                    $dokumen = $permohonan->dokumenPersyaratans
-                        ->firstWhere('persyaratan_id', $persyaratan->id);
+                    $supersededIds = $permohonan->dokumenPersyaratans
+                        ->pluck('menggantikan_id')
+                        ->filter()
+                        ->all();
+                    $requirementDocuments = $permohonan->dokumenPersyaratans
+                        ->where('persyaratan_id', $persyaratan->id)
+                        ->reject(fn ($item) => in_array($item->id, $supersededIds, true));
+                    $dokumen = $requirementDocuments->last();
+                    $signedCopyExists = $requirementDocuments
+                        ->contains(fn ($item) => $item->jenis === 'ttd_warga');
 
                     $acceptAttr = collect(explode(',', $persyaratan->tipe_file))
                         ->map(fn($ext) => '.' . trim($ext))
@@ -294,13 +336,40 @@
                     $isLocked = $dokumen && $dokumen->status === 'sesuai';
                 @endphp
 
+                @if($persyaratan->butuh_ttd_warga)
+                    <div class="revision-note">
+                        <strong>{{ $persyaratan->nama }}</strong>
+                        <p>Cetak dokumen pernyataan, minta tanda tangan warga, lalu unggah hasil pindai.</p>
+                        @if(auth()->user()->role === 'fo')
+                            <a class="secondary-btn" target="_blank" rel="noopener" href="{{ route('permohonan.statement.print', [$permohonan, $persyaratan]) }}">Cetak pernyataan</a>
+                        @endif
+                        @if($dokumen)
+                            <p>File tersimpan: {{ $dokumen->file_original_name }} · {{ ucfirst(str_replace('_', ' ', $dokumen->status ?? 'belum dicek')) }}</p>
+                        @endif
+                        <label for="ttd-warga-{{ $persyaratan->id }}">Hasil pindai tanda tangan warga</label>
+                        <input
+                            id="ttd-warga-{{ $persyaratan->id }}"
+                            class="dropzone-input"
+                            type="file"
+                            name="ttd_warga[{{ $persyaratan->id }}]"
+                            accept="{{ $acceptAttr }}"
+                            data-max-size="{{ $persyaratan->maks_size }}"
+                            @required(!$signedCopyExists)
+                        >
+                        <div class="dropzone-preview" id="signed-thumb-{{ $persyaratan->id }}" style="display:none"></div>
+                    </div>
+                @else
+
                 <div
                     class="form-group"
                     style="margin-bottom:16px"
                 >
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
                         <div>
-                            <label style="margin-bottom:2px">
+                            <label
+                                for="persyaratan-{{ $persyaratan->id }}"
+                                style="margin-bottom:2px"
+                            >
                                 {{ $persyaratan->nama }}
                                 @if($persyaratan->wajib)
                                     <span>*</span>
@@ -352,6 +421,7 @@
                         id="edit-dz-{{ $persyaratan->id }}"
                     >
                         <input
+                            id="persyaratan-{{ $persyaratan->id }}"
                             class="dropzone-input"
                             type="file"
                             name="persyaratan[{{ $persyaratan->id }}]"
@@ -407,6 +477,7 @@
                         </div>
                     @endif
                 </div>
+                @endif
 
             @endforeach
 
@@ -421,16 +492,19 @@
                 Batal
             </a>
 
-            <button
-                class="primary-btn"
-                type="submit"
-            >
-                Kirim Ulang →
-            </button>
+            <button class="primary-btn" type="submit">{{ $isFoDraft ? 'Simpan Draf' : 'Kirim Ulang →' }}</button>
 
         </div>
 
     </form>
+
+    @if($isFoDraft)
+        <form method="POST" action="{{ route('workflow.submit', $permohonan) }}" class="actions" style="margin-top:10px" onsubmit="return confirm('Kirim permohonan yang sudah disimpan kepada Kasi Pemerintahan?')">
+            @csrf
+            @method('PATCH')
+            <button class="btn-emerald" type="submit">Kirim ke Kasi Pemerintahan →</button>
+        </form>
+    @endif
 
 </main>
 

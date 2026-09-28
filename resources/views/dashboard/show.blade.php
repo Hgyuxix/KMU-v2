@@ -37,7 +37,7 @@
                 <li class="separator">/</li>
                 <li class="current">#{{ str_pad($permohonan->id, 4, '0', STR_PAD_LEFT) }} — {{ $permohonan->nama_lengkap }}</li>
             </ul>
-            <div style="display:flex;align-itemss:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
                 <span class="status-badge status-{{ $permohonan->status }}">
                     {{ ucfirst($permohonan->status) }}
                 </span>
@@ -80,7 +80,7 @@
                         @php
                             $ext = strtolower(pathinfo($doc->file_original_name, PATHINFO_EXTENSION));
                             $isPdf = $ext === 'pdf';
-                            $fileUrl = route('dashboard.dokumen.lihat', $doc);
+                            $fileUrl = route('dokumen.file', $doc->uuid);
                         @endphp
                         <button
                             type="button"
@@ -112,7 +112,7 @@
                         $firstDoc = $permohonan->dokumenPersyaratans->first();
                         $firstExt = strtolower(pathinfo($firstDoc->file_original_name, PATHINFO_EXTENSION));
                         $firstIsPdf = $firstExt === 'pdf';
-                        $firstUrl = route('dashboard.dokumen.lihat', $firstDoc);
+                        $firstUrl = route('dokumen.file', $firstDoc->uuid);
                     @endphp
 
                     <div id="image-viewer-wrap" class="viewer-img-container" style="{{ $firstIsPdf ? 'display:none;' : '' }}">
@@ -123,6 +123,7 @@
                         id="pdf-viewer-frame"
                         class="viewer-iframe"
                         src="{{ $firstIsPdf ? $firstUrl : '' }}"
+                        title="Pratinjau dokumen PDF"
                         style="{{ $firstIsPdf ? '' : 'display:none;' }}"
                     ></iframe>
 
@@ -413,13 +414,53 @@
                     </p>
 
                     <div class="quick-reasons-wrap">
-                        <label>Alasan Cepat (Klik untuk memilih):</label>
-                        <div class="quick-tags">
-                            <span class="quick-tag" onclick="appendReason('Foto KTP buram atau tidak terbaca dengan jelas.')">📷 Foto KTP Buram</span>
-                            <span class="quick-tag" onclick="appendReason('Data identitas (NIK / Nama / Tanggal Lahir) tidak cocok dengan berkas.')">⚠️ Data Tidak Cocok</span>
-                            <span class="quick-tag" onclick="appendReason('Dokumen pengantar RT/RW belum dilampirkan atau sudah kadaluwarsa.')">📄 Pengantar Kadaluwarsa</span>
-                            <span class="quick-tag" onclick="appendReason('Dokumen persyaratan yang diunggah belum lengkap.')">📑 Berkas Tidak Lengkap</span>
-                            <span class="quick-tag" onclick="appendReason('Format dokumen terbalik / terpotong.')">🔄 Orientasi Terbalik</span>
+                        <div
+                            style="font-size:12px;font-weight:700;color:#334155;margin-bottom:8px"
+                            id="quick-reasons-label"
+                        >
+                            Alasan Cepat (Klik untuk memilih):
+                        </div>
+
+                        <div class="quick-tags" aria-labelledby="quick-reasons-label">
+                            <button
+                                type="button"
+                                class="quick-tag"
+                                onclick="appendReason('Foto KTP buram atau tidak terbaca dengan jelas.')"
+                            >
+                                📷 Foto KTP Buram
+                            </button>
+
+                            <button
+                                type="button"
+                                class="quick-tag"
+                                onclick="appendReason('Data identitas (NIK / Nama / Tanggal Lahir) tidak cocok dengan berkas.')"
+                            >
+                                ⚠️ Data Tidak Cocok
+                            </button>
+
+                            <button
+                                type="button"
+                                class="quick-tag"
+                                onclick="appendReason('Dokumen pengantar RT/RW belum dilampirkan atau sudah kadaluwarsa.')"
+                            >
+                                📄 Pengantar Kadaluwarsa
+                            </button>
+
+                            <button
+                                type="button"
+                                class="quick-tag"
+                                onclick="appendReason('Dokumen persyaratan yang diunggah belum lengkap.')"
+                            >
+                                📑 Berkas Tidak Lengkap
+                            </button>
+
+                            <button
+                                type="button"
+                                class="quick-tag"
+                                onclick="appendReason('Format dokumen terbalik / terpotong.')"
+                            >
+                                🔄 Orientasi Terbalik
+                            </button>
                         </div>
                     </div>
 

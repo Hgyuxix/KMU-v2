@@ -8,8 +8,6 @@ use App\Models\Kelurahan;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
 use App\Services\SuratGenerator;
-use App\Models\DokumenPersyaratan;
-use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -179,33 +177,6 @@ class DashboardController extends Controller
                 'success',
                 'Pengajuan dibuka kembali untuk revisi.'
             );
-    }
-
-    /**
-     * Kecamatan buka/liat file dokumen persyaratan yang diupload kelurahan.
-     */
-    public function lihatDokumen(DokumenPersyaratan $dokumen){
-        $dokumen->load('permohonan');
-
-        abort_unless(
-            $dokumen->permohonan,
-            404,
-            'Permohonan dokumen tidak ditemukan.'
-        );
-
-        abort_unless(
-            Storage::disk('local')->exists($dokumen->file_path),
-            404,
-            'File dokumen tidak ditemukan.'
-        );
-
-        return Storage::disk('local')->response(
-            $dokumen->file_path,
-            $dokumen->file_original_name,
-            [
-                'X-Content-Type-Options' => 'nosniff',
-            ]
-        );
     }
 
     /**

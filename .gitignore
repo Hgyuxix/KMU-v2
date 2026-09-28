@@ -26,6 +26,7 @@
 /public/build
 /public/hot
 /public/storage
+/public/test-15-surat.php
 
 # Laravel runtime
 /storage/*.key

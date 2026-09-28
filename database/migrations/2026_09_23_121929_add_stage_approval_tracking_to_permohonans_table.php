@@ -41,6 +41,14 @@ return new class extends Migration
 
             $table->timestamp('sekcam_at')
                 ->nullable();
+
+            $table->foreignId('camat_oleh')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->timestamp('camat_at')
+                ->nullable();
         });
     }
 
@@ -63,6 +71,10 @@ return new class extends Migration
                 'sekcam_oleh',
             ]);
 
+            $table->dropForeign([
+                'camat_oleh',
+            ]);
+
             $table->dropColumn([
                 'kasi_pemerintahan_oleh',
                 'kasi_pemerintahan_at',
@@ -72,6 +84,8 @@ return new class extends Migration
                 'kasi_umum_at',
                 'sekcam_oleh',
                 'sekcam_at',
+                'camat_oleh',
+                'camat_at',
             ]);
         });
     }

@@ -20,35 +20,27 @@ class TemplateSuratSeeder extends Seeder
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini:
 
-1. Nama
-   : '{{ nama_pejabat }}'
+1. Nama: '{{ nama_pejabat }}'
 
-2. Jabatan
-   : {{ jabatan_pejabat }}
+2. Jabatan: {{ jabatan_pejabat }}
 
 Dengan ini menerangkan bahwa:
 
-1. Nama Lengkap
-   : {{ nama_lengkap }}
+1. Nama Lengkap: {{ nama_lengkap }}
 
-2. Jenis Kelamin
-   : {{ jenis_kelamin }}
+2. Jenis Kelamin: {{ jenis_kelamin }}
 
-3. Tempat / Tanggal Lahir
-   : {{ tempat_lahir }}, {{ tanggal_lahir }}
+3. Tempat / Tanggal Lahir: {{ tempat_lahir }}, {{ tanggal_lahir }}
 
-4. Warga Negara / Agama
-   : Indonesia / {{ agama }}
+4. Warga Negara / Agama: Indonesia / {{ agama }}
 
-5. No. KTP / NIK
-   : {{ nik }}
+5. No. KTP / NIK: {{ nik }}
 
-6. Pekerjaan
-   : {{ pekerjaan }}
+6. Pekerjaan: {{ pekerjaan }}
 
 7. Alamat
-   : {{ alamat }}
-     RT {{ rt }} / RW {{ rw }}
+    : {{ alamat }}
+    RT {{ rt }} / RW {{ rw }}
 
 Menerangkan dengan sebenarnya bahwa yang bersangkutan betul warga Kecamatan Magelang Utara dengan keadaan ekonominya TIDAK MAMPU.
 
@@ -66,17 +58,13 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tempat / Tanggal Lahir
-: {{ tanggal_lahir }}
+Tempat / Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Berdasarkan data administrasi dan dokumen persyaratan yang diberikan, yang bersangkutan sampai dengan surat ini diterbitkan belum menikah.
 
@@ -94,17 +82,13 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Yang bersangkutan benar berdomisili di wilayah Kecamatan Magelang Utara.
 
@@ -122,20 +106,15 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Pemohon
-: {{ nama_lengkap }}
+Nama Pemohon: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama Suami / Istri
-: {{ nama_pasangan }}
+Nama Suami / Istri: {{ nama_pasangan }}
 
 Alasan Perceraian
 : {{ alasan_perceraian }}
@@ -154,26 +133,19 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Ahli Waris / Pemohon
-: {{ nama_lengkap }}
+Nama Ahli Waris / Pemohon: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama Almarhum / Almarhumah
-: {{ nama_almarhum }}
+Nama Almarhum / Almarhumah: {{ nama_almarhum }}
 
-Tanggal Meninggal
-: {{ tanggal_meninggal }}
+Tanggal Meninggal: {{ tanggal_meninggal }}
 
-Hubungan dengan Almarhum / Almarhumah
-: {{ hubungan_ahli_waris }}
+Hubungan dengan Almarhum / Almarhumah: {{ hubungan_ahli_waris }}
 
 Surat keterangan ini dibuat untuk keperluan pengajuan santunan kematian berdasarkan dokumen persyaratan yang telah diberikan.
 
@@ -189,25 +161,19 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini:
 
-Pemberi Kuasa
-: {{ nama_pemberi_kuasa }}
+Pemberi Kuasa: {{ nama_pemberi_kuasa }}
 
-Penerima Kuasa
-: {{ nama_penerima_kuasa }}
+Penerima Kuasa: {{ nama_penerima_kuasa }}
 
 Dengan ini memberikan kuasa untuk melakukan pengambilan pensiun dengan identitas pemohon:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Keperluan Pengambilan Pensiun
 : {{ keperluan }}
@@ -224,28 +190,21 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Pekerjaan
-: {{ pekerjaan }}
+Pekerjaan: {{ pekerjaan }}
 
 Berdasarkan keterangan yang diberikan, yang bersangkutan mempunyai penghasilan sebagai berikut:
 
-Penghasilan per Bulan
-: {{ penghasilan_per_bulan }}
+Penghasilan per Bulan: {{ penghasilan_per_bulan }}
 
-Sumber Penghasilan
-: {{ sumber_penghasilan }}
+Sumber Penghasilan: {{ sumber_penghasilan }}
 
 Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
 TEXT
@@ -259,29 +218,22 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Pemohon
-: {{ nama_lengkap }}
+Nama Pemohon: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama Pemilik Tanah
-: {{ nama_pemilik_tanah }}
+Nama Pemilik Tanah: {{ nama_pemilik_tanah }}
 
-NIK Pemilik Tanah
-: {{ nik_pemilik_tanah }}
+NIK Pemilik Tanah: {{ nik_pemilik_tanah }}
 
 Lokasi Tanah
 : {{ lokasi_tanah }}
 
-Nomor Bukti Kepemilikan Tanah
-: {{ nomor_bukti_tanah }}
+Nomor Bukti Kepemilikan Tanah: {{ nomor_bukti_tanah }}
 
 Keperluan Penggunaan Tanah
 : {{ keperluan_penggunaan }}
@@ -300,23 +252,17 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama Pasangan
-: {{ nama_pasangan }}
+Nama Pasangan: {{ nama_pasangan }}
 
-Status
-: {{ status_janda_duda }}
+Status: {{ status_janda_duda }}
 
 Sebab
 : {{ sebab }}
@@ -335,26 +281,19 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama pada Dokumen Lain
-: {{ nama_lain }}
+Nama pada Dokumen Lain: {{ nama_lain }}
 
-Dokumen yang Berbeda Nama
-: {{ dokumen_perbedaan }}
+Dokumen yang Berbeda Nama: {{ dokumen_perbedaan }}
 
-Nama yang Benar
-: {{ nama_yang_benar }}
+Nama yang Benar: {{ nama_yang_benar }}
 
 Berdasarkan dokumen dan keterangan yang diberikan, nama-nama tersebut merupakan satu orang yang sama.
 
@@ -370,31 +309,24 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Yang bersangkutan benar memiliki dan menjalankan usaha dengan keterangan:
 
-Nama Usaha
-: {{ nama_usaha }}
+Nama Usaha: {{ nama_usaha }}
 
-Jenis Usaha
-: {{ jenis_usaha }}
+Jenis Usaha: {{ jenis_usaha }}
 
 Alamat Usaha
 : {{ alamat_usaha }}
 
-Lama Menjalankan Usaha
-: {{ lama_usaha }}
+Lama Menjalankan Usaha: {{ lama_usaha }}
 
 Surat keterangan ini dibuat berdasarkan data dan dokumen pendukung yang telah diberikan.
 
@@ -410,25 +342,20 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Yang bersangkutan akan mengikuti pendaftaran:
 
 Jenis Pendaftaran
 : {{ jenis_pendaftaran }}
 
-Instansi Tujuan
-: {{ nama_instansi }}
+Instansi Tujuan: {{ nama_instansi }}
 
 Surat pengantar ini dibuat untuk melengkapi persyaratan pendaftaran TNI/Polri berdasarkan dokumen yang telah diberikan.
 
@@ -444,20 +371,15 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Lengkap
-: {{ nama_lengkap }}
+Nama Lengkap: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nomor Sertifikat
-: {{ nomor_sertifikat }}
+Nomor Sertifikat: {{ nomor_sertifikat }}
 
 Jenis / Keterangan Kesalahan
 : {{ jenis_kesalahan }}
@@ -479,26 +401,19 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Ahli Waris / Pemohon
-: {{ nama_lengkap }}
+Nama Ahli Waris / Pemohon: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
-Nama Almarhum / Almarhumah
-: {{ nama_almarhum }}
+Nama Almarhum / Almarhumah: {{ nama_almarhum }}
 
-Tanggal Meninggal
-: {{ tanggal_meninggal }}
+Tanggal Meninggal: {{ tanggal_meninggal }}
 
-Jumlah Ahli Waris
-: {{ jumlah_ahli_waris }}
+Jumlah Ahli Waris: {{ jumlah_ahli_waris }}
 
 Surat keterangan ini dibuat berdasarkan dokumen dan keterangan ahli waris yang telah diberikan.
 
@@ -514,23 +429,17 @@ TEXT
                 'isi_template' => <<<'TEXT'
 Yang bertanda tangan di bawah ini menerangkan bahwa:
 
-Nama Calon Mempelai
-: {{ nama_calon_mempelai }}
+Nama Calon Mempelai: {{ nama_calon_mempelai }}
 
-Nama Wali Nikah
-: {{ nama_wali }}
+Nama Wali Nikah: {{ nama_wali }}
 
-Nama Lengkap Pemohon
-: {{ nama_lengkap }}
+Nama Lengkap Pemohon: {{ nama_lengkap }}
 
-NIK
-: {{ nik }}
+NIK: {{ nik }}
 
-Tanggal Lahir
-: {{ tanggal_lahir }}
+Tanggal Lahir: {{ tanggal_lahir }}
 
-RT / RW
-: {{ rt }} / {{ rw }}
+RT / RW: {{ rt }} / {{ rw }}
 
 Alasan Penggunaan Wali Hakim
 : {{ alasan_wali_hakim }}
@@ -540,6 +449,122 @@ Surat keterangan ini dibuat berdasarkan dokumen dan keterangan yang telah diberi
 Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
 TEXT
             ],
+        ];
+
+        // Redaksi ditata ulang memakai dokumen sumber yang diserahkan client.
+        $templates[5] = [
+            'judul' => 'SURAT PENGANTAR SANTUNAN KEMATIAN',
+            'isi_template' => <<<'TEXT'
+Yang bertanda tangan di bawah ini menerangkan bahwa:
+
+Nama: {{ nama_lengkap }}
+
+Jenis Kelamin: {{ jenis_kelamin }}
+
+Tempat / Tanggal Lahir: {{ tempat_lahir }}, {{ tanggal_lahir }}
+
+Pekerjaan: {{ pekerjaan }}
+
+Alamat: {{ alamat }} RT {{ rt }} RW {{ rw }}
+
+Yang bersangkutan adalah ahli waris dari almarhum / almarhumah {{ nama_almarhum }} yang meninggal dunia pada {{ tanggal_meninggal }}.
+
+Surat pengantar ini dibuat untuk persyaratan pengajuan usulan permohonan bantuan santunan kematian.
+
+Demikian surat pengantar ini dibuat agar dapat dipergunakan sebagaimana mestinya.
+TEXT
+        ];
+
+        $templates[16] = [
+            'judul' => 'FORM PERMOHONAN BANTUAN SANTUNAN KEMATIAN',
+            'isi_template' => <<<'TEXT'
+Lampiran: 1 (satu) bendel
+Perihal: Permohonan Bantuan Santunan Kematian
+
+Magelang, {{ tanggal }}
+
+Kepada Yth.
+Walikota Magelang
+di Magelang
+
+Yang bertanda tangan di bawah ini:
+
+Nama: {{ nama_lengkap }}
+NIK: {{ nik }}
+Tempat, tanggal lahir: {{ tanggal_lahir }}
+Alamat: {{ alamat }}, RT {{ rt }} RW {{ rw }}, Kelurahan {{ nama_kelurahan }}
+Nomor telepon / HP: {{ no_telp }}
+Hubungan selaku ahli waris: {{ hubungan_ahli_waris }}
+
+Selaku ahli waris dari:
+
+Nama: {{ nama_almarhum }}
+NIK: {{ nik_almarhum }}
+Tempat, tanggal lahir: {{ tanggal_lahir_almarhum }}
+Alamat: {{ alamat_almarhum }}
+Meninggal dunia di {{ tempat_meninggal }} pada tanggal {{ tanggal_meninggal }}.
+
+Bersama ini kami mengajukan permohonan bantuan santunan kematian dan menyampaikan persyaratan sesuai ketentuan yang berlaku.
+
+Dokumen persyaratan:
+1. Fotokopi KTP-el dan Kartu Keluarga penduduk yang meninggal dunia.
+2. Fotokopi Kutipan Akta Kematian.
+3. Fotokopi Kutipan Akta Kelahiran apabila penduduk yang meninggal dunia belum wajib memiliki KTP.
+4. Surat keterangan domisili dari Lurah setempat.
+5. Daftar DTKS atau berita acara musyawarah kelurahan pemutakhiran data kemiskinan.
+6. Fotokopi KTP-el dan Kartu Keluarga ahli waris.
+7. Surat pernyataan sebagai ahli waris bermeterai yang diketahui Ketua RT, Ketua RW, Lurah, dan Camat.
+8. Surat keterangan pihak yang merawat jenazah dan mengurus pemakaman dari Kelurahan.
+9. Daftar DTKS ahli waris atau berita acara musyawarah kelurahan pemutakhiran data kemiskinan.
+
+Demikian permohonan ini kami sampaikan. Atas perhatian Bapak, kami ucapkan terima kasih.
+
+Pemohon,
+
+({{ nama_lengkap }})
+
+Mengetahui,
+Ketua RT {{ rt }} / RW {{ rw }}                 Ketua RW {{ rw }}
+
+
+Lurah {{ nama_kelurahan }}
+
+
+Camat Magelang Utara
+
+[[HALAMAN_BARU]]
+SURAT PERNYATAAN SEBAGAI AHLI WARIS
+
+Yang bertanda tangan di bawah ini:
+
+Nama: {{ nama_lengkap }}
+NIK: {{ nik }}
+Tempat, tanggal lahir: {{ tanggal_lahir }}
+Alamat: {{ alamat }}, RT {{ rt }} RW {{ rw }}, Kelurahan {{ nama_kelurahan }}
+Nomor telepon / HP: {{ no_telp }}
+
+Dengan ini menyatakan bahwa saya adalah ahli waris dari:
+
+Nama: {{ nama_almarhum }}
+NIK: {{ nik_almarhum }}
+Tempat, tanggal lahir: {{ tanggal_lahir_almarhum }}
+Alamat: {{ alamat_almarhum }}
+Meninggal dunia di {{ tempat_meninggal }} pada tanggal {{ tanggal_meninggal }}.
+
+Demikian surat pernyataan ini saya buat dengan sebenar-benarnya.
+
+Yang membuat pernyataan,
+(Meterai Rp10.000)
+
+
+({{ nama_lengkap }})
+
+Mengetahui,
+Ketua RT {{ rt }} / RW {{ rw }}                 Ketua RW {{ rw }}
+
+
+Lurah {{ nama_kelurahan }}                 Camat Magelang Utara
+TEXT
         ];
 
         foreach ($templates as $layananId => $template) {

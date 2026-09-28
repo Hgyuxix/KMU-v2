@@ -18,8 +18,12 @@
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active" href="{{ route('layanan.index') }}">Layanan</a>
                 @auth
-                    @if(auth()->user()->role === 'kelurahan')
+                    @if(auth()->user()->isKelurahan())
                         <a href="{{ route('kelurahan.index') }}">Pengajuan Saya</a>
+                    @elseif(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.users.index') }}">Manajemen Akun</a>
+                    @elseif(in_array(auth()->user()->role, ['kasi_pemerintahan', 'lurah', 'kasi_umum', 'sekcam', 'camat'], true))
+                        <a href="{{ route('workflow.index') }}">Antrian Persetujuan</a>
                     @else
                         <a href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
                     @endif

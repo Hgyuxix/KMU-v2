@@ -346,10 +346,16 @@ Fitur simulasi TTE tidak boleh dianggap sebagai tanda tangan elektronik terserti
 
 ## Testing
 
-Jalankan seluruh automated test:
+Jalankan seluruh automated test secara lokal:
 
 ```bash
 php artisan test
+```
+
+Untuk Docker, gunakan service testing terpisah:
+
+```bat
+docker-test.bat
 ```
 
 Pemeriksaan route:
@@ -470,3 +476,8 @@ Source code:
 ## Status Project
 
 **Development / Prototype — siap memasuki final regression testing dan deployment handover.**
+
+
+## Docker
+
+Untuk development, gunakan `docker compose up -d`. Untuk menjalankan automated tests, gunakan `docker-test.bat` agar environment PHPUnit terpisah dari environment aplikasi.

@@ -1,0 +1,33 @@
+KMU-v2 — STABLE 3-ROLE RECOVERY BUILD
+
+This is the prepared project folder to replace the current codebase.
+
+IMPORTANT BEFORE REPLACING YOUR OLD FOLDER:
+1. Copy your current D:\MAGYANGGG\kmu-v2\.env somewhere safe.
+2. The package intentionally does NOT include .env because it contains your APP_KEY / NIK_ENCRYPTION_KEY.
+3. The bundled kec_magelang SQLite database is the normalized recovery copy from the uploaded project.
+4. After extracting/replacing, put your .env back in the project root.
+
+Stable application roles:
+- admin
+- kecamatan
+- kelurahan
+
+Granular v3 role routing has been removed from the active application for this recovery build.
+The v3 workflow database foundation remains present (alur_tte, current_stage, approval tracking, document UUID/type/hash).
+
+After replacement, run from the project root:
+
+composer install
+php artisan optimize:clear
+php artisan route:list
+php artisan test
+
+Default active accounts in the bundled database:
+admin@kecmagelangutara.test / password
+kecamatan@kecmagelangutara.test / password
+kelurahan.kramat-utara@kecmagelangutara.test / password
+kelurahan.kramat-selatan@kecmagelangutara.test / password
+kelurahan.wates@kecmagelangutara.test / password
+kelurahan.potrobangsan@kecmagelangutara.test / password
+kelurahan.kedungsari@kecmagelangutara.test / password

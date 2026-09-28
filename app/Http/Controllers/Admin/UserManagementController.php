@@ -10,6 +10,12 @@ use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
+    private const WARD_ROLES = ['fo', 'kasi_pemerintahan', 'lurah'];
+
+    private const ASSIGNABLE_ROLES = [
+        'fo', 'kasi_pemerintahan', 'lurah', 'kasi_umum', 'sekcam', 'camat',
+    ];
+
     public function index()
     {
         $users = User::with('kelurahan')
@@ -52,17 +58,17 @@ class UserManagementController extends Controller
 
             'role' => [
                 'required',
-                Rule::in(['kelurahan', 'kecamatan']),
+                Rule::in(self::ASSIGNABLE_ROLES),
             ],
 
             'kelurahan_id' => [
                 'nullable',
-                'required_if:role,kelurahan',
+                Rule::requiredIf(fn () => in_array($request->input('role'), self::WARD_ROLES, true)),
                 'exists:kelurahans,id',
             ],
         ]);
 
-        if ($data['role'] === 'kecamatan') {
+        if (!in_array($data['role'], self::WARD_ROLES, true)) {
             $data['kelurahan_id'] = null;
         }
 
@@ -115,12 +121,12 @@ class UserManagementController extends Controller
 
             'role' => [
                 'required',
-                Rule::in(['kelurahan', 'kecamatan']),
+                Rule::in(self::ASSIGNABLE_ROLES),
             ],
 
             'kelurahan_id' => [
                 'nullable',
-                'required_if:role,kelurahan',
+                Rule::requiredIf(fn () => in_array($request->input('role'), self::WARD_ROLES, true)),
                 'exists:kelurahans,id',
             ],
 
@@ -132,7 +138,7 @@ class UserManagementController extends Controller
             ],
         ]);
 
-        if ($data['role'] === 'kecamatan') {
+        if (!in_array($data['role'], self::WARD_ROLES, true)) {
             $data['kelurahan_id'] = null;
         }
 

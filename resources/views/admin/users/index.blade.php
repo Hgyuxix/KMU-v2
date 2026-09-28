@@ -91,13 +91,13 @@
                                         <span class="status-badge status-diproses">
                                             Admin
                                         </span>
-                                    @elseif($user->role === 'kecamatan')
+                                    @elseif(in_array($user->role, ['kecamatan', 'kasi_umum', 'sekcam', 'camat'], true))
                                         <span class="status-badge status-disetujui">
-                                            Kecamatan
+                                            {{ ['kecamatan' => 'Kecamatan', 'kasi_umum' => 'Kasi Umum', 'sekcam' => 'Sekcam', 'camat' => 'Camat'][$user->role] }}
                                         </span>
                                     @else
                                         <span class="status-badge status-diajukan">
-                                            Kelurahan
+                                            {{ ['kelurahan' => 'Kelurahan', 'fo' => 'FO', 'kasi_pemerintahan' => 'Kasi Pemerintahan', 'lurah' => 'Lurah'][$user->role] ?? ucfirst($user->role) }}
                                         </span>
                                     @endif
                                 </td>

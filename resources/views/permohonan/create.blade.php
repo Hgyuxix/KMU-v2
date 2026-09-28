@@ -61,6 +61,14 @@
                 <input type="hidden" name="ocr_ktp_token" id="ocr-ktp-token">
 
                 <section class="section-box">
+                    <h2>Verifikasi keamanan</h2>
+                    <div class="form-group">
+                        <label for="captcha_answer">Hitung {{ $captchaQuestion }} <span>*</span></label>
+                        <input id="captcha_answer" type="text" name="captcha_answer" inputmode="numeric" autocomplete="off" required>
+                    </div>
+                </section>
+
+                <section class="section-box">
                     <h2>1. Data Warga</h2>
 
                     <div class="ocr-box" style="background:#f1f4f8;border:1px dashed #b8c2cf;border-radius:10px;padding:14px 16px;margin-bottom:16px">
@@ -79,6 +87,11 @@
                             <label>NIK <span>*</span></label>
                             <input type="text" name="nik" value="{{ old('nik') }}" maxlength="16" minlength="16" inputmode="numeric" required>
                             <div class="hint">16 digit. Data disimpan terenkripsi.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="no_kk">Nomor Kartu Keluarga</label>
+                            <input id="no_kk" type="text" name="no_kk" value="{{ old('no_kk') }}" maxlength="16" minlength="16" inputmode="numeric" autocomplete="off">
+                            <div class="hint">Opsional, 16 digit. Disimpan terenkripsi.</div>
                         </div>
                         <div class="form-group">
                             <label>Tanggal Lahir <span>*</span></label>
@@ -137,8 +150,14 @@
                             ? ($persyaratan->maks_size / 1024).' MB'
                             : $persyaratan->maks_size.' KB';
                     @endphp
+                    @if($persyaratan->butuh_ttd_warga)
+                    <div class="revision-note">
+                        {{ $persyaratan->nama }} akan dicetak setelah draf permohonan tersimpan. Warga menandatangani dokumen tersebut, lalu FO mengunggah hasil pindai pada tahap draf.
+                    </div>
+                    @else
                     <div class="dropzone-card" id="dz-{{ $persyaratan->id }}">
                         <input
+                            id="persyaratan-{{ $persyaratan->id }}"
                             class="dropzone-input"
                             type="file"
                             name="persyaratan[{{ $persyaratan->id }}]"
@@ -149,14 +168,19 @@
                         >
                         <div class="dropzone-content">
                             <div class="dropzone-icon">📎</div>
-                            <div class="dropzone-label">
+
+                            <label
+                                for="persyaratan-{{ $persyaratan->id }}"
+                                class="dropzone-label"
+                            >
                                 <strong>{{ $persyaratan->nama }}</strong>
                                 @if($persyaratan->wajib)
                                     <span style="color:var(--danger)"> *</span>
                                 @else
                                     <small style="color:var(--muted)"> (opsional)</small>
                                 @endif
-                            </div>
+                            </label>
+                            
                             <div class="dropzone-hint">
                                 {{ strtoupper(str_replace(',', ', ', $persyaratan->tipe_file)) }} · Maks. {{ $sizeHint }}
                             </div>
@@ -164,11 +188,12 @@
                             <div class="dropzone-preview" id="thumb-{{ $persyaratan->id }}" style="display:none"></div>
                         </div>
                     </div>
+                    @endif
                     @endforeach
                 </section>
                 <div class="actions">
                     <a class="secondary-btn" href="{{ route('layanan.show',$layanan) }}">Batal</a>
-                    <button class="primary-btn" type="submit">Ajukan →</button>
+                    <button class="primary-btn" type="submit">Simpan Draf FO →</button>
                 </div>
             </form>
         </main>

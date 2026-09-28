@@ -156,6 +156,19 @@ class PersyaratanSeeder extends Seeder
                 ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
                 ['nama' => 'Dokumen pendukung lain sesuai persyaratan Kantor Urusan Agama (KUA)', 'wajib' => false],
             ],
+
+            // 16. Form Santunan Kematian: formulir ini dicetak, ditandatangani ahli waris, lalu diunggah kembali.
+            'Form Santunan Kematian' => [
+                ['nama' => 'Form Santunan Kematian bertanda tangan ahli waris', 'wajib' => true],
+                ['nama' => 'Fotokopi KTP-el dan KK penduduk yang meninggal dunia', 'wajib' => true],
+                ['nama' => 'Fotokopi Kutipan Akta Kematian', 'wajib' => true],
+                ['nama' => 'Fotokopi Kutipan Akta Kelahiran apabila penduduk belum wajib KTP', 'wajib' => false],
+                ['nama' => 'Surat keterangan domisili dari Lurah setempat', 'wajib' => true],
+                ['nama' => 'Daftar DTKS atau berita acara musyawarah kelurahan untuk penduduk yang meninggal dunia', 'wajib' => true],
+                ['nama' => 'Fotokopi KTP-el dan KK ahli waris', 'wajib' => true],
+                ['nama' => 'Surat keterangan pihak yang merawat jenazah dan mengurus pemakaman', 'wajib' => true],
+                ['nama' => 'Daftar DTKS ahli waris atau berita acara musyawarah kelurahan', 'wajib' => true],
+            ],
         ];
 
         foreach ($data as $namaLayanan => $persyaratan) {
@@ -177,6 +190,8 @@ class PersyaratanSeeder extends Seeder
                     ],
                     [
                         'wajib' => $item['wajib'],
+                        'butuh_ttd_warga' => str_contains(strtolower($item['nama']), 'surat pernyataan')
+                            || str_contains(strtolower($item['nama']), 'form santunan kematian bertanda tangan'),
                         'tipe_file' => $aturanFile['tipe_file'],
                         'maks_size' => $aturanFile['maks_size'],
                     ]

@@ -19,7 +19,7 @@ return new class extends Migration
                 'selesai',
             ])->default('fo_input')->after('status');
 
-            $table->string('no_kk')->nullable()->after('nik');
+            $table->text('no_kk')->nullable()->after('nik');
         });
     }
 

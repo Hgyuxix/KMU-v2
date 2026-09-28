@@ -58,12 +58,12 @@ class User extends Authenticatable
 
     public function isKelurahan(): bool
     {
-        return $this->role === 'kelurahan';
+        return in_array($this->role, ['kelurahan', 'fo', 'kasi_pemerintahan', 'lurah'], true);
     }
 
     public function isKecamatan(): bool
     {
-        return $this->role === 'kecamatan';
+        return in_array($this->role, ['kecamatan', 'kasi_umum', 'sekcam', 'camat'], true);
     }
 
     public function isAdmin(): bool

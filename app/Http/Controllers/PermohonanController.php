@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DokumenPersyaratan;
 use App\Models\Layanan;
 use App\Models\Permohonan;
 use App\Services\NikEncryptionService;
+use App\Services\MathCaptchaService;
 use App\Services\PermohonanService;
 use App\Services\SuratGenerator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class PermohonanController extends Controller
 {
@@ -51,7 +50,7 @@ class PermohonanController extends Controller
         );
     }
 
-    public function create(Layanan $layanan)
+    public function create(Request $request, Layanan $layanan, MathCaptchaService $captcha)
     {
         abort_if(!$layanan->aktif, 404);
 
@@ -62,9 +61,11 @@ class PermohonanController extends Controller
             []
         );
 
+        $captchaQuestion = $captcha->issue($request);
+
         return view(
             'permohonan.create',
-            compact('layanan', 'fields')
+            compact('layanan', 'fields', 'captchaQuestion')
         );
     }
 
@@ -72,9 +73,17 @@ class PermohonanController extends Controller
         Request $request,
         Layanan $layanan,
         PermohonanService $service,
-        NikEncryptionService $nikEncryptionService
+        NikEncryptionService $nikEncryptionService,
+        MathCaptchaService $captcha
     ) {
         abort_if(!$layanan->aktif, 404);
+
+        $captchaAnswer = $request->input('captcha_answer');
+        if (!$captcha->verify($request, is_string($captchaAnswer) ? $captchaAnswer : null)) {
+            return back()
+                ->withErrors(['captcha_answer' => 'Jawaban captcha tidak sesuai atau sudah kedaluwarsa.'])
+                ->withInput($request->except('captcha_answer'));
+        }
 
         abort_if(
             !$request->user()->kelurahan_id,
@@ -89,14 +98,8 @@ class PermohonanController extends Controller
         );
 
         return redirect()
-            ->route(
-                'permohonan.preview',
-                $permohonan
-            )
-            ->with(
-                'success',
-                'Pengajuan berhasil dikirim dan menunggu proses verifikasi dari pihak Kecamatan.'
-            );
+            ->route('kelurahan.pengajuan.revisi', $permohonan)
+            ->with('success', 'Permohonan disimpan. Lengkapi tanda tangan warga sebelum dikirim untuk pemeriksaan.');
     }
 
     public function preview(
@@ -140,43 +143,6 @@ class PermohonanController extends Controller
         );
     }
 
-    public function lihatDokumen(
-        DokumenPersyaratan $dokumen
-    ) {
-        $dokumen->load('permohonan');
-
-        abort_unless(
-            $dokumen->permohonan,
-            404,
-            'Permohonan dokumen tidak ditemukan.'
-        );
-
-        $user = request()->user();
-
-        abort_if(
-            $user->isKelurahan()
-                && $dokumen->permohonan->kelurahan_id
-                    !== $user->kelurahan_id,
-            403,
-            'Anda tidak memiliki akses ke dokumen ini.'
-        );
-
-        abort_unless(
-            Storage::disk('local')
-                ->exists($dokumen->file_path),
-            404,
-            'File dokumen tidak ditemukan.'
-        );
-
-        return Storage::disk('local')->response(
-            $dokumen->file_path,
-            $dokumen->file_original_name,
-            [
-                'X-Content-Type-Options' => 'nosniff',
-            ]
-        );
-    }
-
     public function editRevisi(
         Request $request,
         Permohonan $permohonan
@@ -191,7 +157,8 @@ class PermohonanController extends Controller
         );
 
         abort_unless(
-            $permohonan->status === 'revisi',
+            $permohonan->status === 'revisi' ||
+            ($user->role === 'fo' && $permohonan->current_stage === 'fo_input'),
             404
         );
 
@@ -207,12 +174,15 @@ class PermohonanController extends Controller
             []
         );
 
+        $isFoDraft = $user->role === 'fo' && $permohonan->current_stage === 'fo_input';
+
         return view(
             'permohonan.edit',
             compact(
                 'permohonan',
                 'layanan',
-                'fields'
+                'fields',
+                'isFoDraft'
             )
         );
     }
@@ -223,17 +193,39 @@ class PermohonanController extends Controller
         PermohonanService $service,
         NikEncryptionService $nikEncryptionService
     ) {
+        $isFoDraft = $request->user()->role === 'fo' && $permohonan->current_stage === 'fo_input';
         $service->updateRevision(
             $request,
             $permohonan,
             $nikEncryptionService
         );
 
-        return redirect()
-            ->route('kelurahan.index')
-            ->with(
-                'success',
-                'Pengajuan berhasil diperbaiki dan dikirim ulang ke Kecamatan.'
-            );
+        return $isFoDraft
+            ? redirect()->route('kelurahan.pengajuan.revisi', $permohonan)->with('success', 'Draf berhasil disimpan.')
+            : redirect()->route('kelurahan.index')->with('success', 'Pengajuan diperbaiki dan dikirim ke Kasi Pemerintahan.');
+    }
+
+    public function printCitizenStatement(
+        Request $request,
+        Permohonan $permohonan,
+        \App\Models\Persyaratan $persyaratan,
+        NikEncryptionService $nikEncryptionService
+    ) {
+        abort_unless(
+            $request->user()->role === 'fo' &&
+            $request->user()->kelurahan_id === $permohonan->kelurahan_id &&
+            $permohonan->current_stage === 'fo_input' &&
+            $persyaratan->layanan_id === $permohonan->layanan_id &&
+            $persyaratan->butuh_ttd_warga,
+            403
+        );
+
+        $permohonan->load(['layanan.templateSurat', 'kelurahan']);
+        $nikPlain = $nikEncryptionService->decrypt($permohonan->nik);
+        $suratDraft = $persyaratan->nama === 'Form Santunan Kematian bertanda tangan ahli waris'
+            ? app(\App\Services\SuratGenerator::class)->generate($permohonan)
+            : null;
+
+        return view('permohonan.statement', compact('permohonan', 'persyaratan', 'nikPlain', 'suratDraft'));
     }
 }

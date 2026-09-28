@@ -127,7 +127,9 @@
                                 </td>
                                 <td>{{ $permohonan->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    @if($permohonan->status === 'revisi')
+                                    @if($permohonan->current_stage === 'fo_input' && auth()->user()->role === 'fo')
+                                        <a class="table-link" href="{{ route('kelurahan.pengajuan.revisi', $permohonan) }}">Lengkapi draf →</a>
+                                    @elseif($permohonan->status === 'revisi')
                                         <a
                                             class="table-link"
                                             href="{{ route('kelurahan.pengajuan.revisi', $permohonan) }}"

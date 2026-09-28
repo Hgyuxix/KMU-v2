@@ -70,7 +70,8 @@ class PermohonanService
 
         $updateData = $this->buildRevisionUpdateData(
             $validated,
-            $nikEncryptionService
+            $nikEncryptionService,
+            $permohonan
         );
 
         DB::transaction(function () use (
@@ -169,6 +170,19 @@ class PermohonanService
         }
 
         foreach ($layanan->persyaratans as $persyaratan) {
+            if ($persyaratan->butuh_ttd_warga) {
+                $extensions = collect(explode(',', $persyaratan->tipe_file))
+                    ->map(fn ($item) => trim($item))
+                    ->filter()
+                    ->values()
+                    ->implode(',');
+                $rules['persyaratan.' . $persyaratan->id] = [
+                    'nullable', 'file', 'mimes:' . $extensions,
+                    'max:' . $persyaratan->maks_size,
+                ];
+                continue;
+            }
+
             $extensions = collect(
                 explode(',', $persyaratan->tipe_file)
             )
@@ -217,6 +231,10 @@ class PermohonanService
                 'required',
                 'digits:16',
             ],
+            'no_kk' => [
+                'nullable',
+                'digits:16',
+            ],
             'rt' => [
                 'required',
                 'string',
@@ -247,13 +265,19 @@ class PermohonanService
             'nik' => $nikEncryptionService->encrypt(
                 $validated['nik']
             ),
+            'no_kk' => $validated['no_kk'] ?? null,
             'rt' => $validated['rt'],
             'rw' => $validated['rw'],
             'data_surat' => $validated['data_surat'] ?? [],
             'status' => 'diajukan',
+            'current_stage' => 'fo_input',
         ]);
 
         foreach ($layanan->persyaratans as $persyaratan) {
+            if ($persyaratan->butuh_ttd_warga) {
+                continue;
+            }
+
             $file = $request->file(
                 'persyaratan.' . $persyaratan->id
             );
@@ -335,7 +359,8 @@ class PermohonanService
         );
 
         abort_unless(
-            $permohonan->status === 'revisi',
+            $permohonan->status === 'revisi' ||
+            ($user->role === 'fo' && $permohonan->current_stage === 'fo_input'),
             404
         );
     }
@@ -370,14 +395,39 @@ class PermohonanService
             'dokumenPersyaratans'
         );
 
-        $documents = $permohonan
-            ->dokumenPersyaratans
-            ->keyBy('persyaratan_id');
+        $supersededIds = $permohonan->dokumenPersyaratans
+            ->pluck('menggantikan_id')
+            ->filter()
+            ->all();
+        $documents = $permohonan->dokumenPersyaratans
+            ->reject(fn ($document) => in_array($document->id, $supersededIds, true))
+            ->groupBy('persyaratan_id');
 
         foreach ($layanan->persyaratans as $persyaratan) {
-            $existing = $documents->get(
-                $persyaratan->id
-            );
+            $requirementDocuments = $documents->get($persyaratan->id, collect());
+            $existing = $requirementDocuments->last();
+
+            if ($persyaratan->butuh_ttd_warga) {
+                $hasSignedCopy = $requirementDocuments
+                    ->contains(fn ($document) => $document->jenis === 'ttd_warga');
+                $extensions = collect(explode(',', $persyaratan->tipe_file))
+                    ->map(fn ($item) => trim($item))
+                    ->filter()
+                    ->values()
+                    ->implode(',');
+
+                $rules['ttd_warga.' . $persyaratan->id] = [
+                    $hasSignedCopy ? 'nullable' : 'required',
+                    'file',
+                    'mimes:' . $extensions,
+                    'max:' . $persyaratan->maks_size,
+                ];
+                $rules['persyaratan.' . $persyaratan->id] = [
+                    'nullable', 'file', 'mimes:' . $extensions,
+                    'max:' . $persyaratan->maks_size,
+                ];
+                continue;
+            }
 
             $needsNewFile =
                 $existing &&
@@ -412,7 +462,8 @@ class PermohonanService
 
     private function buildRevisionUpdateData(
         array $validated,
-        NikEncryptionService $nikEncryptionService
+        NikEncryptionService $nikEncryptionService,
+        Permohonan $permohonan
         ): array {
         return [
             'nama_lengkap' => $validated['nama_lengkap'],
@@ -420,7 +471,10 @@ class PermohonanService
             'rt' => $validated['rt'],
             'rw' => $validated['rw'],
             'data_surat' => $validated['data_surat'] ?? [],
-            'status' => 'diajukan',
+            'status' => $permohonan->status === 'revisi' ? 'diajukan' : $permohonan->status,
+            'current_stage' => $permohonan->status === 'revisi'
+                ? 'kasi_pemerintahan_review'
+                : 'fo_input',
             'catatan_revisi' => null,
             'diproses_oleh' => null,
             'diproses_at' => null,
@@ -431,6 +485,7 @@ class PermohonanService
             'nik' => $nikEncryptionService->encrypt(
                 $validated['nik']
             ),
+            'no_kk' => $validated['no_kk'] ?? null,
         ];
     }
 
@@ -443,11 +498,19 @@ class PermohonanService
             'dokumenPersyaratans'
         );
 
-        $documents = $permohonan
-            ->dokumenPersyaratans
-            ->keyBy('persyaratan_id');
+        $supersededIds = $permohonan->dokumenPersyaratans
+            ->pluck('menggantikan_id')
+            ->filter()
+            ->all();
+        $documents = $permohonan->dokumenPersyaratans
+            ->reject(fn ($document) => in_array($document->id, $supersededIds, true))
+            ->groupBy('persyaratan_id');
 
         foreach ($layanan->persyaratans as $persyaratan) {
+            if ($persyaratan->butuh_ttd_warga) {
+                continue;
+            }
+
             $file = $request->file(
                 'persyaratan.' . $persyaratan->id
             );
@@ -456,9 +519,7 @@ class PermohonanService
                 continue;
             }
 
-            $existing = $documents->get(
-                $persyaratan->id
-            );
+            $existing = $documents->get($persyaratan->id, collect())->last();
 
             if ($existing && $existing->status === 'sesuai') {
                 abort(
@@ -480,6 +541,23 @@ class PermohonanService
                 $permohonan,
                 $persyaratan->id,
                 $file
+            );
+        }
+
+        foreach ($layanan->persyaratans->where('butuh_ttd_warga', true) as $persyaratan) {
+            $signedFile = $request->file('ttd_warga.' . $persyaratan->id);
+            if (!$signedFile) {
+                continue;
+            }
+
+            $existing = $documents->get($persyaratan->id, collect())->last();
+            $this->documentService->store(
+                $permohonan,
+                $persyaratan->id,
+                $signedFile,
+                'ttd_warga',
+                'ttd_warga',
+                $existing
             );
         }
     }

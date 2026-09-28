@@ -139,6 +139,12 @@ class SuratGenerator
                 $permohonan->layanan->nama
             ),
 
+            '{{ nama_kelurahan }}' => e(
+                $permohonan->kelurahan?->nama ?? '—'
+            ),
+
+            '{{ nama_kecamatan }}' => 'Magelang Utara',
+
             '{{ tanggal }}' => now()
                 ->translatedFormat('d F Y'),
 
@@ -174,6 +180,18 @@ class SuratGenerator
         // ==========================================
 
         foreach ($data as $key => $value) {
+            $fieldType = config(
+                'surat.' . $permohonan->layanan_id . '.' . $key . '.type'
+            );
+
+            if ($fieldType === 'date' && filled($value)) {
+                try {
+                    $value = Carbon::parse($value)->translatedFormat('d F Y');
+                } catch (\Exception $e) {
+                    // Keep the submitted text visible if an old record has an invalid date.
+                }
+            }
+
             $formattedValue = is_array($value)
                 ? implode(', ', $value)
                 : (string) ($value ?? '');

@@ -19,112 +19,62 @@ class UserSeeder extends Seeder
 
         foreach ($kelurahans as $kelurahan) {
             $slug = Str::slug($kelurahan->nama);
-
-            /*
-             * Migrasi akun lama:
-             * role kelurahan -> fo
-             */
-            $legacyEmail = 'kelurahan.' . $slug . self::EMAIL_DOMAIN;
-
-            User::updateOrCreate(
-                ['email' => $legacyEmail],
-                [
-                    'name' => 'FO ' . $kelurahan->nama,
-                    'password' => Hash::make(self::DEFAULT_PASSWORD),
-                    'role' => 'fo',
-                    'kelurahan_id' => $kelurahan->id,
-                    'is_active' => true,
-                ]
+            $this->upsertUser(
+                'kelurahan.' . $slug . self::EMAIL_DOMAIN,
+                'FO ' . $kelurahan->nama,
+                'fo',
+                $kelurahan->id
             );
-
-            /*
-             * Kasi Pemerintahan per kelurahan
-             */
-            $kasiPemEmail =
-                'kasi.pemerintahan.' . $slug . self::EMAIL_DOMAIN;
-
-            User::updateOrCreate(
-                ['email' => $kasiPemEmail],
-                [
-                    'name' => 'Kasi Pemerintahan ' . $kelurahan->nama,
-                    'password' => Hash::make(self::DEFAULT_PASSWORD),
-                    'role' => 'kasi_pemerintahan',
-                    'kelurahan_id' => $kelurahan->id,
-                    'is_active' => true,
-                ]
+            $this->upsertUser(
+                'kasi-pemerintahan.' . $slug . self::EMAIL_DOMAIN,
+                'Kasi Pemerintahan ' . $kelurahan->nama,
+                'kasi_pemerintahan',
+                $kelurahan->id
             );
-
-            /*
-             * Lurah per kelurahan
-             */
-            $lurahEmail =
-                'lurah.' . $slug . self::EMAIL_DOMAIN;
-
-            User::updateOrCreate(
-                ['email' => $lurahEmail],
-                [
-                    'name' => 'Lurah ' . $kelurahan->nama,
-                    'password' => Hash::make(self::DEFAULT_PASSWORD),
-                    'role' => 'lurah',
-                    'kelurahan_id' => $kelurahan->id,
-                    'is_active' => true,
-                ]
+            $this->upsertUser(
+                'lurah.' . $slug . self::EMAIL_DOMAIN,
+                'Lurah ' . $kelurahan->nama,
+                'lurah',
+                $kelurahan->id
             );
         }
 
-        /*
-         * Migrasi akun kecamatan lama
-         * menjadi Kasi Umum.
-         */
-        User::updateOrCreate(
-            ['email' => 'kecamatan@kecmagelangutara.test'],
-            [
-                'name' => 'Kasi Umum Kecamatan Magelang Utara',
-                'password' => Hash::make(self::DEFAULT_PASSWORD),
-                'role' => 'kasi_umum',
-                'kelurahan_id' => null,
-                'is_active' => true,
-            ]
+        $this->upsertUser(
+            'kecamatan' . self::EMAIL_DOMAIN,
+            'Camat Magelang Utara',
+            'camat'
+        );
+        $this->upsertUser(
+            'kasi-umum' . self::EMAIL_DOMAIN,
+            'Kasi Umum Kecamatan Magelang Utara',
+            'kasi_umum'
+        );
+        $this->upsertUser(
+            'sekcam' . self::EMAIL_DOMAIN,
+            'Sekretaris Kecamatan Magelang Utara',
+            'sekcam'
         );
 
-        /*
-         * Sekcam - shared seluruh kecamatan
-         */
-        User::updateOrCreate(
-            ['email' => 'sekcam@kecmagelangutara.test'],
-            [
-                'name' => 'Sekretaris Kecamatan Magelang Utara',
-                'password' => Hash::make(self::DEFAULT_PASSWORD),
-                'role' => 'sekcam',
-                'kelurahan_id' => null,
-                'is_active' => true,
-            ]
+        $this->upsertUser(
+            'admin' . self::EMAIL_DOMAIN,
+            'Administrator KMU',
+            'admin'
         );
+    }
 
-        /*
-         * Camat - shared seluruh kecamatan
-         */
+    private function upsertUser(
+        string $email,
+        string $name,
+        string $role,
+        ?int $kelurahanId = null
+    ): void {
         User::updateOrCreate(
-            ['email' => 'camat@kecmagelangutara.test'],
+            ['email' => $email],
             [
-                'name' => 'Camat Magelang Utara',
+                'name' => $name,
                 'password' => Hash::make(self::DEFAULT_PASSWORD),
-                'role' => 'camat',
-                'kelurahan_id' => null,
-                'is_active' => true,
-            ]
-        );
-
-        /*
-         * Administrator
-         */
-        User::updateOrCreate(
-            ['email' => 'admin@kecmagelangutara.test'],
-            [
-                'name' => 'Administrator KMU',
-                'password' => Hash::make(self::DEFAULT_PASSWORD),
-                'role' => 'admin',
-                'kelurahan_id' => null,
+                'role' => $role,
+                'kelurahan_id' => $kelurahanId,
                 'is_active' => true,
             ]
         );

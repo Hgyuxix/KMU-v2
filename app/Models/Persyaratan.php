@@ -11,12 +11,14 @@ class Persyaratan extends Model
         'layanan_id',
         'nama',
         'wajib',
+        'butuh_ttd_warga',
         'tipe_file',
         'maks_size',
     ];
 
     protected $casts = [
         'wajib' => 'boolean',
+        'butuh_ttd_warga' => 'boolean',
         'maks_size' => 'integer',
     ];
 

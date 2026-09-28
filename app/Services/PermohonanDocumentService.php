@@ -13,27 +13,31 @@ use Illuminate\Support\Str;
 class PermohonanDocumentService
 {
     private const SAFE_FILENAME_PATTERN = '/[^\w\s.-]/';
-    private const STORAGE_DIRECTORY = 'persyaratan';
+    private const STORAGE_DIRECTORY = 'dokumen';
 
     public function store(
         Permohonan $permohonan,
         int $persyaratanId,
         UploadedFile $file,
-        string $fallbackPrefix = 'dokumen'
+        string $fallbackPrefix = 'dokumen',
+        string $jenis = 'awal',
+        ?DokumenPersyaratan $replaces = null
     ): DokumenPersyaratan {
-        $path = $this->storeFile(
-            $file,
-            $permohonan->id
-        );
+        $uuid = (string) Str::uuid();
+        $path = $this->storeFile($file, $permohonan->id, $uuid);
 
         return $permohonan->dokumenPersyaratans()->create([
             'persyaratan_id' => $persyaratanId,
+            'uuid' => $uuid,
+            'jenis' => $jenis,
+            'menggantikan_id' => $replaces?->id,
             'file_path' => $path,
             'file_original_name' => $this->sanitizeFileName(
                 $file->getClientOriginalName(),
                 $fallbackPrefix . '_' . Str::random(8) . '.' .
                 ($file->guessExtension() ?? 'bin')
             ),
+            'file_hash' => hash_file('sha256', $file->getRealPath()),
         ]);
     }
 
@@ -44,7 +48,11 @@ class PermohonanDocumentService
         string $originalName,
         string $extension
     ): DokumenPersyaratan {
-        $filename = 'ktp_' . Str::random(20) . '.' . $extension;
+        $uuid = (string) Str::uuid();
+        $safeExtension = preg_match('/^[a-zA-Z0-9]{1,10}$/', $extension)
+            ? strtolower($extension)
+            : 'bin';
+        $filename = $uuid . '.' . $safeExtension;
 
         $path = Storage::disk('local')->putFileAs(
             self::STORAGE_DIRECTORY . '/' . $permohonan->id,
@@ -60,46 +68,43 @@ class PermohonanDocumentService
 
         return $permohonan->dokumenPersyaratans()->create([
             'persyaratan_id' => $persyaratanId,
+            'uuid' => $uuid,
             'file_path' => $path,
             'file_original_name' => $this->sanitizeFileName(
                 $originalName,
                 'ktp_' . Str::random(8) . '.' . $extension
             ),
+            'file_hash' => hash_file('sha256', $tempPath),
         ]);
     }
 
     public function replace(
         DokumenPersyaratan $existing,
-        UploadedFile $file
-    ): void {
-        $oldPath = $existing->file_path;
-
-        $newPath = $this->storeFile(
+        UploadedFile $file,
+        ?string $jenis = null
+    ): DokumenPersyaratan {
+        return $this->store(
+            $existing->permohonan,
+            $existing->persyaratan_id,
             $file,
-            $existing->permohonan_id
+            'dokumen',
+            $jenis ?? $existing->jenis,
+            $existing
         );
-
-        $existing->update([
-            'file_path' => $newPath,
-            'file_original_name' => $this->sanitizeFileName(
-                $file->getClientOriginalName(),
-                'dokumen_' . Str::random(8) . '.' .
-                ($file->guessExtension() ?? 'bin')
-            ),
-            'status' => 'belum_dicek',
-        ]);
-
-        if ($oldPath !== $newPath) {
-            Storage::disk('local')->delete($oldPath);
-        }
     }
 
     private function storeFile(
         UploadedFile $file,
-        int $permohonanId
-    ): string {
-        $path = $file->store(
+        int $permohonanId,
+        string $uuid
+        ): string {
+        $extension = $file->guessExtension() ?: 'bin';
+        $extension = preg_match('/^[a-zA-Z0-9]{1,10}$/', $extension)
+            ? strtolower($extension)
+            : 'bin';
+        $path = $file->storeAs(
             self::STORAGE_DIRECTORY . '/' . $permohonanId,
+            $uuid . '.' . $extension,
             'local'
         );
 

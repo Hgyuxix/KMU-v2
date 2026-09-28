@@ -66,26 +66,98 @@
                 font-size:16pt;
                 font-weight:700
             }
+
             .alamat{
                 font-size:8.5pt;
                 margin-top:1mm
             }
+
             .judul{
                 text-align:center;
                 margin:7mm 0 5mm
             }
+
             .judul h1{
                 font-size:12pt;
                 text-decoration:underline;
                 margin:0 0 2mm
             }
+
             .nomor{
                 font-size:9pt}
+
             .isi{
                 font-size:10.5pt;
                 line-height:1.48;
                 white-space:normal
             }
+
+            /* ==============================
+                Format isi surat seperti tabel
+                tanpa border
+            ============================== */
+
+            .letter-table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+                margin: 0;
+            }
+
+            .letter-table td {
+                padding: 0;
+                border: 0;
+                vertical-align: top;
+                font-size: 10.5pt;
+                line-height: 1.48;
+            }
+
+            .letter-table .number {
+                width: 7mm;
+                white-space: nowrap;
+            }
+
+            .letter-table .label {
+                width: 52mm;
+                padding-right: 2mm;
+            }
+
+            .letter-table .colon {
+                width: 4mm;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            .letter-table .value {
+                width: auto;
+                min-width: 0;
+            }
+
+            .letter-paragraph {
+                margin: 0 0 7px;
+                font-size: 10.5pt;
+                line-height: 1.48;
+            }
+
+            .letter-spacer {
+                height: 5px;
+            }
+
+            .page-break {
+                break-before: page;
+                page-break-before: always;
+            }
+
+            @media print {
+                .letter-table td {
+                    font-size: 10.5pt;
+                }
+
+                .letter-paragraph {
+                    font-size: 10.5pt;
+                }
+            }
+
             .signature{
                 width:62mm;
                 margin-left:auto;
@@ -143,10 +215,210 @@
                     margin: 1mm auto !important;
                 }
             }
+
+            /* ==============================
+            Surat - Table Style Without Border
+            ============================== */
+
+            .letter-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0;
+            }
+
+            .letter-table td {
+                padding: 0;
+                border: none;
+                vertical-align: top;
+                font-size: 11pt;
+                line-height: 1.55;
+            }
+
+            .letter-table .number {
+                width: 7mm;
+                white-space: nowrap;
+            }
+
+            .letter-table .label {
+                width: 52mm;
+                padding-right: 2mm;
+            }
+
+            .letter-table .colon {
+                width: 5mm;
+                text-align: center;
+            }
+
+            .letter-table .value {
+                width: auto;
+            }
+
+            .letter-table .continuation {
+                padding-left: 5mm;
+            }
+
+            .letter-paragraph {
+                margin: 0 0 7px;
+                font-size: 11pt;
+                line-height: 1.55;
+            }
+
+            @media print {
+                .letter-table td {
+                    font-size: 11pt;
+                }
+
+                .letter-paragraph {
+                    font-size: 11pt;
+                }
+            }
         </style>
     </head>
 
     <body>
+
+        @php
+            /*
+            * Mengubah baris:
+            * Nama Lengkap : Budi Santoso
+            *
+            * menjadi tabel tanpa border agar kolom label dan nilai rata.
+            */
+            $renderSuratContent = function (string $content): string {
+                $lines = preg_split("/\r\n|\r|\n/", $content);
+
+                $html = '';
+                $tableOpen = false;
+
+                $closeTable = function () use (&$html, &$tableOpen): void {
+                    if ($tableOpen) {
+                        $html .= '</tbody></table>';
+                        $tableOpen = false;
+                    }
+                };
+
+                foreach ($lines as $line) {
+                    $line = trim($line);
+
+                    if ($line === '[[HALAMAN_BARU]]') {
+                        $closeTable();
+                        $html .= '<div class="page-break"></div>';
+                        continue;
+                    }
+
+                    /*
+                    * Baris kosong.
+                    */
+                    if ($line === '') {
+                        $closeTable();
+                        $html .= '<div class="letter-spacer"></div>';
+                        continue;
+                    }
+
+                    /*
+                    * Field normal:
+                    *
+                    * 1. Nama Lengkap : Budi Santoso
+                    * Nama Lengkap : Budi Santoso
+                    */
+                    if (preg_match(
+                        '/^(?:(\d+)\.\s*)?(.+?)\s*:\s*(.+)$/u',
+                        $line,
+                        $match
+                    )) {
+                        if (!$tableOpen) {
+                            $html .= '<table class="letter-table"><tbody>';
+                            $tableOpen = true;
+                        }
+
+                        $number = $match[1] ?? '';
+                        $label = trim($match[2]);
+                        $value = trim($match[3]);
+
+                        $html .= '<tr>';
+
+                        $html .= '<td class="number">'
+                            . e($number !== '' ? $number . '.' : '')
+                            . '</td>';
+
+                        $html .= '<td class="label">'
+                            . e($label)
+                            . '</td>';
+
+                        $html .= '<td class="colon">:</td>';
+
+                        $html .= '<td class="value">'
+                            . e($value)
+                            . '</td>';
+
+                        $html .= '</tr>';
+
+                        continue;
+                    }
+
+                    /*
+                    * Judul/paragraf yang kebetulan berakhir ":" tanpa value.
+                    *
+                    * Contoh:
+                    * Yang bertanda tangan di bawah ini:
+                    */
+                    if (preg_match(
+                        '/^(?:(\d+)\.\s*)?(.+?)\s*:\s*$/u',
+                        $line,
+                        $match
+                    )) {
+                        $closeTable();
+
+                        $text = trim(
+                            ($match[1] ?? '') !== ''
+                                ? $match[1] . '. ' . $match[2] . ':'
+                                : $match[2] . ':'
+                        );
+
+                        $html .= '<div class="letter-paragraph">'
+                            . e($text)
+                            . '</div>';
+
+                        continue;
+                    }
+
+                    /*
+                    * Baris lanjutan dari field sebelumnya.
+                    *
+                    * Contoh:
+                    * Alamat : Jl. Contoh No. 10
+                    *          RT 001 / RW 002
+                    */
+                    if ($tableOpen) {
+                        $html .= '<tr class="continuation">';
+
+                        $html .= '<td class="number"></td>';
+                        $html .= '<td class="label"></td>';
+                        $html .= '<td class="colon"></td>';
+
+                        $html .= '<td class="value">'
+                            . e($line)
+                            . '</td>';
+
+                        $html .= '</tr>';
+
+                        continue;
+                    }
+
+                    /*
+                    * Paragraf biasa.
+                    */
+                    $html .= '<div class="letter-paragraph">'
+                        . e($line)
+                        . '</div>';
+                }
+
+                $closeTable();
+
+                return $html;
+            };
+        @endphp
+
         <div class="toolbar">
             <h2>Preview Surat · {{ $permohonan->layanan->nama }}</h2>
             @if(in_array($permohonan->status, ['disetujui', 'selesai']))
@@ -169,7 +441,7 @@
                 <div class="nomor">Nomor: {{ $permohonan->nomor_surat ?? '(belum diterbitkan)' }}</div>
             </div>
             <div class="isi">
-                {!! nl2br($surat) !!}
+                {!! $renderSuratContent($surat) !!}
             </div>
             <div class="signature">
                 <div>Pada tanggal {{ $permohonan->diproses_at?->translatedFormat('d F Y') ?? now()->translatedFormat('d F Y') }}</div>
@@ -270,9 +542,12 @@
             @endif
         </div>
         @php
-            $backUrl = auth()->user()->isKecamatan()
-                ? route('dashboard.pengajuan.show', $permohonan)
-                : route('kelurahan.index');
+            $role = auth()->user()->role;
+            $backUrl = in_array($role, ['kasi_pemerintahan', 'lurah', 'kasi_umum', 'sekcam', 'camat'], true)
+                ? route('workflow.show', $permohonan)
+                : (auth()->user()->isKecamatan()
+                    ? route('dashboard.pengajuan.show', $permohonan)
+                    : route('kelurahan.index'));
         @endphp
         <div style="max-width:600px;margin:12px auto 40px;text-align:center">
             <a
