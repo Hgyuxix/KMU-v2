@@ -51,6 +51,7 @@
 /kmuv2.zip
 *.zip
 /implementation_plan.md
+*/HANDOFF
 
 # OS
 Thumbs.db
