@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Pengajuan {{ $layanan->nama }}</title>
-        <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body>
@@ -15,10 +15,7 @@
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
-                <div class="user-chip">
-                    <span class="dot"></span>
-                    <span>{{ auth()->user()->name ?? 'Staf Kelurahan' }}</span>
-                </div>
+                @include('partials.user-chip')
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active">Pengajuan</a>
                 <a href="{{ route('kelurahan.index') }}">Daftar Pengajuan Saya</a>
@@ -59,14 +56,6 @@
                 @csrf
 
                 <input type="hidden" name="ocr_ktp_token" id="ocr-ktp-token">
-
-                <section class="section-box">
-                    <h2>Verifikasi keamanan</h2>
-                    <div class="form-group">
-                        <label for="captcha_answer">Hitung {{ $captchaQuestion }} <span>*</span></label>
-                        <input id="captcha_answer" type="text" name="captcha_answer" inputmode="numeric" autocomplete="off" required>
-                    </div>
-                </section>
 
                 <section class="section-box">
                     <h2>1. Data Warga</h2>

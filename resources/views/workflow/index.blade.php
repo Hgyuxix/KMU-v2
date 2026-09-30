@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Antrian Persetujuan — KMU</title>
-    <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 <div class="container">
@@ -12,12 +12,15 @@
         <div>
             <div class="eyebrow">KMU v3 · Alur Persetujuan</div>
             <h1>Antrian Persetujuan</h1>
-            <p>{{ auth()->user()->name }} · {{ str_replace('_', ' ', ucfirst(auth()->user()->role)) }}</p>
+            <p>Permohonan yang menunggu tindakan sesuai kewenangan akun Anda.</p>
         </div>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="secondary-btn" type="submit">Keluar</button>
-        </form>
+        <div class="header-actions">
+            @include('partials.user-chip')
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="secondary-btn" type="submit">Keluar</button>
+            </form>
+        </div>
     </header>
 
     @if(session('success'))
@@ -50,7 +53,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $permohonans->links() }}
+        {{ $permohonans->links('vendor.pagination.kmu') }}
     </section>
 
     @if($monitoring)

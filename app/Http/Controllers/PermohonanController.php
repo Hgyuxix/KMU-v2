@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Layanan;
 use App\Models\Permohonan;
 use App\Services\NikEncryptionService;
-use App\Services\MathCaptchaService;
 use App\Services\PermohonanService;
 use App\Services\SuratGenerator;
 use Illuminate\Http\Request;
@@ -50,7 +49,7 @@ class PermohonanController extends Controller
         );
     }
 
-    public function create(Request $request, Layanan $layanan, MathCaptchaService $captcha)
+    public function create(Request $request, Layanan $layanan)
     {
         abort_if(!$layanan->aktif, 404);
 
@@ -61,11 +60,9 @@ class PermohonanController extends Controller
             []
         );
 
-        $captchaQuestion = $captcha->issue($request);
-
         return view(
             'permohonan.create',
-            compact('layanan', 'fields', 'captchaQuestion')
+            compact('layanan', 'fields')
         );
     }
 
@@ -73,17 +70,9 @@ class PermohonanController extends Controller
         Request $request,
         Layanan $layanan,
         PermohonanService $service,
-        NikEncryptionService $nikEncryptionService,
-        MathCaptchaService $captcha
+        NikEncryptionService $nikEncryptionService
     ) {
         abort_if(!$layanan->aktif, 404);
-
-        $captchaAnswer = $request->input('captcha_answer');
-        if (!$captcha->verify($request, is_string($captchaAnswer) ? $captchaAnswer : null)) {
-            return back()
-                ->withErrors(['captcha_answer' => 'Jawaban captcha tidak sesuai atau sudah kedaluwarsa.'])
-                ->withInput($request->except('captcha_answer'));
-        }
 
         abort_if(
             !$request->user()->kelurahan_id,

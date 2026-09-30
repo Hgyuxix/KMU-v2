@@ -5,6 +5,7 @@
 /.env
 /.env.*
 !/.env.example
+!/.env.*.example
 
 .env.backup
 .env.production
@@ -19,6 +20,12 @@
 /.vscode
 /.zed
 /auth.json
+*.swp
+*.swo
+*.orig
+*.rej
+*.tmp
+*.temp
 
 # Dependencies / build
 /node_modules
@@ -27,6 +34,13 @@
 /public/hot
 /public/storage
 /public/test-15-surat.php
+/coverage
+/htmlcov
+.coverage
+.coverage.*
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
 # Laravel runtime
 /storage/*.key
@@ -46,6 +60,13 @@
 /ocr/hasil_ktp_v3.json
 /ocr/hasil_ocr.txt
 /ocr/ocr_debug.txt
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+/.venv
+/venv
 
 # Local archive
 /kmuv2.zip
@@ -59,5 +80,3 @@ Thumbs.db
 # Laravel / Homestead
 Homestead.json
 Homestead.yaml
-
-/ocr/hasil_ktp_v3.json

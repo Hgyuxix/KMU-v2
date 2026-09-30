@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Verifikasi Surat — Kecamatan Magelang Utara</title>
-        <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body style="background:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center">

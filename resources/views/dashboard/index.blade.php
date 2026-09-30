@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Dashboard Pelayanan — Kecamatan Magelang Utara</title>
-        <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body>
@@ -14,10 +14,7 @@
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
-                <div class="user-chip">
-                    <span class="dot"></span>
-                    <span>{{ auth()->user()->name ?? 'Staf Kecamatan' }}</span>
-                </div>
+                @include('partials.user-chip')
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active" href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline">
@@ -170,7 +167,7 @@
                 </table>
             </div>
             @if($permohonans->hasPages())
-            <div class="pagination-wrap">{{ $permohonans->links() }}</div>
+            <div class="pagination-wrap">{{ $permohonans->links('vendor.pagination.kmu') }}</div>
             @endif
             </section>
         </main>

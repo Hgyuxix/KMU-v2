@@ -68,7 +68,7 @@ class UserSeeder extends Seeder
         string $role,
         ?int $kelurahanId = null
     ): void {
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => $email],
             [
                 'name' => $name,

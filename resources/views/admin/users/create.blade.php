@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Akun — Kecamatan Magelang Utara</title>
-    <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body>
@@ -17,6 +17,7 @@
         </a>
 
         <div class="kmu-navlinks">
+            @include('partials.user-chip')
             <a class="active" href="{{ route('admin.users.index') }}">
                 Manajemen Akun
             </a>

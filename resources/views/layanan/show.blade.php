@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{{ $layanan->nama }} — Pelayanan Administrasi</title>
-        <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body>
@@ -15,6 +15,7 @@
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
+                @include('partials.user-chip')
                 <a href="{{ route('layanan.index') }}">Beranda</a>
                 <a class="active" href="{{ route('layanan.index') }}">Layanan</a>
                 @auth

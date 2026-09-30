@@ -15,6 +15,7 @@ use Database\Seeders\TemplateSuratSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\LayananSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -625,14 +626,15 @@ class SecurityHardeningTest extends TestCase
 
     public function test_login_rate_limiting_blocks_after_too_many_attempts(): void
     {
-        for ($i = 0; $i < 5; $i++) {
-            $this->get(route('login'));
-            $captchaAnswer = session('math_captcha.answer');
+        Http::fake([
+            'https://challenges.cloudflare.com/*' => Http::response(['success' => true], 200),
+        ]);
 
+        for ($i = 0; $i < 5; $i++) {
             $response = $this->post(route('login.process'), [
                 'email' => 'wrong@test.com',
                 'password' => 'wrongpass',
-                'captcha_answer' => $captchaAnswer,
+                'cf-turnstile-response' => 'valid-test-token',
             ]);
             $response->assertSessionHasErrors('email');
         }
@@ -641,7 +643,7 @@ class SecurityHardeningTest extends TestCase
         $response = $this->post(route('login.process'), [
             'email' => 'wrong@test.com',
             'password' => 'wrongpass',
-            'captcha_answer' => '0',
+            'cf-turnstile-response' => 'valid-test-token',
         ]);
 
         $response->assertStatus(429);

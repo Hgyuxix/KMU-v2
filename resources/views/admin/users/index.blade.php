@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen Akun — Kecamatan Magelang Utara</title>
-    <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body>
@@ -17,6 +17,7 @@
         </a>
 
         <div class="kmu-navlinks">
+            @include('partials.user-chip')
             <a class="active" href="{{ route('admin.users.index') }}">Manajemen Akun</a>
 
             <form method="POST" action="{{ route('logout') }}" style="display:inline">
@@ -59,7 +60,7 @@
 
             <div class="table-wrap">
 
-                <table class="data-table">
+                <table class="data-table account-table">
                     <thead>
                         <tr>
                             <th>Nama</th>
@@ -121,38 +122,28 @@
                                 <td>
 
                                     @if($user->isAdmin())
-                                        <span class="table-sub">
-                                            Akun administrator
-                                        </span>
+                                        <span class="table-sub">Akun administrator</span>
                                     @else
-
-                                        <a
-                                            class="table-link"
-                                            href="{{ route('admin.users.edit', $user) }}"
-                                        >
-                                            Edit
-                                        </a>
-
-                                        <span style="margin:0 6px;color:#cbd5e1">|</span>
-
-                                        <form
-                                            method="POST"
-                                            action="{{ route('admin.users.toggle-status', $user) }}"
-                                            style="display:inline"
-                                            onsubmit="return confirm('Yakin ingin mengubah status akun ini?')"
-                                        >
-                                            @csrf
-                                            @method('PATCH')
-
-                                            <button
-                                                type="submit"
-                                                class="table-link"
-                                                style="border:0;background:none;padding:0;cursor:pointer;font:inherit"
+                                        <div class="table-actions">
+                                            <a
+                                                class="table-action table-action-primary"
+                                                href="{{ route('admin.users.edit', $user) }}"
                                             >
-                                                {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                            </button>
-                                        </form>
+                                                Edit
+                                            </a>
 
+                                            <form
+                                                method="POST"
+                                                action="{{ route('admin.users.toggle-status', $user) }}"
+                                                onsubmit="return confirm('Yakin ingin mengubah status akun ini?')"
+                                            >
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="table-action {{ $user->is_active ? 'table-action-danger' : 'table-action-success' }}">
+                                                    {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                </button>
+                                            </form>
+                                        </div>
                                     @endif
 
                                 </td>
@@ -188,7 +179,7 @@
 
             @if($users->hasPages())
                 <div class="pagination-wrap">
-                    {{ $users->links() }}
+                    {{ $users->links('vendor.pagination.kmu') }}
                 </div>
             @endif
 

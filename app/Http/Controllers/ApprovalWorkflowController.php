@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Permohonan;
-use App\Models\DokumenPersyaratan;
 use App\Models\AuditLog;
+use App\Models\Permohonan;
+use App\Models\DocumentReview;
+use App\Models\DokumenPersyaratan;
 use App\Services\ApprovalStageService;
 use Illuminate\Http\Request;
 
@@ -136,8 +137,24 @@ class ApprovalWorkflowController extends Controller
         $data = $request->validate([
             'status' => ['required', 'in:sesuai,tidak_sesuai'],
         ]);
-        $before = $dokumen->status;
-        $dokumen->update(['status' => $data['status']]);
+
+        $review = DocumentReview::firstOrCreate(
+            [
+                'dokumen_persyaratan_id' => $dokumen->id,
+                'stage' => $dokumen->permohonan->current_stage,
+            ],
+            [
+                'status' => 'belum_dicek',
+            ]
+        );
+
+        $before = $review->status;
+
+        $review->update([
+            'status' => $data['status'],
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
 
         if ($before !== $data['status']) {
             AuditLog::create([

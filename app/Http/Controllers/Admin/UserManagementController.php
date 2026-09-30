@@ -21,7 +21,7 @@ class UserManagementController extends Controller
         $users = User::with('kelurahan')
             ->orderBy('role')
             ->orderBy('name')
-            ->paginate(15);
+            ->paginate(5);
 
         return view('admin.users.index', compact('users'));
     }

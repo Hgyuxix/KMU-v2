@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\DocumentReview;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DokumenPersyaratan extends Model
@@ -43,5 +45,10 @@ class DokumenPersyaratan extends Model
             self::class,
             'menggantikan_id'
         );
+    }
+
+    public function documentReviews(): HasMany
+    {
+        return $this->hasMany(DocumentReview::class);
     }
 }

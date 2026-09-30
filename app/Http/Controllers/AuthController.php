@@ -4,24 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Services\MathCaptchaService;
+use App\Services\TurnstileService;
 
 class AuthController extends Controller
 {
-    public function showLogin(Request $request, MathCaptchaService $captcha)
+    public function showLogin()
     {
-        $captchaQuestion = $captcha->issue($request);
-
-        return view('auth.login', compact('captchaQuestion'));
+        return view('auth.login', [
+            'turnstileSiteKey' => config('services.turnstile.site_key'),
+        ]);
     }
 
-    public function login(Request $request, MathCaptchaService $captcha)
+    public function login(Request $request, TurnstileService $turnstile)
     {
-        $captchaAnswer = $request->input('captcha_answer');
-
-        if (!$captcha->verify($request, is_string($captchaAnswer) ? $captchaAnswer : null)) {
+        if (is_string($request->input('website')) && trim($request->input('website')) !== '') {
             return back()
-                ->withErrors(['captcha_answer' => 'Jawaban captcha tidak sesuai atau sudah kedaluwarsa.'])
+                ->withErrors(['email' => 'Email atau password tidak sesuai.'])
+                ->withInput($request->only('email'));
+        }
+
+        $token = $request->input('cf-turnstile-response');
+
+        if (!$turnstile->verify($request, is_string($token) ? $token : null)) {
+            return back()
+                ->withErrors(['captcha' => 'Verifikasi keamanan gagal atau kedaluwarsa. Coba lagi.'])
                 ->withInput($request->only('email'));
         }
 

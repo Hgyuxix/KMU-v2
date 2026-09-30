@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Pelayanan Administrasi — Kecamatan Magelang Utara</title>
-        <link rel="stylesheet" href="{{ asset('css/kmu.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
     <body>
@@ -14,6 +14,7 @@
                 <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
             </a>
             <div class="kmu-navlinks">
+                @include('partials.user-chip')
                 <a class="active" href="{{ route('layanan.index') }}">Beranda</a>
                 <a href="#layanan">Layanan</a>
                 @auth
@@ -24,7 +25,7 @@
                 @else
                 <a class="kmu-login" href="{{ route('login') }}">Masuk</a>
                 @endauth
-                <a class="kmu-login" href="#layanan">Mulai Pengajuan</a>
+                <a class="kmu-login cta-start" href="#layanan">Mulai Pengajuan</a>
             </div>
         </nav>
 
