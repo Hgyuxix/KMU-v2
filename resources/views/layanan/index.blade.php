@@ -49,9 +49,7 @@
                 <div class="service-card">
                     <div>
                         <div class="service-icon">▤</div>
-                        @if($layanan->tte)
-                        <span class="badge">✓ TTE</span>
-                        @endif
+                        @include('partials.tte-badge', ['layanan' => $layanan])
                         <h3>{{ $layanan->nama }}</h3>
                         <p>{{ $layanan->deskripsi ?: 'Layanan administrasi Kecamatan Magelang Utara.' }}</p>
                     </div>

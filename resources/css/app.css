@@ -1078,6 +1078,32 @@ textarea:disabled {
     color: var(--kmu-success);
 }
 
+.tte-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    box-sizing: border-box;
+    padding: 3px 8px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.tte-badge--enabled {
+    border-color: #bfe4d2;
+    background: #edf8f1;
+    color: #147a56;
+}
+
+.tte-badge--manual {
+    border-color: #d8dee6;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
 /* ---------------------------------------------------------
    Steps / upload UI
 --------------------------------------------------------- */

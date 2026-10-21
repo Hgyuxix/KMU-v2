@@ -160,6 +160,7 @@
             <div class="workflow-kicker">{{ str_replace('_', ' ', ucfirst($permohonan->current_stage)) }}</div>
             <h1 class="workflow-title">Tinjau Permohonan #{{ str_pad($permohonan->id, 4, '0', STR_PAD_LEFT) }}</h1>
             <p class="workflow-subtitle">{{ $permohonan->layanan->nama }} · {{ $permohonan->nama_lengkap }} · {{ $permohonan->kelurahan->nama ?? 'Kelurahan' }}</p>
+            @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
         </div>
         <div class="workflow-user">
             @include('partials.user-chip')
@@ -214,8 +215,8 @@
                 </div>
                 <div id="empty-viewer" class="workflow-empty-doc" style="display:none">
                     <div class="workflow-empty-icon">📄</div>
-                    <strong>Dokumen belum tersedia</strong>
-                    <div style="margin-top:5px;font-size:12px">Berkas tidak dapat ditampilkan.</div>
+                    <strong>Lampiran tidak tersedia</strong>
+                    <div style="margin-top:5px;font-size:12px">File dokumen tidak ditemukan pada penyimpanan server.</div>
                 </div>
             </div>
 
@@ -243,18 +244,29 @@
                         @php
                             $ext = strtolower(pathinfo($dokumen->file_original_name, PATHINFO_EXTENSION));
                             $isPdf = $ext === 'pdf';
-                            $status = $dokumen->status ?? 'belum_dicek';
+
+                            $currentStage = $permohonan->current_stage;
+
+                            $currentReview = $dokumen->documentReviews
+                                ->firstWhere('stage', $currentStage);
+
+                            $status = $currentReview?->status;
+                            $actionStatus = $status ?? 'belum_dicek';
+                            $fileAvailable = $documentFilesAvailable[$dokumen->id] ?? false;
+
+                            $reviewer = $currentReview?->reviewer;
                         @endphp
                         <button
                             type="button"
                             class="workflow-doc-item {{ $index === 0 ? 'active' : '' }}"
                             data-index="{{ $index }}"
                             data-id="{{ $dokumen->uuid }}"
-                            data-url="{{ route('dokumen.file', $dokumen->uuid) }}"
+                            data-url="{{ filled($dokumen->uuid) ? route('dokumen.file', ['uuid' => $dokumen->uuid]) : '' }}"
                             data-name="{{ $dokumen->persyaratan->nama ?? 'Dokumen' }}"
                             data-file="{{ $dokumen->file_original_name }}"
                             data-pdf="{{ $isPdf ? '1' : '0' }}"
-                            data-status="{{ $status }}"
+                            data-status="{{ $actionStatus }}"
+                            data-file-available="{{ $fileAvailable ? '1' : '0' }}"
                             data-replaced="{{ $dokumen->dokumenPengganti()->exists() ? '1' : '0' }}"
                         >
                             <span class="workflow-doc-num">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span>
@@ -263,13 +275,39 @@
                                 <span class="workflow-doc-file">{{ $dokumen->file_original_name }}</span>
                             </span>
                             @if($status === 'sesuai')
-                                <span class="workflow-status ok">Sesuai</span>
+                                <span class="workflow-status workflow-review-status ok">Sesuai</span>
                             @elseif($status === 'tidak_sesuai')
-                                <span class="workflow-status bad">Tidak sesuai</span>
+                                <span class="workflow-status workflow-review-status bad">Tidak sesuai</span>
+                            @elseif($status === 'belum_dicek')
+                                <span class="workflow-status workflow-review-status pending">Belum dicek</span>
+                            @elseif($status === null)
+                                <span class="workflow-status workflow-review-status pending">Belum ada data review</span>
                             @else
-                                <span class="workflow-status pending">Belum dicek</span>
+                                <span class="workflow-status workflow-review-status pending">Status review tidak dikenal</span>
+                            @endif
+                            @if($fileAvailable)
+                                <span class="workflow-status workflow-file-status pending">File tersedia</span>
+                            @else
+                                <span class="workflow-status workflow-file-status bad">Lampiran tidak tersedia</span>
                             @endif
                         </button>
+
+                        @if($currentReview)
+                            <div class="document-review-meta">
+                                Reviewer:
+                                <strong>{{ $reviewer?->name
+                                    ?? ($currentReview->reviewed_by !== null
+                                        ? 'Reviewer tidak tersedia'
+                                        : ($currentReview->status === 'belum_dicek'
+                                            ? 'Belum ditinjau'
+                                            : 'Reviewer tidak tercatat')) }}</strong>
+                                <br>
+                                {{ $currentReview->reviewed_at?->translatedFormat('d F Y H:i')
+                                    ?? ($currentReview->status === 'belum_dicek'
+                                        ? 'Belum ada waktu pemeriksaan'
+                                        : 'Waktu pemeriksaan tidak tercatat') }}
+                            </div>
+                        @endif
                     @empty
                         <div style="padding:22px 16px;color:#748798;font-size:12px">Belum ada dokumen yang dilampirkan.</div>
                     @endforelse
@@ -313,24 +351,7 @@
                 </div>
             </section>
 
-            @if($canComplete)
-                <section class="workflow-card">
-                    <div class="workflow-card-head">
-                        <div class="workflow-card-kicker">Finalisasi</div>
-                        <div class="workflow-card-title">Surat Disetujui</div>
-                    </div>
-                    <div class="workflow-actions">
-                        <p>Nomor surat: <strong>{{ $permohonan->nomor_surat }}</strong></p>
-                        <div class="workflow-actions-row">
-                            <a class="secondary-btn" href="{{ route('permohonan.preview', $permohonan) }}">Pratinjau / Cetak</a>
-                            <form method="POST" action="{{ route('workflow.complete', $permohonan) }}" onsubmit="return confirm('Tandai surat sudah diserahkan?')">
-                                @csrf @method('PATCH')
-                                <button class="btn-emerald" type="submit">Tandai selesai</button>
-                            </form>
-                        </div>
-                    </div>
-                </section>
-            @elseif($canAct)
+            @if($canAct)
                 <section class="workflow-card">
                     <div class="workflow-card-head">
                         <div class="workflow-card-kicker">Tindakan Tahap</div>
@@ -375,7 +396,7 @@
     const rotate = document.getElementById('rotate-doc');
     const reset = document.getElementById('reset-doc');
     const fullscreen = document.getElementById('fullscreen-doc');
-    const decisionForms = [...document.querySelectorAll('[data-decision-form]')];
+        const decisionForms = [...document.querySelectorAll('[data-decision-form]')];
     const canAct = decisionForms.length > 0;
 
     let currentIndex = docs.length ? 0 : -1;
@@ -395,10 +416,10 @@
 
     function updateStatusBadge(doc, status) {
         doc.dataset.status = status;
-        const old = doc.querySelector('.workflow-status');
+        const old = doc.querySelector('.workflow-review-status');
         if (old) old.remove();
         const badge = document.createElement('span');
-        badge.className = 'workflow-status ' + (status === 'sesuai' ? 'ok' : status === 'tidak_sesuai' ? 'bad' : 'pending');
+        badge.className = 'workflow-status workflow-review-status ' + (status === 'sesuai' ? 'ok' : status === 'tidak_sesuai' ? 'bad' : 'pending');
         badge.textContent = statusLabel(status);
         doc.appendChild(badge);
     }
@@ -423,7 +444,11 @@
         pdfWrap.style.display = 'none';
         empty.style.display = 'none';
 
-        if (isPdf) {
+        if (doc.dataset.fileAvailable !== '1') {
+            image.removeAttribute('src');
+            pdf.src = 'about:blank';
+            empty.style.display = 'flex';
+        } else if (isPdf) {
             pdf.src = url;
             pdfWrap.style.display = 'block';
         } else {

@@ -143,6 +143,48 @@
                 height: 5px;
             }
 
+            .witness-signature-space {
+                height: 20mm;
+                flex-shrink: 0;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .declaration-signature {
+                width: 62mm;
+                margin: 4mm 0 4mm auto;
+                text-align: center;
+                font-size: 10.5pt;
+                line-height: 1.48;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .declaration-signature-space {
+                height: 20mm;
+            }
+
+            .witness-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                column-gap: 12mm;
+                row-gap: 5mm;
+                margin-top: 2mm;
+            }
+
+            .witness-card {
+                min-height: 34mm;
+                display: flex;
+                flex-direction: column;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .witness-name {
+                font-size: 10.5pt;
+                line-height: 1.4;
+            }
+
             .page-break {
                 break-before: page;
                 page-break-before: always;
@@ -271,11 +313,276 @@
                 .letter-paragraph {
                     font-size: 11pt;
                 }
+
+                .signature-date-row {
+                    margin: 4mm 0 3mm;
+                    text-align: right;
+                    font-size: 10.5pt;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+
+                .tte-signatures {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                    column-gap: 12mm;
+                    row-gap: 6mm;
+                    align-items: start;
+                    margin-top: 4mm;
+                }
+
+                .signer-block {
+                    min-width: 0;
+                    text-align: center;
+                    font-size: 8.5pt;
+                    line-height: 1.3;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+
+                .signer-block.lurah-only {
+                    grid-column: 2;
+                }
+
+                .signer-block.camat-after-lurah {
+                    grid-column: 2;
+                }
+
+                .signer-space {
+                    height: 16mm;
+                }
+
+                .tte-qr {
+                    width: 24mm;
+                    height: 24mm;
+                    margin: 2mm auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .tte-qr canvas,
+                .tte-qr img {
+                    display: block;
+                    width: 24mm !important;
+                    height: 24mm !important;
+                    margin: 0 auto;
+                }
+
+                .signer-name {
+                    font-weight: 700;
+                    overflow-wrap: anywhere;
+                }
+
+                .signer-note {
+                    margin-top: 1mm;
+                    font-size: 7pt;
+                    font-style: italic;
+                }
+
+                @media print {
+                    .tte-signatures,
+                    .signer-block,
+                    .signature-date-row {
+                        break-inside: avoid;
+                        page-break-inside: avoid;
+                    }
+
+                    .paper {
+                        height: auto;
+                        min-height: 345mm;
+                        overflow: visible;
+                    }
+                }
             }
         </style>
     </head>
 
     <body>
+        $alurTte = $permohonan->layanan->alur_tte ?? 'tanpa_tte';
+        $layananId = (int) $permohonan->layanan_id;
+
+        $kelurahanName = $permohonan->kelurahan?->nama
+            ?? '[NAMA KELURAHAN BELUM DIISI]';
+
+        $lurahName = $permohonan->kelurahan?->nama_lurah
+            ?? '[NAMA LURAH BELUM DIISI]';
+
+        $lurahNip = $permohonan->kelurahan?->nip_lurah
+            ?? '[NIP LURAH BELUM DIISI]';
+
+        $camatName = config(
+            'penandatangan.nama',
+            '[NAMA CAMAT BELUM DIISI]'
+        );
+
+        $camatNip = config(
+            'penandatangan.nip',
+            '[NIP CAMAT BELUM DIISI]'
+        );
+
+        $camatJabatan = config(
+            'penandatangan.jabatan',
+            'CAMAT MAGELANG UTARA'
+        );
+
+        $verificationUrl = route(
+            'verifikasi.show',
+            $permohonan->nomor_surat
+        );
+
+        $formData = $permohonan->data_surat ?? [];
+
+        if (is_string($formData)) {
+            $formData = json_decode($formData, true) ?: [];
+        }
+
+        if (!is_array($formData)) {
+            $formData = [];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Persiapan blok tanda tangan
+        |--------------------------------------------------------------------------
+        */
+
+        $signatureDate = null;
+        $signatureHasApplicant = false;
+        $signatureApplicantTitle = 'Pemohon';
+        $signatureApplicantName = $permohonan->nama_lengkap ?? '';
+
+        $suratUntukRender = $surat;
+        $suratLines = preg_split(
+            "/\r\n|\r|\n/",
+            (string) $surat
+        );
+
+        $dateIndex = null;
+
+        /* Cari baris tanggal surat. */
+        foreach ($suratLines as $index => $line) {
+            if (preg_match('/^Magelang,\s*.+$/u', trim($line))) {
+                $dateIndex = $index;
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Surat beda nama:
+        | Pertahankan area tanda tangan warga/RT/RW di isi surat,
+        | tetapi pindahkan blok Lurah dari isi surat ke blok TTE.
+        |--------------------------------------------------------------------------
+        */
+
+        if ($layananId === 10 && $dateIndex !== null) {
+            for ($i = $dateIndex + 1; $i < count($suratLines); $i++) {
+                if (preg_match('/^(?:LURAH|Lurah)\s+/u', trim($suratLines[$i]))) {
+                    $suratUntukRender = implode(
+                        "\n",
+                        array_slice($suratLines, 0, $i)
+                    );
+
+                    break;
+                }
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Surat dengan blok tanda tangan standar
+        |--------------------------------------------------------------------------
+        |
+        | ID 3 mendapat blok Pemohon + Lurah sesuai kebutuhan yang lu sebutkan.
+        | Surat ID 2 dan ID 7 tidak diproses oleh aturan ini.
+        */
+
+        $standardSignatureServices = [1, 3, 4, 5, 6, 11, 14, 15, 16];
+
+        if (
+            in_array($layananId, $standardSignatureServices, true)
+            && in_array($alurTte, ['lurah_saja', 'lurah_dan_camat'], true)
+            && $dateIndex !== null
+        ) {
+            $tailLines = array_values(array_filter(
+                array_map(
+                    'trim',
+                    array_slice($suratLines, $dateIndex + 1)
+                ),
+                fn ($line) => $line !== ''
+            ));
+
+            $hasLurahBlock = false;
+            $hasNipBlock = false;
+
+            foreach ($tailLines as $line) {
+                if (preg_match('/^(?:LURAH|Lurah)\s+/u', $line)) {
+                    $hasLurahBlock = true;
+                }
+
+                if (preg_match('/^NIP\./iu', $line)) {
+                    $hasNipBlock = true;
+                }
+            }
+
+            /*
+            * Jangan memindahkan isi surat jika bentuk penandatanganannya
+            * tidak sesuai dengan pola yang dikenali.
+            */
+            if ($hasLurahBlock && $hasNipBlock) {
+                $signatureDate = trim($suratLines[$dateIndex]);
+
+                for ($i = 0; $i < count($tailLines); $i++) {
+                    if (in_array(
+                        $tailLines[$i],
+                        ['Pemohon', 'Mempelai Perempuan'],
+                        true
+                    )) {
+                        $signatureHasApplicant = true;
+                        $signatureApplicantTitle = $tailLines[$i];
+
+                        if (isset($tailLines[$i + 1])) {
+                            $signatureApplicantName = $tailLines[$i + 1];
+                        }
+
+                        break;
+                    }
+                }
+
+                /*
+                * Nama calon perempuan pada template lama menggunakan placeholder
+                * yang berbeda dari key form. Gunakan nilai form sebagai fallback.
+                */
+                if (
+                    $layananId === 16
+                    && str_contains($signatureApplicantName, '{'.'{')
+                ) {
+                    $signatureApplicantName =
+                        $formData['nama_calon_mempelai_perempuan']
+                        ?? $formData['nama_calon_wanita']
+                        ?? '';
+                }
+
+                /*
+                * Surat domisili: tambahkan area tanda tangan pemohon
+                * di sebelah kiri area TTE Lurah.
+                */
+                if ($layananId === 3) {
+                    $signatureHasApplicant = true;
+                    $signatureApplicantTitle = 'Pemohon';
+                    $signatureApplicantName = $permohonan->nama_lengkap ?? '';
+                }
+
+                /*
+                * Baris tanggal dan tanda tangan standar dipindahkan ke layout
+                * tanda tangan di bawah isi surat.
+                */
+                $suratUntukRender = implode(
+                    "\n",
+                    array_slice($suratLines, 0, $dateIndex)
+                );
+            }
+        }
 
         @php
             /*
@@ -289,6 +596,8 @@
 
                 $html = '';
                 $tableOpen = false;
+                $specialBlock = null;
+                $specialLines = [];
 
                 $closeTable = function () use (&$html, &$tableOpen): void {
                     if ($tableOpen) {
@@ -299,6 +608,76 @@
 
                 foreach ($lines as $line) {
                     $line = trim($line);
+                    if (in_array($line, [
+                        '[[DECLARANT_SIGNATURE_BEGIN]]',
+                        '[[WITNESS_GRID_BEGIN]]',
+                    ], true)) {
+                        $closeTable();
+
+                        $specialBlock = $line === '[[DECLARANT_SIGNATURE_BEGIN]]'
+                            ? 'declarant'
+                            : 'witnesses';
+
+                        $specialLines = [];
+                        continue;
+                    }
+
+                    if (
+                        ($line === '[[DECLARANT_SIGNATURE_END]]' && $specialBlock === 'declarant') ||
+                        ($line === '[[WITNESS_GRID_END]]' && $specialBlock === 'witnesses')
+                    ) {
+                        $closeTable();
+
+                        if ($specialBlock === 'declarant') {
+                            $html .= '<div class="declaration-signature">';
+
+                            foreach ($specialLines as $specialLine) {
+                                if ($specialLine === '') {
+                                    continue;
+                                }
+
+                                if ($specialLine === '[[RUANG_TTD_PERNYATAAN]]') {
+                                    $html .= '<div class="declaration-signature-space" aria-hidden="true"></div>';
+                                } else {
+                                    $html .= '<div>' . e($specialLine) . '</div>';
+                                }
+                            }
+
+                            $html .= '</div>';
+                        } else {
+                            $html .= '<div class="witness-grid">';
+
+                            foreach ($specialLines as $specialLine) {
+                                if ($specialLine === '') {
+                                    continue;
+                                }
+
+                                $html .= '<div class="witness-card">';
+                                $html .= '<div class="witness-signature-space" aria-hidden="true"></div>';
+                                $html .= '<div class="witness-name">' . e($specialLine) . '</div>';
+                                $html .= '</div>';
+                            }
+
+                            $html .= '</div>';
+                        }
+
+                        $specialBlock = null;
+                        $specialLines = [];
+                        continue;
+                    }
+
+                    if ($specialBlock !== null) {
+                        $specialLines[] = $line;
+                        continue;
+                    }
+
+                    if ($line === '[[RUANG_TTD_SAKSI]]') {
+                        $closeTable();
+
+                        $html .= '<div class="witness-signature-space" aria-hidden="true"></div>';
+
+                        continue;
+                    }
 
                     if ($line === '[[HALAMAN_BARU]]') {
                         $closeTable();
@@ -443,17 +822,107 @@
             <div class="isi">
                 {!! $renderSuratContent($surat) !!}
             </div>
-            <div class="signature">
-                <div>Pada tanggal {{ $permohonan->diproses_at?->translatedFormat('d F Y') ?? now()->translatedFormat('d F Y') }}</div>
-                @if(config('penandatangan.atasan'))
-                <div>a.n. {{ config('penandatangan.atasan') }}</div>
-                @endif
-                <div>{{ strtoupper(config('penandatangan.jabatan')) }}</div>
-                <div id="tte-qr" style="margin:3mm auto;width:fit-content"></div>
-                <div class="nama-pejabat">{{ config('penandatangan.nama') }}</div>
-                <div>Ditandatangani secara elektronik</div>
-            </div>
+            @if($signatureDate)
+                <div class="signature-date-row">
+                    {{ $signatureDate }}
+                </div>
+            @endif
+
+            @if(in_array($alurTte, ['lurah_saja', 'lurah_dan_camat'], true))
+                <div class="tte-signatures">
+
+                    @if($signatureHasApplicant)
+                        <div class="signer-block applicant-signature">
+                            <div>{{ $signatureApplicantTitle }}</div>
+                            <div class="signer-space"></div>
+                            <div class="signer-name">
+                                {{ $signatureApplicantName }}
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- TTE Lurah --}}
+                    <div class="signer-block signer-lurah
+                        {{ !$signatureHasApplicant && $alurTte === 'lurah_saja' ? 'lurah-only' : '' }}">
+
+                        <div>
+                            LURAH {{ $kelurahanName }}
+                        </div>
+
+                        <div id="tte-qr-lurah" class="tte-qr"></div>
+
+                        <div class="signer-name">
+                            {{ $lurahName }}
+                        </div>
+
+                        <div>NIP. {{ $lurahNip }}</div>
+
+                        <div class="signer-note">
+                            Simulasi TTE Lurah
+                        </div>
+                    </div>
+
+                    {{-- TTE Camat hanya untuk layanan lurah_dan_camat --}}
+                    @if($alurTte === 'lurah_dan_camat')
+                        <div class="signer-block signer-camat
+                            {{ $signatureHasApplicant ? 'camat-after-lurah' : '' }}">
+
+                            @if(config('penandatangan.atasan'))
+                                <div>
+                                    a.n. {{ config('penandatangan.atasan') }}
+                                </div>
+                            @endif
+
+                            <div>
+                                {{ $camatJabatan }}
+                            </div>
+
+                            <div id="tte-qr-camat" class="tte-qr"></div>
+
+                            <div class="signer-name">
+                                {{ $camatName }}
+                            </div>
+
+                            <div>NIP. {{ $camatNip }}</div>
+
+                            <div class="signer-note">
+                                Simulasi TTE Camat
+                            </div>
+                        </div>
+                    @endif
+
+                </div>
+
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+                <script>
+                    const verificationUrl = @json($verificationUrl);
+
+                    const qrLurah = document.getElementById('tte-qr-lurah');
+
+                    if (qrLurah) {
+                        new QRCode(qrLurah, {
+                            text: verificationUrl,
+                            width: 90,
+                            height: 90
+                        });
+                    }
+
+                    @if($alurTte === 'lurah_dan_camat')
+                        const qrCamat = document.getElementById('tte-qr-camat');
+
+                        if (qrCamat) {
+                            new QRCode(qrCamat, {
+                                text: verificationUrl,
+                                width: 90,
+                                height: 90
+                            });
+                        }
+                    @endif
+                </script>
+            @endif
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+            @if($permohonan->layanan->alur_tte !== 'tanpa_tte')
             <script>
                 new QRCode(document.getElementById("tte-qr"), {
                     text: "{{ route('verifikasi.show', $permohonan->nomor_surat) }}",
@@ -461,6 +930,7 @@
                     height: 90
                 });
             </script>
+            @endif
         </div>
         @else
         <div

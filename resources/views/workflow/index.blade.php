@@ -42,7 +42,10 @@
                     <tr>
                         <td>#{{ str_pad($permohonan->id, 4, '0', STR_PAD_LEFT) }}</td>
                         <td>{{ $permohonan->nama_lengkap }}</td>
-                        <td>{{ $permohonan->layanan->nama }}</td>
+                        <td>
+                            {{ $permohonan->layanan->nama }}<br>
+                            @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
+                        </td>
                         <td>{{ $permohonan->kelurahan->nama ?? '—' }}</td>
                         <td>{{ str_replace('_', ' ', ucfirst($permohonan->current_stage)) }}</td>
                         <td><a class="table-link" href="{{ route('workflow.show', $permohonan) }}">Tinjau →</a></td>
@@ -68,36 +71,15 @@
                         <tr>
                             <td>#{{ str_pad($permohonan->id, 4, '0', STR_PAD_LEFT) }}</td>
                             <td>{{ $permohonan->nama_lengkap }}</td>
-                            <td>{{ $permohonan->layanan->nama }}</td>
+                            <td>
+                                {{ $permohonan->layanan->nama }}<br>
+                                @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
+                            </td>
                             <td>{{ ucfirst($permohonan->status) }}</td>
                             <td><a class="table-link" href="{{ route('workflow.show', $permohonan) }}">Lihat →</a></td>
                         </tr>
                     @empty
                         <tr><td colspan="5">Belum ada permohonan selesai tanpa TTE pejabat.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    @endif
-
-    @if($completedPending)
-        <section class="section-box">
-            <h2>Surat disetujui, menunggu penyerahan</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>No.</th><th>Pemohon</th><th>Layanan</th><th>Kelurahan</th><th></th></tr></thead>
-                    <tbody>
-                    @forelse($completedPending as $permohonan)
-                        <tr>
-                            <td>#{{ str_pad($permohonan->id, 4, '0', STR_PAD_LEFT) }}</td>
-                            <td>{{ $permohonan->nama_lengkap }}</td>
-                            <td>{{ $permohonan->layanan->nama }}</td>
-                            <td>{{ $permohonan->kelurahan->nama ?? '—' }}</td>
-                            <td><a class="table-link" href="{{ route('workflow.show', $permohonan) }}">Selesaikan →</a></td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">Tidak ada surat yang menunggu diserahkan.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

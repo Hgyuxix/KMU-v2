@@ -44,9 +44,7 @@
                 <div class="eyebrow">Layanan {{ $layanan->id }}</div>
                 <h1>{{ $layanan->nama }}</h1>
                 <p class="lead">{{ $layanan->deskripsi }}</p>
-                @if($layanan->tte)
-                <span class="badge">✓ Diproses dengan Tanda Tangan Elektronik</span>
-                @endif
+                @include('partials.tte-badge', ['layanan' => $layanan])
                 <h2 style="font-size:18px;margin:24px 0 8px">Persyaratan</h2>
                 <div class="req-list">
                     @foreach($layanan->persyaratans as $index => $persyaratan)
@@ -62,7 +60,11 @@
                     </div>
                     @endforeach
                 </div>
-                <a class="primary-btn" href="{{ route('permohonan.create', $layanan) }}">Lanjutkan Pengajuan →</a>
+                @if(auth()->user()?->role === 'fo')
+                    <a class="primary-btn" href="{{ route('permohonan.create', $layanan) }}">
+                        Lanjutkan Pengajuan →
+                    </a>
+                @endif
             </section>
         </main>
     </body>

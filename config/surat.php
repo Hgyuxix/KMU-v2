@@ -4,10 +4,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | 1. Surat Keterangan Tidak Mampu
+    | 1. SURAT KETERANGAN TIDAK MAMPU
     |--------------------------------------------------------------------------
     */
     1 => [
+
         'jenis_kelamin' => [
             'label' => 'Jenis Kelamin',
             'type' => 'select',
@@ -16,6 +17,78 @@ return [
                 'Perempuan',
             ],
         ],
+
+        'tempat_lahir' => [
+            'label' => 'Tempat Lahir',
+            'type' => 'text',
+        ],
+
+        'status' => [
+            'label' => 'Status',
+            'type' => 'select',
+            'options' => [
+                'Belum Kawin',
+                'Kawin',
+                'Cerai Hidup',
+                'Cerai Mati',
+            ],
+        ],
+
+        'agama' => [
+            'label' => 'Agama',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan' => [
+            'label' => 'Pekerjaan',
+            'type' => 'text',
+        ],
+
+        'alamat' => [
+            'label' => 'Alamat',
+            'type' => 'textarea',
+        ],
+
+        'kota' => [
+            'label' => 'Kota',
+            'type' => 'text',
+        ],
+
+        'keperluan' => [
+            'label' => 'Keperluan',
+            'type' => 'textarea',
+        ],
+
+        'berlaku_mulai' => [
+            'label' => 'Berlaku Mulai',
+            'type' => 'date',
+        ],
+
+        'berlaku_sampai' => [
+            'label' => 'Berlaku Sampai',
+            'type' => 'date',
+        ],
+
+        'keterangan_lain' => [
+            'label' => 'Keterangan Lain-lain',
+            'type' => 'textarea',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. SURAT PERNYATAAN BELUM MENIKAH
+    |--------------------------------------------------------------------------
+    */
+    2 => [
 
         'tempat_lahir' => [
             'label' => 'Tempat Lahir',
@@ -45,42 +118,56 @@ return [
             'type' => 'textarea',
         ],
 
-        'keperluan' => [
-            'label' => 'Keperluan Surat',
-            'type' => 'textarea',
+        'status_pernyataan' => [
+            'label' => 'Status Pernyataan',
+            'type' => 'select',
+            'options' => [
+                'JEJAKA',
+                'PERAWAN',
+            ],
+        ],
+
+        'saksi_1' => [
+            'label' => 'Saksi 1',
+            'type' => 'text',
+        ],
+
+        'saksi_2' => [
+            'label' => 'Saksi 2',
+            'type' => 'text',
+        ],
+
+        'saksi_3' => [
+            'label' => 'Saksi 3',
+            'type' => 'text',
+        ],
+
+        'saksi_4' => [
+            'label' => 'Saksi 4',
+            'type' => 'text',
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 2. Surat Keterangan Belum Menikah
-    |--------------------------------------------------------------------------
-    */
-    2 => [
-        'keperluan' => [
-            'label' => 'Keperluan Surat',
-            'type' => 'textarea',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | 3. Surat Keterangan Domisili
+    | 3. SURAT KETERANGAN DOMISILI
     |--------------------------------------------------------------------------
     */
     3 => [
+
         'keperluan' => [
-            'label' => 'Keperluan Surat',
+            'label' => 'Keperluan',
             'type' => 'textarea',
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 4. Surat Pengantar Permohonan Cerai
+    | 4. SURAT PENGANTAR CERAI
     |--------------------------------------------------------------------------
     */
     4 => [
+
         'nama_pasangan' => [
             'label' => 'Nama Suami / Istri',
             'type' => 'text',
@@ -94,27 +181,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | 5. Santunan Kematian
+    | 5. SURAT PENGANTAR SANTUNAN KEMATIAN
     |--------------------------------------------------------------------------
     */
     5 => [
+
         'jenis_kelamin' => [
-            'label' => 'Jenis kelamin ahli waris',
+            'label' => 'Jenis Kelamin',
             'type' => 'select',
-            'options' => ['Laki-laki', 'Perempuan'],
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
         ],
+
         'tempat_lahir' => [
-            'label' => 'Tempat lahir ahli waris',
+            'label' => 'Tempat Lahir',
             'type' => 'text',
         ],
+
         'pekerjaan' => [
-            'label' => 'Pekerjaan ahli waris',
+            'label' => 'Pekerjaan',
             'type' => 'text',
         ],
+
         'alamat' => [
-            'label' => 'Alamat ahli waris',
+            'label' => 'Alamat',
             'type' => 'textarea',
         ],
+
         'nama_almarhum' => [
             'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
@@ -133,10 +228,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | 6. Surat Kuasa Pengambilan Pensiun
+    | 6. SURAT KUASA PENGAMBILAN PENSIUN
     |--------------------------------------------------------------------------
     */
     6 => [
+
         'nama_pemberi_kuasa' => [
             'label' => 'Nama Pemberi Kuasa',
             'type' => 'text',
@@ -155,13 +251,66 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | 7. Surat Keterangan Penghasilan
+    | 7. SURAT KETERANGAN PENGHASILAN ORANG TUA
     |--------------------------------------------------------------------------
     */
     7 => [
-        'pekerjaan' => [
-            'label' => 'Pekerjaan',
+
+        'nik_orang_tua' => [
+            'label' => 'NIK Orang Tua / Wali',
             'type' => 'text',
+        ],
+
+        'tempat_lahir_orang_tua' => [
+            'label' => 'Tempat Lahir Orang Tua / Wali',
+            'type' => 'text',
+        ],
+
+        'tanggal_lahir_orang_tua' => [
+            'label' => 'Tanggal Lahir Orang Tua / Wali',
+            'type' => 'date',
+        ],
+
+        'agama_orang_tua' => [
+            'label' => 'Agama Orang Tua / Wali',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan' => [
+            'label' => 'Pekerjaan Orang Tua / Wali',
+            'type' => 'text',
+        ],
+
+        'alamat_orang_tua' => [
+            'label' => 'Alamat Orang Tua / Wali',
+            'type' => 'textarea',
+        ],
+
+        'nama_anak' => [
+            'label' => 'Nama Anak',
+            'type' => 'text',
+        ],
+
+        'jenis_kelamin_anak' => [
+            'label' => 'Jenis Kelamin Anak',
+            'type' => 'select',
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
+        ],
+
+        'alamat_anak' => [
+            'label' => 'Alamat Anak',
+            'type' => 'textarea',
         ],
 
         'penghasilan_per_bulan' => [
@@ -169,76 +318,33 @@ return [
             'type' => 'text',
         ],
 
-        'sumber_penghasilan' => [
-            'label' => 'Sumber Penghasilan',
-            'type' => 'text',
+        'keperluan' => [
+            'label' => 'Keperluan',
+            'type' => 'textarea',
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 8. Surat Keterangan Izin Penggunaan Tanah
+    | 8. NONAKTIF — FORM CLIENT BELUM TERSEDIA
     |--------------------------------------------------------------------------
     */
-    8 => [
-        'nama_pemilik_tanah' => [
-            'label' => 'Nama Pemilik Tanah',
-            'type' => 'text',
-        ],
-
-        'nik_pemilik_tanah' => [
-            'label' => 'NIK Pemilik Tanah',
-            'type' => 'text',
-        ],
-
-        'lokasi_tanah' => [
-            'label' => 'Lokasi Tanah',
-            'type' => 'textarea',
-        ],
-
-        'nomor_bukti_tanah' => [
-            'label' => 'Nomor Bukti Kepemilikan Tanah',
-            'type' => 'text',
-        ],
-
-        'keperluan_penggunaan' => [
-            'label' => 'Keperluan Penggunaan Tanah',
-            'type' => 'textarea',
-        ],
-    ],
+    8 => [],
 
     /*
     |--------------------------------------------------------------------------
-    | 9. Surat Keterangan Janda / Duda
+    | 9. NONAKTIF — FORM CLIENT BELUM TERSEDIA
     |--------------------------------------------------------------------------
     */
-    9 => [
-        'nama_pasangan' => [
-            'label' => 'Nama Pasangan',
-            'type' => 'text',
-        ],
-
-        'status_janda_duda' => [
-            'label' => 'Status',
-            'type' => 'select',
-            'options' => [
-                'Janda',
-                'Duda',
-            ],
-        ],
-
-        'sebab' => [
-            'label' => 'Sebab',
-            'type' => 'textarea',
-        ],
-    ],
+    9 => [],
 
     /*
     |--------------------------------------------------------------------------
-    | 10. Surat Keterangan Beda Nama
+    | 10. SURAT PERNYATAAN BEDA NAMA
     |--------------------------------------------------------------------------
     */
     10 => [
+
         'nama_lain' => [
             'label' => 'Nama pada Dokumen Lain',
             'type' => 'text',
@@ -253,21 +359,27 @@ return [
             'label' => 'Nama yang Benar',
             'type' => 'text',
         ],
+
+        'nomor_dokumen_perbedaan' => [
+            'label' => 'Nomor Dokumen',
+            'type' => 'text',
+        ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 11. Surat Keterangan Usaha
+    | 11. SURAT KETERANGAN USAHA
     |--------------------------------------------------------------------------
     */
     11 => [
+
         'nama_usaha' => [
             'label' => 'Nama Usaha',
             'type' => 'text',
         ],
 
-        'jenis_usaha' => [
-            'label' => 'Jenis Usaha',
+        'lama_usaha' => [
+            'label' => 'Lama Menjalankan Usaha',
             'type' => 'text',
         ],
 
@@ -276,64 +388,60 @@ return [
             'type' => 'textarea',
         ],
 
-        'tanggal_berdiri_usaha' => [
-            'label' => 'Tanggal Berdiri Usaha',
+        'nomor_surat_rt_rw' => [
+            'label' => 'Nomor Surat RT/RW',
+            'type' => 'text',
+        ],
+
+        'tanggal_surat_rt_rw' => [
+            'label' => 'Tanggal Surat RT/RW',
             'type' => 'date',
         ],
-    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | 12. Surat Pengantar Persyaratan Pendaftaran TNI / Polri
-    |--------------------------------------------------------------------------
-    */
-    12 => [
-        'jenis_pendaftaran' => [
-            'label' => 'Jenis Pendaftaran',
-            'type' => 'select',
-            'options' => [
-                'TNI',
-                'Polri',
-            ],
-        ],
-
-        'nama_instansi' => [
-            'label' => 'Instansi Tujuan',
-            'type' => 'text',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | 13. Surat Keterangan Persyaratan Pembetulan Sertifikat
-    |--------------------------------------------------------------------------
-    */
-    13 => [
-        'nomor_sertifikat' => [
-            'label' => 'Nomor Sertifikat',
-            'type' => 'text',
-        ],
-
-        'jenis_kesalahan' => [
-            'label' => 'Jenis / Keterangan Kesalahan',
-            'type' => 'textarea',
-        ],
-
-        'data_seharusnya' => [
-            'label' => 'Data yang Seharusnya',
+        'keperluan' => [
+            'label' => 'Keperluan',
             'type' => 'textarea',
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 14. Surat Keterangan Ahli Waris
+    | 12. NONAKTIF — FORM CLIENT BELUM TERSEDIA
+    |--------------------------------------------------------------------------
+    */
+    12 => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | 13. NONAKTIF — FORM CLIENT BELUM TERSEDIA
+    |--------------------------------------------------------------------------
+    */
+    13 => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | 14. SURAT KETERANGAN AHLI WARIS
     |--------------------------------------------------------------------------
     */
     14 => [
+
         'nama_almarhum' => [
             'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
+        ],
+
+        'jenis_kelamin_almarhum' => [
+            'label' => 'Jenis Kelamin Almarhum / Almarhumah',
+            'type' => 'select',
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
+        ],
+
+        'alamat_almarhum' => [
+            'label' => 'Alamat Almarhum / Almarhumah',
+            'type' => 'textarea',
         ],
 
         'tanggal_meninggal' => [
@@ -341,71 +449,202 @@ return [
             'type' => 'date',
         ],
 
-        'jumlah_ahli_waris' => [
-            'label' => 'Jumlah Ahli Waris',
-            'type' => 'number',
+        'nomor_surat_kematian' => [
+            'label' => 'Nomor Surat Keterangan Kematian',
+            'type' => 'text',
+        ],
+
+        'tanggal_surat_kematian' => [
+            'label' => 'Tanggal Surat Keterangan Kematian',
+            'type' => 'date',
+        ],
+
+        'ahli_waris' => [
+            'label' => 'Data Ahli Waris',
+            'type' => 'textarea',
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | 15. Surat Keterangan Wali Nikah / Hakim
+    | 15. SURAT KETERANGAN WALI NIKAH
     |--------------------------------------------------------------------------
     */
     15 => [
+
+        'nama_wali' => [
+            'label' => 'Nama Wali',
+            'type' => 'text',
+        ],
+
+        'tempat_lahir_wali' => [
+            'label' => 'Tempat Lahir Wali',
+            'type' => 'text',
+        ],
+
+        'tanggal_lahir_wali' => [
+            'label' => 'Tanggal Lahir Wali',
+            'type' => 'date',
+        ],
+
+        'agama_wali' => [
+            'label' => 'Agama Wali',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan_wali' => [
+            'label' => 'Pekerjaan Wali',
+            'type' => 'text',
+        ],
+
+        'alamat_wali' => [
+            'label' => 'Tempat Tinggal Wali',
+            'type' => 'textarea',
+        ],
+
         'nama_calon_mempelai' => [
             'label' => 'Nama Calon Mempelai',
             'type' => 'text',
         ],
 
-        'nama_wali' => [
-            'label' => 'Nama Wali Nikah',
+        'tempat_lahir_calon' => [
+            'label' => 'Tempat Lahir Calon Mempelai',
             'type' => 'text',
         ],
 
-        'alasan_wali_hakim' => [
-            'label' => 'Alasan Penggunaan Wali Hakim',
+        'tanggal_lahir_calon' => [
+            'label' => 'Tanggal Lahir Calon Mempelai',
+            'type' => 'date',
+        ],
+
+        'agama_calon' => [
+            'label' => 'Agama Calon Mempelai',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan_calon' => [
+            'label' => 'Pekerjaan Calon Mempelai',
+            'type' => 'text',
+        ],
+
+        'alamat_calon' => [
+            'label' => 'Tempat Tinggal Calon Mempelai',
             'type' => 'textarea',
+        ],
+
+        'hubungan_wali' => [
+            'label' => 'Hubungan Wali',
+            'type' => 'text',
         ],
     ],
 
-    /* Form terpisah sesuai dokumen sumber Form Santunan Kematian.docx. */
+    /*
+    |--------------------------------------------------------------------------
+    | 16. SURAT KETERANGAN WALI HAKIM / FORM BARU
+    |--------------------------------------------------------------------------
+    */
     16 => [
-        'alamat' => [
-            'label' => 'Alamat ahli waris',
-            'type' => 'textarea',
-        ],
-        'no_telp' => [
-            'label' => 'Nomor telepon / HP ahli waris',
-            'type' => 'text',
-        ],
-        'nama_almarhum' => [
-            'label' => 'Nama almarhum / almarhumah',
-            'type' => 'text',
-        ],
-        'nik_almarhum' => [
-            'label' => 'NIK almarhum / almarhumah',
-            'type' => 'text',
-        ],
-        'tanggal_lahir_almarhum' => [
-            'label' => 'Tempat dan tanggal lahir almarhum / almarhumah',
-            'type' => 'text',
-        ],
-        'alamat_almarhum' => [
-            'label' => 'Alamat almarhum / almarhumah',
-            'type' => 'textarea',
-        ],
-        'tempat_meninggal' => [
-            'label' => 'Tempat meninggal',
-            'type' => 'text',
-        ],
-        'tanggal_meninggal' => [
-            'label' => 'Tanggal meninggal',
+
+        'tanggal_pernikahan' => [
+            'label' => 'Tanggal Pernikahan',
             'type' => 'date',
         ],
-        'hubungan_ahli_waris' => [
-            'label' => 'Hubungan ahli waris dengan almarhum / almarhumah',
+
+        'alasan_wali_hakim' => [
+            'label' => 'Alasan Menggunakan Wali Hakim',
+            'type' => 'textarea',
+        ],
+
+        'nama_calon_mempelai_perempuan' => [
+            'label' => 'Nama Calon Mempelai Perempuan',
             'type' => 'text',
+        ],
+
+        'nama_ayah_calon' => [
+            'label' => 'Nama Ayah Calon Mempelai',
+            'type' => 'text',
+        ],
+
+        'umur_calon_perempuan' => [
+            'label' => 'Umur Calon Mempelai Perempuan',
+            'type' => 'number',
+        ],
+
+        'agama_calon_perempuan' => [
+            'label' => 'Agama Calon Mempelai Perempuan',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan_calon_perempuan' => [
+            'label' => 'Pekerjaan Calon Mempelai Perempuan',
+            'type' => 'text',
+        ],
+
+        'alamat_calon_perempuan' => [
+            'label' => 'Tempat Tinggal Calon Mempelai Perempuan',
+            'type' => 'textarea',
+        ],
+
+        'nama_calon_mempelai_laki' => [
+            'label' => 'Nama Calon Mempelai Laki-laki',
+            'type' => 'text',
+        ],
+
+        'nama_ayah_calon_laki' => [
+            'label' => 'Nama Ayah Calon Mempelai Laki-laki',
+            'type' => 'text',
+        ],
+
+        'umur_calon_laki' => [
+            'label' => 'Umur Calon Mempelai Laki-laki',
+            'type' => 'number',
+        ],
+
+        'agama_calon_laki' => [
+            'label' => 'Agama Calon Mempelai Laki-laki',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan_calon_laki' => [
+            'label' => 'Pekerjaan Calon Mempelai Laki-laki',
+            'type' => 'text',
+        ],
+
+        'alamat_calon_laki' => [
+            'label' => 'Tempat Tinggal Calon Mempelai Laki-laki',
+            'type' => 'textarea',
         ],
     ],
 

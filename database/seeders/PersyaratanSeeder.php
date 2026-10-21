@@ -12,232 +12,537 @@ class PersyaratanSeeder extends Seeder
     {
         $data = [
 
+            // =====================================================
             // 1. SKTM
-            'Surat Keterangan Tidak Mampu (SKTM/PIP/KIS)' => [
-                ['nama' => 'Fotokopi KTP pemohon', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
-                ['nama' => 'Fotokopi kartu program bantuan sosial (PKH/KKS/BPNT atau sejenisnya)', 'wajib' => false],
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Tidak Mampu (SKTM/PIP/KIS)',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu bantuan sosial jika ada',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 2. Belum Menikah
-            'Surat Keterangan Belum Menikah' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
+            // =====================================================
+            // 2. BELUM MENIKAH
+            // =====================================================
+            [
+                'layanan' => 'Surat Pernyataan Belum Menikah',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 3. Domisili
-            'Surat Keterangan Domisili' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
+            // =====================================================
+            // 3. DOMISILI
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Domisili',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 4. Cerai
-            'Surat Pengantar Permohonan Cerai' => [
-                ['nama' => 'Fotokopi KTP suami dan/atau istri', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Fotokopi Buku Nikah atau Akta Perkawinan', 'wajib' => true],
-                ['nama' => 'Surat permohonan cerai dari pemohon', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lain yang berkaitan dengan alasan perceraian (apabila diperlukan sesuai ketentuan pengadilan)', 'wajib' => false],
+            // =====================================================
+            // 4. PENGANTAR CERAI
+            // =====================================================
+            [
+                'layanan' => 'Surat Pengantar Permohonan Cerai',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP suami',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi KTP istri',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Buku Nikah/Akta Perkawinan',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Permohonan Cerai',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen pendukung terkait persidangan',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 5. Santunan Kematian
-            'Santunan Kematian' => [
-                ['nama' => 'Surat Keterangan Kematian', 'wajib' => true],
-                ['nama' => 'Foto Copy KTP dan KK Ahli Waris', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP almarhum/almarhumah', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP ahli waris/pemohon', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
+            // =====================================================
+            // 5. SANTUNAN KEMATIAN
+            // =====================================================
+            [
+                'layanan' => 'Santunan Kematian',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Surat Keterangan Kematian',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Ahli Waris',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga Ahli Waris',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Almarhum/Almarhumah',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Pemohon',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 6. Kuasa Pengambilan Pensiun
-            'Surat Kuasa Pengambilan Pensiun' => [
-                ['nama' => 'Fotokopi KTP pemberi kuasa', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP penerima kuasa', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Fotokopi kartu pensiun atau SK pensiun', 'wajib' => true],
-                ['nama' => 'Surat kuasa bermeterai yang telah ditandatangani pemberi dan penerima kuasa', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lain apabila dipersyaratkan oleh instansi pengelola pensiun', 'wajib' => false],
+            // =====================================================
+            // 6. KUASA PENGAMBILAN PENSIUN
+            // =====================================================
+            [
+                'layanan' => 'Surat Kuasa Pengambilan Pensiun',
+                'persyaratan' => [
+                    [
+                        'nama' => 'KTP Pemberi Kuasa',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Penerima Kuasa',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu/Surat Keputusan Pensiun',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Kuasa bermaterai dan ditandatangani',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen pendukung lainnya',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 7. Penghasilan
-            'Surat Keterangan Penghasilan' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
-                ['nama' => 'Surat pernyataan penghasilan yang ditandatangani pemohon di atas meterai', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lain yang menunjukkan sumber penghasilan (apabila ada)', 'wajib' => false],
+            // =====================================================
+            // 7. PENGHASILAN ORANG TUA
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Penghasilan Orang Tua',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Fotokopi Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Keterangan Penghasilan bermaterai',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen pendukung sumber penghasilan',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 8. Izin Penggunaan Tanah
-            'Surat Keterangan Izin Penggunaan Tanah' => [
-                ['nama' => 'Fotokopi KTP pemohon', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP pemilik tanah', 'wajib' => true],
-                ['nama' => 'Bukti kepemilikan tanah (sertifikat, Letter C, girik, petok, atau dokumen lainnya)', 'wajib' => true],
-                ['nama' => 'Surat persetujuan/izin dari pemilik tanah', 'wajib' => true],
-                ['nama' => 'Denah atau lokasi tanah', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
+            // =====================================================
+            // 10. BEDA NAMA
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Beda Nama (Satu Orang yang Sama)',
+                'persyaratan' => [
+                    [
+                        'nama' => 'KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen yang memuat perbedaan nama',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 9. Janda/Duda
-            'Surat Keterangan Janda/Duda' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Akta Kematian pasangan atau Akta Cerai/Putusan Pengadilan yang telah berkekuatan hukum tetap', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
+            // =====================================================
+            // 11. USAHA
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Usaha',
+                'persyaratan' => [
+                    [
+                        'nama' => 'KTP',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen pendukung usaha',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 10. Beda Nama
-            'Surat Keterangan Beda Nama (Satu Orang yang Sama)' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Dokumen-dokumen yang terdapat perbedaan nama (misalnya ijazah, akta kelahiran, buku nikah, sertifikat, atau dokumen lainnya)', 'wajib' => true],
-                ['nama' => 'Dokumen yang menjadi dasar penggunaan nama yang benar', 'wajib' => true],
-                ['nama' => 'Surat pernyataan bahwa kedua nama tersebut adalah satu orang yang sama, ditandatangani di atas meterai', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
+            // =====================================================
+            // 14. AHLI WARIS
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Ahli Waris',
+                'persyaratan' => [
+                    [
+                        'nama' => 'Fotokopi KTP Ahli Waris',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                        'multiple' => true,
+                    ],
+                    [
+                        'nama' => 'Kartu Keluarga Ahli Waris',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Keterangan Kematian',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen pendukung hubungan keluarga',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 11. Usaha
-            'Surat Keterangan Usaha' => [
-                ['nama' => 'Fotokopi KTP', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
-                ['nama' => 'Foto lokasi usaha (apabila diperlukan)', 'wajib' => false],
-                ['nama' => 'Surat pernyataan memiliki dan menjalankan usaha', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lainnya sesuai jenis usaha apabila diperlukan (NIB)', 'wajib' => false],
+            // =====================================================
+            // 15. WALI NIKAH
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Wali Nikah',
+                'persyaratan' => [
+                    [
+                        'nama' => 'KTP Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Akta Kelahiran Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Akta Kelahiran Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Calon Wali Nikah',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Wali Nikah',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen Pendukung KUA',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
 
-            // 12. TNI/Polri
-            'Surat Pengantar Persyaratan Pendaftaran TNI/Polri' => [
-                ['nama' => 'Fotokopi KTP atau Kartu Identitas Anak (bagi yang belum memiliki KTP)', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Fotokopi Akta Kelahiran', 'wajib' => true],
-                ['nama' => 'Fotokopi ijazah atau surat keterangan lulus', 'wajib' => true],
-                ['nama' => 'Pas foto terbaru sesuai ketentuan instansi penerima', 'wajib' => true],
-                ['nama' => 'Dokumen lain sesuai persyaratan pendaftaran TNI/Polri', 'wajib' => false],
-            ],
-
-            // 13. Pembetulan Sertifikat
-            'Surat Keterangan Persyaratan Pembetulan Sertifikat' => [
-                ['nama' => 'Fotokopi KTP pemohon', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK)', 'wajib' => true],
-                ['nama' => 'Fotokopi sertifikat tanah yang akan diperbaiki', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung yang menunjukkan adanya kesalahan data', 'wajib' => true],
-                ['nama' => 'Bukti kepemilikan atau atas hak tanah', 'wajib' => true],
-                ['nama' => 'Surat pengantar RT/RW', 'wajib' => true],
-                ['nama' => 'Dokumen lain sesuai ketentuan Kantor Pertanahan', 'wajib' => false],
-            ],
-
-            // 14. Ahli Waris
-            'Surat Keterangan Ahli Waris' => [
-                ['nama' => 'Fotokopi KTP seluruh ahli waris', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK) almarhum/almarhumah dan ahli waris', 'wajib' => true],
-                ['nama' => 'Surat Keterangan Kematian atau Akta Kematian almarhum/almarhumah', 'wajib' => true],
-                ['nama' => 'Fotokopi Buku Nikah/Akta Perkawinan almarhum/almarhumah (apabila ada)', 'wajib' => false],
-                ['nama' => 'Fotokopi Akta Kelahiran ahli waris atau dokumen lain yang membuktikan hubungan keluarga', 'wajib' => true],
-                ['nama' => 'Surat pernyataan ahli waris yang ditandatangani oleh seluruh ahli waris di atas meterai (apabila dipersyaratkan)', 'wajib' => false],
-                ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lainnya sesuai ketentuan yang berlaku', 'wajib' => false],
-            ],
-
-            // 15. Wali Nikah/Hakim
-            'Surat Keterangan Wali Nikah/Hakim' => [
-                ['nama' => 'Fotokopi KTP calon mempelai', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga (KK) calon mempelai', 'wajib' => true],
-                ['nama' => 'Fotokopi Akta Kelahiran calon mempelai', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP calon wali nikah', 'wajib' => true],
-                ['nama' => 'Fotokopi Kartu Keluarga calon wali nikah', 'wajib' => true],
-                ['nama' => 'Dokumen yang menjelaskan alasan penggunaan wali hakim', 'wajib' => true],
-                ['nama' => 'Surat pengantar dari RT/RW', 'wajib' => true],
-                ['nama' => 'Dokumen pendukung lain sesuai persyaratan Kantor Urusan Agama (KUA)', 'wajib' => false],
-            ],
-
-            // 16. Form Santunan Kematian: formulir ini dicetak, ditandatangani ahli waris, lalu diunggah kembali.
-            'Form Santunan Kematian' => [
-                ['nama' => 'Form Santunan Kematian bertanda tangan ahli waris', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP-el dan KK penduduk yang meninggal dunia', 'wajib' => true],
-                ['nama' => 'Fotokopi Kutipan Akta Kematian', 'wajib' => true],
-                ['nama' => 'Fotokopi Kutipan Akta Kelahiran apabila penduduk belum wajib KTP', 'wajib' => false],
-                ['nama' => 'Surat keterangan domisili dari Lurah setempat', 'wajib' => true],
-                ['nama' => 'Daftar DTKS atau berita acara musyawarah kelurahan untuk penduduk yang meninggal dunia', 'wajib' => true],
-                ['nama' => 'Fotokopi KTP-el dan KK ahli waris', 'wajib' => true],
-                ['nama' => 'Surat keterangan pihak yang merawat jenazah dan mengurus pemakaman', 'wajib' => true],
-                ['nama' => 'Daftar DTKS ahli waris atau berita acara musyawarah kelurahan', 'wajib' => true],
+            // =====================================================
+            // 16. WALI HAKIM
+            // =====================================================
+            [
+                'layanan' => 'Surat Keterangan Wali Hakim',
+                'persyaratan' => [
+                    [
+                        'nama' => 'KTP Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Akta Kelahiran Calon Mempelai Pria',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Akta Kelahiran Calon Mempelai Wanita',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KTP Calon Wali Nikah',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'KK Calon Wali Nikah',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen Alasan Penggunaan Wali Hakim',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Surat Pengantar RT/RW',
+                        'wajib' => true,
+                        'jumlah_file' => 1,
+                    ],
+                    [
+                        'nama' => 'Dokumen Pendukung KUA',
+                        'wajib' => false,
+                        'jumlah_file' => 1,
+                    ],
+                ],
             ],
         ];
 
-        foreach ($data as $namaLayanan => $persyaratan) {
+                // Nama lama yang secara makna sama dengan persyaratan terbaru.
+        // Pemetaan ini mempertahankan ID dokumen pada permohonan aktif.
+        $legacyAliases = [
+            'Surat Pernyataan Belum Menikah' => [
+                'Fotokopi Kartu Keluarga' => [
+                    'Fotokopi Kartu Keluarga (KK)',
+                ],
+                'Surat Pengantar RT/RW' => [
+                    'Surat pengantar dari RT/RW',
+                ],
+            ],
+        ];
 
-            $layanan = Layanan::where('nama', $namaLayanan)->first();
+        foreach ($data as $item) {
+            $layanan = Layanan::where('nama', $item['layanan'])->first();
 
             if (!$layanan) {
                 continue;
             }
 
-            foreach ($persyaratan as $item) {
+            $activeNames = [];
 
-                $aturanFile = $this->aturanFile($item['nama']);
-
-                Persyaratan::updateOrCreate(
-                    [
-                        'layanan_id' => $layanan->id,
-                        'nama' => $item['nama'],
-                    ],
-                    [
-                        'wajib' => $item['wajib'],
-                        'butuh_ttd_warga' => str_contains(strtolower($item['nama']), 'surat pernyataan')
-                            || str_contains(strtolower($item['nama']), 'form santunan kematian bertanda tangan'),
-                        'tipe_file' => $aturanFile['tipe_file'],
-                        'maks_size' => $aturanFile['maks_size'],
-                    ]
+            foreach ($item['persyaratan'] as $persyaratan) {
+                $persyaratan['jumlah_file'] = max(
+                    1,
+                    (int) ($persyaratan['jumlah_file'] ?? 1)
                 );
+
+                $persyaratan['multiple'] = (bool) (
+                    $persyaratan['multiple'] ?? false
+                );
+
+                $persyaratan['wajib'] = (bool) (
+                    $persyaratan['wajib'] ?? true
+                );
+
+                $canonicalName = $persyaratan['nama'];
+                $activeNames[] = $canonicalName;
+
+                // Utamakan record yang sudah memakai nama terbaru.
+                $record = Persyaratan::where('layanan_id', $layanan->id)
+                    ->where('nama', $canonicalName)
+                    ->first();
+
+                // Jika belum ada, cari nama lama yang telah dipetakan.
+                if (!$record) {
+                    $aliases = $legacyAliases[$item['layanan']][$canonicalName]
+                        ?? [];
+
+                    if ($aliases !== []) {
+                        $record = Persyaratan::where(
+                            'layanan_id',
+                            $layanan->id
+                        )
+                            ->whereIn('nama', $aliases)
+                            ->first();
+                    }
+                }
+
+                if (!$record) {
+                    $record = new Persyaratan();
+                }
+
+                $record->fill($persyaratan);
+                $record->layanan_id = $layanan->id;
+                $record->nama = $canonicalName;
+                $record->aktif = true;
+                $record->save();
             }
+
+            // Arsipkan persyaratan yang tidak lagi ada dalam katalog.
+            // Record dan relasi dokumen historis tetap dipertahankan.
+            Persyaratan::where('layanan_id', $layanan->id)
+                ->whereNotIn('nama', $activeNames)
+                ->where('aktif', true)
+                ->update(['aktif' => false]);
         }
-    }
-
-    /**
-     * Menentukan format dan ukuran maksimal
-     * berdasarkan jenis dokumen.
-     */
-    private function aturanFile(string $nama): array
-    {
-        $nama = strtolower($nama);
-
-        // Foto
-        if (
-            str_contains($nama, 'pas foto') ||
-            str_contains($nama, 'foto lokasi')
-        ) {
-            return [
-                'tipe_file' => 'jpg,jpeg,png',
-                'maks_size' => 3072, // 3 MB
-            ];
-        }
-
-        // Dokumen tanah / sertifikat / denah
-        if (
-            str_contains($nama, 'sertifikat') ||
-            str_contains($nama, 'tanah') ||
-            str_contains($nama, 'denah') ||
-            str_contains($nama, 'letter c') ||
-            str_contains($nama, 'girik') ||
-            str_contains($nama, 'petok')
-        ) {
-            return [
-                'tipe_file' => 'pdf,jpg,jpeg,png',
-                'maks_size' => 10240, // 10 MB
-            ];
-        }
-
-        // Dokumen standar
-        return [
-            'tipe_file' => 'pdf,jpg,jpeg,png',
-            'maks_size' => 5120, // 5 MB
-        ];
     }
 }

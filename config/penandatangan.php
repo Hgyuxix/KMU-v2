@@ -3,6 +3,5 @@
 return [
 
     'nama' => 'Michael Subagyo',
-    'jabatan' => 'CAMAT MAGELANG UTARA',
-    'atasan' => 'WALIKOTA MAGELANG',
+    'NIP' => '197901062005011001',
 ];

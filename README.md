@@ -157,7 +157,7 @@ Contoh konfigurasi dasar:
 APP_NAME="KMU Magelang Utara"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=http://localhost
+APP_URL=http://127.0.0.1
 
 DB_CONNECTION=sqlite
 DB_DATABASE=/absolute/path/to/database.sqlite

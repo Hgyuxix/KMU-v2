@@ -6,6 +6,7 @@
 /.env.*
 !/.env.example
 !/.env.*.example
+!/.env.testing
 
 .env.backup
 .env.production
@@ -53,7 +54,7 @@ pnpm-debug.log*
 
 # Local database
 /database/database.sqlite
-/kec_magelang
+/kec_magelang*
 
 # OCR output / debug
 /ocr/hasil_ktp.json

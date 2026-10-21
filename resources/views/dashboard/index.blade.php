@@ -36,27 +36,27 @@
             <div class="stat-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Pengajuan</div>
-                    <div class="stat-value">{{ $stats->total }}</div>
+                    <div class="stat-value">{{ $stats?->total ?? 0 }}</div>
                     <div class="stat-note">Seluruh data permohonan</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Diajukan</div>
-                    <div class="stat-value">{{ $stats->diajukan }}</div>
+                    <div class="stat-value">{{ $stats?->diajukan ?? 0 }}</div>
                     <div class="stat-note">Menunggu proses</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Perlu Revisi</div>
-                    <div class="stat-value">{{ $stats->revisi }}</div>
+                    <div class="stat-value">{{ $stats?->revisi ?? 0 }}</div>
                     <div class="stat-note">Dikembalikan ke kelurahan</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Disetujui</div>
-                    <div class="stat-value">{{ $stats->disetujui }}</div>
+                    <div class="stat-value">{{ $stats?->disetujui ?? 0 }}</div>
                     <div class="stat-note">Telah disetujui kecamatan</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Selesai</div>
-                    <div class="stat-value">{{ $stats->selesai }}</div>
+                    <div class="stat-value">{{ $stats?->selesai ?? 0 }}</div>
                     <div class="stat-note">Surat sudah dibuat</div>
                 </div>
             </div>
@@ -81,6 +81,17 @@
                         @foreach($layanans as $layanan)
                             <option value="{{ $layanan->id }}" @selected((string)request('layanan_id') === (string)$layanan->id)>
                                 {{ $layanan->id }}. {{ $layanan->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="kelurahan_id">Kelurahan</label>
+                    <select id="kelurahan_id" name="kelurahan_id">
+                        <option value="">Semua kelurahan</option>
+                        @foreach(($kelurahans ?? collect()) as $kelurahan)
+                            <option value="{{ $kelurahan->id }}" @selected((string)request('kelurahan_id') === (string)$kelurahan->id)>
+                                {{ $kelurahan->nama }}
                             </option>
                         @endforeach
                     </select>
@@ -133,9 +144,13 @@
                                 <div class="table-sub">Data NIK tersimpan terenkripsi</div>
                             </td>
                             <td>
-                                <div class="table-main">{{ $permohonan->layanan->nama }}</div>
+                                <div class="table-main">{{ $permohonan->layanan?->nama ?? 'Layanan tidak tersedia' }}</div>
+                                @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
                             </td>
-                            <td>RT {{ $permohonan->rt }} / RW {{ $permohonan->rw }}</td>
+                            <td>
+                                <div>{{ $permohonan->kelurahan?->nama ?? 'Kelurahan tidak tersedia' }}</div>
+                                <div class="table-sub">RT {{ $permohonan->rt ?? '—' }} / RW {{ $permohonan->rw ?? '—' }}</div>
+                            </td>
                             <td>
                                 <span class="status-badge status-{{ $permohonan->status }}">
                                     @switch($permohonan->status)
@@ -147,7 +162,7 @@
                                     {{ ucfirst($permohonan->status) }}
                                 </span>
                             </td>
-                            <td>{{ $permohonan->created_at->format('d/m/Y H:i') }}</td>
+                            <td>{{ $permohonan->created_at?->format('d/m/Y H:i') ?? '—' }}</td>
                             <td>
                                 <a class="table-link" href="{{ route('dashboard.pengajuan.show', $permohonan) }}">Detail →</a>
                             </td>

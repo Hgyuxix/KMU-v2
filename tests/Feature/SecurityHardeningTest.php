@@ -8,6 +8,7 @@ use App\Models\Layanan;
 use App\Models\Permohonan;
 use App\Models\Persyaratan;
 use App\Models\User;
+use App\Models\DocumentReview;
 use App\Services\NikEncryptionService;
 use Database\Seeders\KelurahanSeeder;
 use Database\Seeders\PersyaratanSeeder;
@@ -259,13 +260,20 @@ class SecurityHardeningTest extends TestCase
             'status' => 'diajukan',
             'current_stage' => 'kasi_pemerintahan_review',
         ]);
-        DokumenPersyaratan::create([
+        $document = DokumenPersyaratan::create([
             'permohonan_id' => $permohonan->id,
             'persyaratan_id' => $persyaratan->id,
             'uuid' => (string) Str::uuid(),
             'file_path' => 'dokumen/uji.pdf',
             'file_original_name' => 'uji.pdf',
             'status' => 'sesuai',
+        ]);
+
+        $document->documentReviews()->create([
+            'stage' => 'kasi_pemerintahan_review',
+            'status' => 'sesuai',
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
         ]);
 
         $this->actingAs($otherReviewer)
@@ -306,14 +314,27 @@ class SecurityHardeningTest extends TestCase
             'nik' => 'encrypted_nik_sample', 'rt' => '01', 'rw' => '02',
             'status' => 'diajukan', 'current_stage' => 'kasi_pemerintahan_review',
         ]);
-        DokumenPersyaratan::create([
-            'permohonan_id' => $permohonan->id, 'persyaratan_id' => $persyaratan->id,
-            'uuid' => (string) Str::uuid(), 'file_path' => 'dokumen/identitas.pdf',
-            'file_original_name' => 'identitas.pdf', 'status' => 'sesuai',
+        $document = DokumenPersyaratan::create([
+            'permohonan_id' => $permohonan->id,
+            'persyaratan_id' => $persyaratan->id,
+            'status' => 'sesuai',
+            'file_path' => 'dokumen/identitas.pdf',
+            'file_original_name' => 'identitas.pdf',
         ]);
 
-        $this->actingAs($kasi)->patch(route('workflow.approve', $permohonan))
-            ->assertRedirect(route('workflow.index'));
+        $document->documentReviews()->create([
+            'stage' => 'kasi_pemerintahan_review',
+            'status' => 'sesuai',
+            'reviewed_by' => $kasi->id,
+            'reviewed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($kasi)
+            ->patch(route('workflow.approve', $permohonan));
+
+        $response->assertRedirect(route('workflow.index'));
+        $response->assertSessionHasNoErrors();
+
         $this->assertSame('selesai', $permohonan->fresh()->status);
         $this->assertSame('selesai', $permohonan->fresh()->current_stage);
         $this->assertNotEmpty($permohonan->fresh()->nomor_surat);
@@ -333,6 +354,11 @@ class SecurityHardeningTest extends TestCase
         $layanan = Layanan::create([
             'nama' => 'Layanan Lurah', 'aktif' => true, 'alur_tte' => 'lurah_saja',
         ]);
+        $fo = User::factory()->create([
+            'role' => 'fo',
+            'kelurahan_id' => $kelurahan->id,
+            'is_active' => true,
+        ]);
         $persyaratan = Persyaratan::create([
             'layanan_id' => $layanan->id, 'nama' => 'Identitas', 'wajib' => true,
             'tipe_file' => 'pdf', 'maks_size' => 2048,
@@ -343,23 +369,86 @@ class SecurityHardeningTest extends TestCase
             'nik' => 'encrypted_nik_sample', 'rt' => '01', 'rw' => '02',
             'status' => 'diajukan', 'current_stage' => 'kasi_pemerintahan_review',
         ]);
-        DokumenPersyaratan::create([
-            'permohonan_id' => $permohonan->id, 'persyaratan_id' => $persyaratan->id,
-            'uuid' => (string) Str::uuid(), 'file_path' => 'dokumen/identitas.pdf',
-            'file_original_name' => 'identitas.pdf', 'status' => 'sesuai',
+        $document = DokumenPersyaratan::create([
+            'permohonan_id' => $permohonan->id,
+            'persyaratan_id' => $persyaratan->id,
+            'uuid' => (string) Str::uuid(),
+            'file_path' => 'dokumen/identitas.pdf',
+            'file_original_name' => 'identitas.pdf',
+            'status' => 'sesuai',
         ]);
 
-        $this->actingAs($kasi)->patch(route('workflow.approve', $permohonan));
-        $this->assertSame('lurah_review', $permohonan->fresh()->current_stage);
-        $this->actingAs($lurah)->patch(route('workflow.approve', $permohonan))
-            ->assertRedirect(route('workflow.index'));
-        $this->assertSame('disetujui', $permohonan->fresh()->status);
-        $this->assertSame('selesai', $permohonan->fresh()->current_stage);
+        $document->documentReviews()->updateOrCreate(
+            ['stage' => 'kasi_pemerintahan_review'],
+            [
+                'status' => 'sesuai',
+                'reviewed_by' => $kasi->id,
+                'reviewed_at' => now(),
+            ]
+        );
 
-        $this->actingAs($lurah)->patch(route('workflow.complete', $permohonan))
+        $document->documentReviews()->updateOrCreate(
+            ['stage' => 'lurah_review'],
+            [
+                'status' => 'sesuai',
+                'reviewed_by' => $lurah->id,
+                'reviewed_at' => now(),
+            ]
+        );
+
+        $response = $this->actingAs($kasi)
+            ->patch(route('workflow.approve', $permohonan));
+
+        $response->assertRedirect(route('workflow.index'));
+        $response->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            'lurah_review',
+            $permohonan->fresh()->current_stage
+        );
+
+        $document->documentReviews()->updateOrCreate(
+            ['stage' => 'lurah_review'],
+            [
+                'status' => 'sesuai',
+                'reviewed_by' => $lurah->id,
+                'reviewed_at' => now(),
+            ]
+        );
+
+        $this->actingAs($lurah)
+            ->patch(route('workflow.approve', $permohonan))
             ->assertRedirect(route('workflow.index'));
-        $this->assertSame('selesai', $permohonan->fresh()->status);
-        $this->assertSame($lurah->id, $permohonan->fresh()->selesai_oleh);
+
+        $this->assertSame(
+            'fo_finalisasi',
+            $permohonan->fresh()->current_stage
+        );
+
+        $this->assertSame(
+            'diajukan',
+            $permohonan->fresh()->status
+        );
+
+        // FO menyelesaikan penyerahan fisik surat.
+        $this->actingAs($fo)
+            ->patch(route('workflow.finalize', $permohonan))
+            ->assertRedirect(route('kelurahan.index'));
+
+        $this->assertSame(
+            'selesai',
+            $permohonan->fresh()->status
+        );
+
+        $this->assertSame(
+            'selesai',
+            $permohonan->fresh()->current_stage
+        );
+
+        $this->assertSame(
+            $fo->id,
+            $permohonan->fresh()->selesai_oleh
+        );
     }
 
     public function test_full_approval_workflow_reaches_camat_and_supports_revision_resubmission(): void
@@ -397,9 +486,12 @@ class SecurityHardeningTest extends TestCase
             'file_original_name' => 'identitas.pdf', 'status' => 'sesuai',
         ]);
 
-        $this->actingAs($kasiPem)->patch(route('workflow.revisi', $permohonan), [
-            'catatan_revisi' => 'Mohon cek ulang identitas.',
-        ])->assertRedirect(route('workflow.index'));
+        $response = $this->actingAs($kasiPem)->patch(
+            route('workflow.revisi', $permohonan),
+            ['catatan_revisi' => 'Mohon cek ulang identitas.']
+        );
+
+        $response->assertRedirect(route('workflow.index'));
         $this->assertSame('revisi', $permohonan->fresh()->status);
         $this->assertSame('fo_input', $permohonan->fresh()->current_stage);
 
@@ -412,26 +504,69 @@ class SecurityHardeningTest extends TestCase
             'data_surat' => [
                 'jenis_kelamin' => 'Laki-laki',
                 'tempat_lahir' => 'Bandung',
+                'status' => 'Belum Kawin',
                 'agama' => 'Islam',
                 'pekerjaan' => 'Wiraswasta',
+                'tempat_tinggal' => 'Magelang',
+                'kota' => 'Magelang',
                 'alamat' => 'Jalan Uji',
                 'keperluan' => 'Keperluan uji',
+                'berlaku_mulai' => '2026-10-05',
+                'berlaku_sampai' => '2026-10-06',
+                'keterangan_lain' => '-',
             ],
         ])
-            ->assertRedirect(route('kelurahan.pengajuan.revisi', $permohonan));
-        $this->assertSame('kasi_pemerintahan_review', $permohonan->fresh()->current_stage);
-        foreach ([[$kasiPem, 'lurah_review'], [$lurah, 'kasi_umum_review'],
-            [$kasiUmum, 'sekcam_review'], [$sekcam, 'camat_review'], [$camat, 'selesai']] as [$reviewer, $nextStage]) {
-            $this->actingAs($reviewer)->patch(route('workflow.approve', $permohonan))
+            ->assertRedirect(route('kelurahan.index'))
+            ->assertSessionHas('success', 'Pengajuan diperbaiki dan dikirim ke Kasi Pemerintahan.');
+        foreach ([
+            [$kasiPem, 'lurah_review'],
+            [$lurah, 'kasi_umum_review'],
+            [$kasiUmum, 'sekcam_review'],
+            [$sekcam, 'camat_review'],
+            [$camat, 'fo_finalisasi'],
+        ] as [$reviewer, $nextStage]) {
+            // Ambil tahap yang akan disetujui.
+            $currentStage = $permohonan->fresh()->current_stage;
+
+            $document = $permohonan->dokumenPersyaratans()
+                ->firstOrFail();
+
+            // Pastikan dokumen sudah dinyatakan sesuai
+            // sebelum reviewer menyetujui tahap aktif.
+            DocumentReview::updateOrCreate(
+                [
+                    'dokumen_persyaratan_id' => $document->id,
+                    'stage' => $currentStage,
+                ],
+                [
+                    'status' => 'sesuai',
+                    'reviewed_by' => $reviewer->id,
+                    'reviewed_at' => now(),
+                ]
+            );
+
+            $this->actingAs($reviewer)
+                ->patch(route('workflow.approve', $permohonan))
                 ->assertRedirect(route('workflow.index'));
-            $this->assertSame($nextStage, $permohonan->fresh()->current_stage);
+
+            $this->assertSame(
+                $nextStage,
+                $permohonan->fresh()->current_stage
+            );
         }
 
-        $this->assertSame('disetujui', $permohonan->fresh()->status);
-        $this->assertSame($camat->id, $permohonan->fresh()->diproses_oleh);
-        $this->actingAs($camat)->patch(route('workflow.complete', $permohonan))
-            ->assertRedirect(route('workflow.index'));
+        $this->assertSame('diajukan', $permohonan->fresh()->status);
+        $this->assertSame('fo_finalisasi', $permohonan->fresh()->current_stage);
+        $this->assertSame($camat->id, $permohonan->fresh()->camat_oleh);
+
+        $this->actingAs($fo)
+            ->patch(route('workflow.finalize', $permohonan))
+            ->assertRedirect(route('kelurahan.index'));
+
         $this->assertSame('selesai', $permohonan->fresh()->status);
+        $this->assertSame('selesai', $permohonan->fresh()->current_stage);
+        $this->assertSame($fo->id, $permohonan->fresh()->selesai_oleh);
+        $this->assertNotEmpty($permohonan->fresh()->nomor_surat);
     }
 
     public function test_fo_cannot_submit_until_citizen_signed_document_is_uploaded(): void
@@ -467,9 +602,13 @@ class SecurityHardeningTest extends TestCase
             'current_stage' => 'fo_input',
         ]);
 
-        $this->actingAs($fo)
+        $response = $this->actingAs($fo)
             ->patch(route('workflow.submit', $permohonan))
-            ->assertStatus(422);
+            ->assertRedirect();
+
+        $response->assertSessionHasErrors([
+            'dokumen' => 'Dokumen wajib Surat Pernyataan minimal 1 file; saat ini 0 file aktif.',
+        ]);
 
         $this->assertSame('fo_input', $permohonan->fresh()->current_stage);
     }
@@ -541,58 +680,48 @@ class SecurityHardeningTest extends TestCase
 
         $this->assertSame(16, Layanan::count());
         $this->assertSame(2, Layanan::where('alur_tte', 'tanpa_tte')->count());
-        $this->assertSame(8, Layanan::where('alur_tte', 'lurah_saja')->count());
-        $this->assertSame(6, Layanan::where('alur_tte', 'lurah_dan_camat')->count());
+        $this->assertSame(9, Layanan::where('alur_tte', 'lurah_saja')->count());
+        $this->assertSame(5, Layanan::where('alur_tte', 'lurah_dan_camat')->count());
     }
 
-    public function test_santunan_form_is_a_separate_full_approval_service_with_printable_heir_form(): void
+    public function test_santunan_kematian_remains_a_single_lurah_only_service(): void
     {
-        config(['app.nik_encryption_key' => base64_encode(str_repeat('k', 32))]);
-        $this->seed([LayananSeeder::class, PersyaratanSeeder::class, TemplateSuratSeeder::class]);
-
-        $layanan = Layanan::where('nama', 'Form Santunan Kematian')->firstOrFail();
-        $this->assertSame('lurah_dan_camat', $layanan->alur_tte);
-        $this->assertStringContainsString('SURAT PERNYATAAN SEBAGAI AHLI WARIS', $layanan->templateSurat->isi_template);
-        $this->assertStringContainsString('[[HALAMAN_BARU]]', $layanan->templateSurat->isi_template);
-
-        $signatureRequirement = Persyaratan::where('layanan_id', $layanan->id)
-            ->where('nama', 'Form Santunan Kematian bertanda tangan ahli waris')
-            ->firstOrFail();
-        $this->assertTrue($signatureRequirement->butuh_ttd_warga);
-        $this->assertTrue($signatureRequirement->wajib);
-
-        $kelurahan = Kelurahan::create(['nama' => 'Kelurahan Form Santunan']);
-        $fo = User::factory()->create([
-            'role' => 'fo', 'kelurahan_id' => $kelurahan->id, 'is_active' => true,
+        $this->seed([
+            LayananSeeder::class,
+            PersyaratanSeeder::class,
         ]);
-        $permohonan = Permohonan::create([
-            'layanan_id' => $layanan->id, 'kelurahan_id' => $kelurahan->id,
-            'dibuat_oleh' => $fo->id, 'nama_lengkap' => 'Ahli Waris Uji',
-            'tanggal_lahir' => '1990-01-01',
-            'nik' => app(NikEncryptionService::class)->encrypt('3371010101010001'),
-            'rt' => '01', 'rw' => '02', 'status' => 'diajukan', 'current_stage' => 'fo_input',
-            'data_surat' => [
-                'alamat' => 'Alamat Uji', 'no_telp' => '081234567890',
-                'nama_almarhum' => 'Almarhum Uji', 'nik_almarhum' => '3371010202020002',
-                'tanggal_lahir_almarhum' => 'Magelang, 1 Januari 1950',
-                'alamat_almarhum' => 'Alamat Almarhum Uji', 'tempat_meninggal' => 'Magelang',
-                'tanggal_meninggal' => '2026-09-01', 'hubungan_ahli_waris' => 'Anak',
-            ],
-        ]);
-        $this->assertStringContainsString(
-            'Lampiran: 1 (satu) bendel',
-            app(\App\Services\SuratGenerator::class)->generate($permohonan)
+
+        // Katalog tetap memiliki 16 layanan.
+        $this->assertSame(16, Layanan::count());
+
+        // Santunan Kematian yang dipertahankan adalah layanan ID 5.
+        $layanan = Layanan::where(
+            'nama',
+            'Santunan Kematian'
+        )->firstOrFail();
+
+        $this->assertSame('lurah_saja', $layanan->alur_tte);
+        $this->assertTrue((bool) $layanan->aktif);
+
+        // Form Santunan Kematian terpisah memang sengaja dihapus.
+        $this->assertFalse(
+            Layanan::where(
+                'nama',
+                'Form Santunan Kematian'
+            )->exists()
         );
 
-        $response = $this->actingAs($fo)
-            ->get(route('permohonan.statement.print', [$permohonan, $signatureRequirement]))
-            ->assertOk()
-            ->assertViewHas('suratDraft', fn ($draft) => is_string($draft) && str_contains($draft, 'Lampiran: 1 (satu) bendel'));
+        // Persyaratan Santunan Kematian yang aktif tetap dipertahankan.
+        $persyaratan = Persyaratan::where(
+            'layanan_id',
+            $layanan->id
+        )->where(
+            'nama',
+            'Surat Keterangan Kematian'
+        )->firstOrFail();
 
-        $response
-            ->assertSee('FORM PERMOHONAN BANTUAN SANTUNAN KEMATIAN')
-            ->assertSee('SURAT PERNYATAAN SEBAGAI AHLI WARIS')
-            ->assertDontSee('[[HALAMAN_BARU]]');
+        $this->assertTrue((bool) $persyaratan->wajib);
+        $this->assertSame(1, (int) $persyaratan->jumlah_file);
     }
 
     public function test_kelurahan_user_cannot_preview_other_kelurahan_permohonan(): void

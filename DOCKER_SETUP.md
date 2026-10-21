@@ -15,7 +15,7 @@ Pertahankan nilai lama:
 Tambahkan/ubah nilai berikut di `.env`:
 
 ```env
-APP_URL=http://localhost:8000
+APP_URL=http://127.0.0.1:8000
 DB_CONNECTION=sqlite
 DB_DATABASE=kec_magelang
 OCR_PYTHON_BIN=/opt/ocr-venv/bin/python
@@ -40,7 +40,7 @@ docker compose ps
 
 Buka:
 
-`http://localhost:8000`
+`http://127.0.0.1:8000`
 
 ## Stop
 

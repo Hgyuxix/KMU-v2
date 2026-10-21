@@ -14,9 +14,15 @@ class Persyaratan extends Model
         'butuh_ttd_warga',
         'tipe_file',
         'maks_size',
+        'jumlah_file',
+        'multiple',
+        'aktif',
     ];
 
     protected $casts = [
+        'jumlah_file' => 'integer',
+        'multiple' => 'boolean',
+        'aktif' => 'boolean',
         'wajib' => 'boolean',
         'butuh_ttd_warga' => 'boolean',
         'maks_size' => 'integer',

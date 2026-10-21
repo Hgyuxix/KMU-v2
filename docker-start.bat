@@ -26,8 +26,8 @@ docker compose exec app php artisan optimize:clear
 
 echo.
 echo =========================================
-echo APP   : http://localhost:8000
-echo VITE  : http://localhost:5173
+echo APP   : http://127.0.0.1:8000
+echo VITE  : http://127.0.0.1:5173
 echo =========================================
 echo.
 docker compose ps

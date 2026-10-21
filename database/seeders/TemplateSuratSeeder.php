@@ -10,565 +10,450 @@ class TemplateSuratSeeder extends Seeder
 {
     public function run(): void
     {
+        /*
+         * Sumber redaksi: form client pada Form Surat KMU(1).zip.
+         * ID 8, 9, 12, 13 tidak dimasukkan karena form client belum tersedia.
+         *
+         * Aturan isi template (mengikuti preview.blade.php):
+         * - Judul dan "Nomor:" dicetak preview dari kolom `judul` dan
+         *   nomor_surat, jadi TIDAK ditulis lagi di isi_template.
+         * - Blok TTE Camat dicetak preview di bawah isi surat, jadi nama
+         *   dan NIP Camat tidak ditulis di isi_template.
+         * - Baris "Label : isi" tampil sebagai tabel. Baris diakhiri ":"
+         *   tampil sebagai paragraf. Spasi di awal/tengah baris tidak
+         *   dipertahankan, jadi tanda tangan ditulis bertumpuk, bukan
+         *   berkolom.
+         * - Tidak ada "a.n." / Sekretaris. Penandatangan langsung Lurah
+         *   (data dari kelurahan yang menangani) dan Camat.
+         */
         $templates = [
 
-            // =====================================================
-            // 1. SKTM
-            // =====================================================
+            // KIP (SK/Pengantar). Data kelurahan dan Lurah otomatis.
             1 => [
                 'judul' => 'SURAT KETERANGAN TIDAK MAMPU',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini:
+                Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 
-1. Nama: '{{ nama_pejabat }}'
+                Nama Lengkap : {{ nama_lengkap }} / {{ jenis_kelamin }}
+                Tempat&Tanggal Lahir / Status : {{ tempat_lahir }}, {{ tanggal_lahir }} / {{ status }}
+                Kewarganegaraan & Agama : Indonesia / {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Tempat Tinggal : {{ alamat }}
 
-2. Jabatan: {{ jabatan_pejabat }}
+                Kota : {{ kota }}
+                Bukti Diri : KK/KTP No. {{ nik }}
+                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan KIP
+                Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang dan kurang mampu
 
-Dengan ini menerangkan bahwa:
+                Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-1. Nama Lengkap: {{ nama_lengkap }}
+                No :
+                Tanggal :
 
-2. Jenis Kelamin: {{ jenis_kelamin }}
+                Magelang, {{ tanggal }}
 
-3. Tempat / Tanggal Lahir: {{ tempat_lahir }}, {{ tanggal_lahir }}
+                Pemohon
+                {{ nama_lengkap }}
 
-4. Warga Negara / Agama: Indonesia / {{ agama }}
-
-5. No. KTP / NIK: {{ nik }}
-
-6. Pekerjaan: {{ pekerjaan }}
-
-7. Alamat
-    : {{ alamat }}
-    RT {{ rt }} / RW {{ rw }}
-
-Menerangkan dengan sebenarnya bahwa yang bersangkutan betul warga Kecamatan Magelang Utara dengan keadaan ekonominya TIDAK MAMPU.
-
-Surat keterangan ini diperlukan untuk {{ keperluan }}.
-
-Demikian surat keterangan ini kami buat atas permintaan yang bersangkutan dan dapat digunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 2. BELUM MENIKAH
-            // =====================================================
+            //Pernyataan belum menikah. Data kelurahan dan Lurah otomatis.
             2 => [
-                'judul' => 'SURAT KETERANGAN BELUM MENIKAH',
+                'judul' => 'SURAT PERNYATAAN BELUM MENIKAH',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah:
 
-Nama Lengkap: {{ nama_lengkap }}
+                Nama : {{ nama_lengkap }}
+                Tempat dan tanggal lahir : {{ tempat_lahir }}, {{ tanggal_lahir }}
+                Agama : {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Alamat : {{ alamat }}
+                Kec. Magelang Utara Kota Magelang
 
-NIK: {{ nik }}
+                Menyatakan bahwa sampai saat ini saya belum pernah menikah ({{ status_pernyataan }}) dengan siapapun.
 
-Tempat / Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian surat pernyataan ini saya buat dengan sebenarnya, dan jika pada di kemudian hari ada pernyataan saya yang tidak benar maka saya siap di proses secara hukum dan tidak akan melibatkan pihak kelurahan {{ nama_kelurahan }}.
 
-RT / RW: {{ rt }} / {{ rw }}
+                Magelang, {{ tanggal }}
 
-Berdasarkan data administrasi dan dokumen persyaratan yang diberikan, yang bersangkutan sampai dengan surat ini diterbitkan belum menikah.
+                [[DECLARANT_SIGNATURE_BEGIN]]
+                Yang Membuat Pernyataan
+                Materai Rp.10.000,-
+                [[RUANG_TTD_PERNYATAAN]]
+                {{ nama_lengkap }}
+                [[DECLARANT_SIGNATURE_END]]
 
-Surat keterangan ini dibuat untuk keperluan {{ keperluan }}.
+                Saksi – Saksi :
 
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                [[WITNESS_GRID_BEGIN]]
+                1. {{ saksi_1 }}
+                2. {{ saksi_2 }}
+                3. {{ saksi_3 }}
+                4. {{ saksi_4 }}
+                [[WITNESS_GRID_END]]
+                TEXT
             ],
 
-            // =====================================================
-            // 3. DOMISILI
-            // =====================================================
+            //Keterangan domisili. Data kelurahan dan Lurah otomatis.
             3 => [
                 'judul' => 'SURAT KETERANGAN DOMISILI',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah ini :
 
-Nama Lengkap: {{ nama_lengkap }}
+                Nama : {{ nama_lurah }}
+                NIP : {{ nip_lurah }}
+                Jabatan : Lurah {{ nama_kelurahan }}
 
-NIK: {{ nik }}
+                Dengan ini menerangkan bahwa "{{ nama_lengkap }}" yang beralamat di {{ alamat_domisili }} RT {{ rt }} RW {{ rw }} Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang benar berdomisili di alamat tersebut dan masuk wilayah Kelurahan {{ nama_kelurahan }}, Kecamatan Magelang Utara, Kota Magelang.
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian surat keterangan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.
 
-RT / RW: {{ rt }} / {{ rw }}
+                Magelang, {{ tanggal }}
 
-Yang bersangkutan benar berdomisili di wilayah Kecamatan Magelang Utara.
-
-Surat keterangan domisili ini dibuat untuk keperluan {{ keperluan }}.
-
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 4. PERMOHONAN CERAI
-            // =====================================================
+            // Perceraian
             4 => [
-                'judul' => 'SURAT PENGANTAR PERMOHONAN CERAI',
+                'judul' => 'SURAT PENGANTAR CERAI',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 
-Nama Pemohon: {{ nama_lengkap }}
+                Nama Lengkap : {{ nama_lengkap }} / {{ jenis_kelamin }}
+                Tempat&Tanggal Lahir / Status : {{ tempat_lahir }}, {{ tanggal_lahir }} / {{ status }}
+                Kewarganegaraan & Agama : Indonesia / {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Tempat Tinggal : {{ alamat }}
 
-NIK: {{ nik }}
+                Kota : {{ kota }}
+                Bukti Diri : KK/KTP No. {{ nik }}
+                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan Perceraian an. {{ nama_lengkap }} dan {{ nama_pasangan }} ke Pengadilan Agama Kota Magelang
+                Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-RT / RW: {{ rt }} / {{ rw }}
+                No :
+                Tanggal :
 
-Nama Suami / Istri: {{ nama_pasangan }}
+                Magelang, {{ tanggal }}
 
-Alasan Perceraian
-: {{ alasan_perceraian }}
+                Pemohon
+                {{ nama_lengkap }}
 
-Yang bersangkutan mengajukan permohonan perceraian dan surat ini dibuat sebagai surat pengantar untuk keperluan proses perceraian sesuai ketentuan yang berlaku.
-
-Demikian surat pengantar ini dibuat untuk dapat dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 5. SANTUNAN KEMATIAN
-            // =====================================================
+            // Santunan kematian (Alm. bertempat tinggal di ...)
             5 => [
-                'judul' => 'SURAT KETERANGAN SANTUNAN KEMATIAN',
+                'judul' => 'SURAT PENGANTAR PENGAJUAN SANTUNAN KEMATIAN',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 
-Nama Ahli Waris / Pemohon: {{ nama_lengkap }}
+                Nama Lengkap : {{ nama_lengkap }} / {{ jenis_kelamin }}
+                Tempat&Tanggal Lahir / Status : {{ tempat_lahir }}, {{ tanggal_lahir }} / {{ status }}
+                Kewarganegaraan & Agama : Indonesia / {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Tempat Tinggal : {{ alamat }}
 
-NIK: {{ nik }}
+                Kota : {{ kota }}
+                Bukti Diri : KK/KTP No. {{ nik }}
+                Keperluan : Persyaratan Pengajuan Usulan Permohonan Bantuan Santunan Kematian an. Alm. {{ nama_almarhum }}
+                Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
+                Keterangan lain-lain : Bahwa Alm. {{ nama_almarhum }} Benar-benar bertempat tinggal di {{ alamat_almarhum }} RT {{ rt_almarhum }} RW {{ rw_almarhum }} Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-RT / RW: {{ rt }} / {{ rw }}
+                No :
+                Tanggal :
 
-Nama Almarhum / Almarhumah: {{ nama_almarhum }}
+                Magelang, {{ tanggal }}
 
-Tanggal Meninggal: {{ tanggal_meninggal }}
+                Pemohon
+                {{ nama_lengkap }}
 
-Hubungan dengan Almarhum / Almarhumah: {{ hubungan_ahli_waris }}
-
-Surat keterangan ini dibuat untuk keperluan pengajuan santunan kematian berdasarkan dokumen persyaratan yang telah diberikan.
-
-Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 6. KUASA PENGAMBILAN PENSIUN
-            // =====================================================
+            // Pensiun (surat kuasa). Redaksi "an. ......" menunggu konfirmasi.
             6 => [
-                'judul' => 'SURAT KUASA PENGAMBILAN PENSIUN',
+                'judul' => 'SURAT KETERANGAN KUASA PENGAMBILAN PENSIUN',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini:
+                Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 
-Pemberi Kuasa: {{ nama_pemberi_kuasa }}
+                Nama Lengkap : {{ nama_penerima_kuasa }} / {{ jenis_kelamin }}
+                Tempat&Tanggal Lahir / Status : {{ tempat_lahir }}, {{ tanggal_lahir }} / {{ status }}
+                Kewarganegaraan & Agama : Indonesia / {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Tempat Tinggal : {{ alamat }}
 
-Penerima Kuasa: {{ nama_penerima_kuasa }}
+                Kota : {{ kota }}
+                Bukti Diri : KK/KTP No. {{ nik }}
+                Keperluan : Surat kuasa pengambilan pensiun an. {{ nama_pemberi_kuasa }}
+                Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan Kramat Selatan Kecamatan Magelang Utara Kota Magelang, an. {{ nama_pemberi_kuasa }} benar masih hidup dan sudah lanjut usia
 
-Dengan ini memberikan kuasa untuk melakukan pengambilan pensiun dengan identitas pemohon:
+                Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-Nama Lengkap: {{ nama_lengkap }}
+                No :
+                Tanggal :
 
-NIK: {{ nik }}
+                Magelang, {{ tanggal }}
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Pemohon
+                {{ nama_lengkap }}
 
-RT / RW: {{ rt }} / {{ rw }}
-
-Keperluan Pengambilan Pensiun
-: {{ keperluan }}
-
-Surat kuasa ini dibuat berdasarkan dokumen persyaratan yang telah diberikan dan untuk dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 7. PENGHASILAN
-            // =====================================================
+            // Penghasilan orang tua. Data kelurahan dan Lurah otomatis.
             7 => [
-                'judul' => 'SURAT KETERANGAN PENGHASILAN',
+                'judul' => 'SURAT KETERANGAN PENGHASILAN ORANG TUA',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah ini:
 
-Nama Lengkap: {{ nama_lengkap }}
+                Nama : {{ nama_wali }}
+                NIK : {{ nik_wali }}
+                Tempat, Tanggal Lahir : {{ tempat_lahir_wali }}, {{ tanggal_lahir_wali }}
+                Pekerjaan : {{ pekerjaan }}
+                Agama : {{ agama_wali }}
+                Alamat : {{ alamat_wali }}
 
-NIK: {{ nik }}
+                Adalah Wali dari :
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Nama : {{ nama_anak }}
+                Jenis Kelamin : {{ jenis_kelamin_anak }}
+                Alamat : {{ alamat_anak }}
 
-RT / RW: {{ rt }} / {{ rw }}
+                adalah benar berstatus sebagai warga kami yang bekerja sebagai {{ pekerjaan }} dan berpenghasilan per bulan rata-rata : {{ penghasilan_per_bulan }}
 
-Pekerjaan: {{ pekerjaan }}
+                Demikian surat keterangan ini dibuat dengan sebenar-benarnya dan data yang diisikan sesuai kondisi yang sesungguhnya berdasarkan keterangan dari yang bersangkutan untuk keperluan {{ keperluan }}.
 
-Berdasarkan keterangan yang diberikan, yang bersangkutan mempunyai penghasilan sebagai berikut:
+                Apabila di kemudian hari ditemukan perbedaan data, maka yang bersangkutan sanggup bertanggung jawab tanpa melibatkan pihak manapun.
 
-Penghasilan per Bulan: {{ penghasilan_per_bulan }}
+                Magelang, {{ tanggal }}
 
-Sumber Penghasilan: {{ sumber_penghasilan }}
+                Yang Membuat Pernyataan
 
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                Materai 10000
+
+                {{ nama_wali }}
+
+                Tercatat di registrasi Kelurahan
+                Nomor : ....
+                Tanggal : {{ tanggal }}
+                TEXT
             ],
 
-            // =====================================================
-            // 8. IZIN PENGGUNAAN TANAH
-            // =====================================================
-            8 => [
-                'judul' => 'SURAT KETERANGAN IZIN PENGGUNAAN TANAH',
-                'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
-
-Nama Pemohon: {{ nama_lengkap }}
-
-NIK: {{ nik }}
-
-Tanggal Lahir: {{ tanggal_lahir }}
-
-RT / RW: {{ rt }} / {{ rw }}
-
-Nama Pemilik Tanah: {{ nama_pemilik_tanah }}
-
-NIK Pemilik Tanah: {{ nik_pemilik_tanah }}
-
-Lokasi Tanah
-: {{ lokasi_tanah }}
-
-Nomor Bukti Kepemilikan Tanah: {{ nomor_bukti_tanah }}
-
-Keperluan Penggunaan Tanah
-: {{ keperluan_penggunaan }}
-
-Surat keterangan ini dibuat berdasarkan dokumen kepemilikan dan persetujuan pemilik tanah yang telah diberikan.
-
-Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
-            ],
-
-            // =====================================================
-            // 9. JANDA / DUDA
-            // =====================================================
-            9 => [
-                'judul' => 'SURAT KETERANGAN JANDA / DUDA',
-                'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
-
-Nama Lengkap: {{ nama_lengkap }}
-
-NIK: {{ nik }}
-
-Tanggal Lahir: {{ tanggal_lahir }}
-
-RT / RW: {{ rt }} / {{ rw }}
-
-Nama Pasangan: {{ nama_pasangan }}
-
-Status: {{ status_janda_duda }}
-
-Sebab
-: {{ sebab }}
-
-Berdasarkan dokumen pendukung yang telah diberikan, yang bersangkutan berstatus janda / duda.
-
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
-            ],
-
-            // =====================================================
-            // 10. BEDA NAMA
-            // =====================================================
+            //surat pernyataan beda nama.
             10 => [
-                'judul' => 'SURAT KETERANGAN BEDA NAMA',
+                'judul' => 'SURAT PERNYATAAN BEDA NAMA',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Saya yang bertanda tangan di bawah ini:
 
-Nama Lengkap: {{ nama_lengkap }}
+                Nama : {{ nama_lengkap }}
+                NIK : {{ nik }}
+                Alamat : {{ alamat }}
+                Kec. Magelang Utara Kota Magelang
+                Pekerjaan : {{ pekerjaan }}
 
-NIK: {{ nik }}
+                Menerangkan bahwa terdapat perbedaan “Nama” pada :
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                KTP : {{ nama_ktp }}
+                Nomor : {{ nomor_ktp }}
 
-RT / RW: {{ rt }} / {{ rw }}
+                KK : {{ nama_kk }}
+                Nomor : {{ nomor_kk }}
 
-Nama pada Dokumen Lain: {{ nama_lain }}
+                Sertifikat : {{ nama_sertifikat }}
+                Nomor : {{ nomor_sertifikat }}
 
-Dokumen yang Berbeda Nama: {{ dokumen_perbedaan }}
+                Data tersebut diatas adalah benar nama orang yang sama (satu orang).
 
-Nama yang Benar: {{ nama_yang_benar }}
+                Demikian surat pernyataan ini dibuat untuk dipergunakan sebagaimana mestinya dan harap menjadikan maklum.
 
-Berdasarkan dokumen dan keterangan yang diberikan, nama-nama tersebut merupakan satu orang yang sama.
+                Apabila di kemudian hari ternyata saya melanggar atau pernyataan ini tidak benar maka saya siap bertanggung jawab sesuai hukum yang berlaku tanpa melibatkan pihak manapun.
 
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                Magelang, {{ tanggal }}
+
+                Yang membuat pernyataan
+
+                Materai 10.000
+
+                (....................................)
+
+                Mengetahui
+
+                Ketua RT
+                (..................................)
+
+                Ketua RW
+                (..................................)
+
+                Lurah {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 11. USAHA
-            // =====================================================
+            // KUR
             11 => [
-                'judul' => 'SURAT KETERANGAN USAHA',
+                'judul' => 'SURAT PENGANTAR PENGAJUAN KUR',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 
-Nama Lengkap: {{ nama_lengkap }}
+                Nama Lengkap : {{ nama_lengkap }} / {{ jenis_kelamin }}
+                Tempat&Tanggal Lahir / Status : {{ tempat_lahir }}, {{ tanggal_lahir }} / {{ status }}
+                Kewarganegaraan & Agama : Indonesia / {{ agama }}
+                Pekerjaan : {{ pekerjaan }}
+                Tempat Tinggal : {{ alamat }}
 
-NIK: {{ nik }}
+                Kota : {{ kota }}
+                Bukti Diri : KK/KTP No. {{ nik }}
+                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan KUR
+                Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
+                Keterangan lain-lain : Bahwa ybs mempunyai usaha "{{ nama_usaha }}" kurang lebih selama {{ lama_usaha }} di wilayah RT {{ rt_usaha }} RW {{ rw_usaha }} Kel. {{ nama_kelurahan }} Kec. Magelang Utara Kota Magelang menurut surat pengantar RT RW No. {{ nomor_surat_rt_rw }} Tanggal {{ tanggal_surat_rt_rw }}
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-RT / RW: {{ rt }} / {{ rw }}
+                No :
+                Tanggal :
 
-Yang bersangkutan benar memiliki dan menjalankan usaha dengan keterangan:
+                Magelang, {{ tanggal }}
 
-Nama Usaha: {{ nama_usaha }}
+                Pemohon
+                {{ nama_lengkap }}
 
-Jenis Usaha: {{ jenis_usaha }}
-
-Alamat Usaha
-: {{ alamat_usaha }}
-
-Lama Menjalankan Usaha: {{ lama_usaha }}
-
-Surat keterangan ini dibuat berdasarkan data dan dokumen pendukung yang telah diberikan.
-
-Demikian surat keterangan ini dibuat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 12. TNI / POLRI
-            // =====================================================
-            12 => [
-                'judul' => 'SURAT PENGANTAR PERSYARATAN PENDAFTARAN TNI/POLRI',
-                'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
-
-Nama Lengkap: {{ nama_lengkap }}
-
-NIK: {{ nik }}
-
-Tanggal Lahir: {{ tanggal_lahir }}
-
-RT / RW: {{ rt }} / {{ rw }}
-
-Yang bersangkutan akan mengikuti pendaftaran:
-
-Jenis Pendaftaran
-: {{ jenis_pendaftaran }}
-
-Instansi Tujuan: {{ nama_instansi }}
-
-Surat pengantar ini dibuat untuk melengkapi persyaratan pendaftaran TNI/Polri berdasarkan dokumen yang telah diberikan.
-
-Demikian surat pengantar ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
-            ],
-
-            // =====================================================
-            // 13. PEMBETULAN SERTIFIKAT
-            // =====================================================
-            13 => [
-                'judul' => 'SURAT KETERANGAN PERSYARATAN PEMBETULAN SERTIFIKAT',
-                'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
-
-Nama Lengkap: {{ nama_lengkap }}
-
-NIK: {{ nik }}
-
-Tanggal Lahir: {{ tanggal_lahir }}
-
-RT / RW: {{ rt }} / {{ rw }}
-
-Nomor Sertifikat: {{ nomor_sertifikat }}
-
-Jenis / Keterangan Kesalahan
-: {{ jenis_kesalahan }}
-
-Data yang Seharusnya
-: {{ data_seharusnya }}
-
-Surat keterangan ini dibuat untuk melengkapi persyaratan pembetulan sertifikat tanah sesuai dengan dokumen pendukung yang telah diberikan.
-
-Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
-            ],
-
-            // =====================================================
-            // 14. AHLI WARIS
-            // =====================================================
+            //Surat Keterangan Ahli Waris. Data kelurahan dan Lurah otomatis.
             14 => [
                 'judul' => 'SURAT KETERANGAN AHLI WARIS',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan dibawah ini :
 
-Nama Ahli Waris / Pemohon: {{ nama_lengkap }}
+                Nama : {{ nama_lurah }}
+                Jabatan : Lurah {{ nama_kelurahan }}
 
-NIK: {{ nik }}
+                Dengan ini menerangkan bahwa :
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Nama : {{ nama_almarhum }}
+                Jenis Kelamin : {{ jenis_kelamin_almarhum }}
+                Alamat : {{ alamat_almarhum }}
+                Kec. Magelang Utara Kota Magelang
 
-RT / RW: {{ rt }} / {{ rw }}
+                Nama tersebut diatas adalah benar telah meninggal dunia pada tanggal {{ tanggal_meninggal }} di {{ tempat_meninggal }} menurut Akta Kematian Nomor {{ nomor_akta_kematian }} Tanggal {{ tanggal_akta_kematian }} yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil Kota Magelang, dan sebagai ahli warisnya adalah :
 
-Nama Almarhum / Almarhumah: {{ nama_almarhum }}
+                {{ ahli_waris }}
 
-Tanggal Meninggal: {{ tanggal_meninggal }}
+                Demikian Surat Keterangan Ahli Waris ini kami berikan untuk dapat dipergunakan seperlunya.
 
-Jumlah Ahli Waris: {{ jumlah_ahli_waris }}
+                Para Ahli Waris :
+                Meterai 10.000
 
-Surat keterangan ini dibuat berdasarkan dokumen dan keterangan ahli waris yang telah diberikan.
+                {{ ahli_waris_ttd }}
 
-Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                Magelang, {{ tanggal }}
+
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
 
-            // =====================================================
-            // 15. WALI NIKAH / HAKIM
-            // =====================================================
+            // Wali Nikah
             15 => [
-                'judul' => 'SURAT KETERANGAN WALI NIKAH / HAKIM',
+                'judul' => 'SURAT KETERANGAN WALI NIKAH',
                 'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+                Yang bertanda tangan dibawah ini Lurah {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang menerangkan dengan sesungguhnya bahwa:
 
-Nama Calon Mempelai: {{ nama_calon_mempelai }}
+                Nama : {{ nama_wali }}
+                Tempat/Tgl lahir : {{ tempat_lahir_wali }}, {{ tanggal_lahir_wali }}
+                Agama : {{ agama_wali }}
+                Pekerjaan : {{ pekerjaan_wali }}
+                Tempat tinggal : {{ tempat_tinggal_wali }}
 
-Nama Wali Nikah: {{ nama_wali }}
+                Adalah WALI NIKAH dari seorang perempuan:
 
-Nama Lengkap Pemohon: {{ nama_lengkap }}
+                Nama : {{ nama_calon_mempelai }}
+                Tempat/Tgl lahir : {{ tempat_lahir_calon }}, {{ tanggal_lahir_calon }}
+                Agama : {{ agama_calon }}
+                Pekerjaan : {{ pekerjaan_calon }}
+                Tempat tinggal : {{ tempat_tinggal_calon }}
 
-NIK: {{ nik }}
+                Hubungan wali/status terhadap perempuan tsb : {{ hubungan_wali }}
 
-Tanggal Lahir: {{ tanggal_lahir }}
+                Demikian surat keterangan ini dibuat untuk menjadikan periksa dan dapat dipergunakan seperlunya.
 
-RT / RW: {{ rt }} / {{ rw }}
+                Magelang, {{ tanggal }}
 
-Alasan Penggunaan Wali Hakim
-: {{ alasan_wali_hakim }}
-
-Surat keterangan ini dibuat berdasarkan dokumen dan keterangan yang telah diberikan untuk memenuhi persyaratan wali nikah / wali hakim.
-
-Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
             ],
-        ];
 
-        // Redaksi ditata ulang memakai dokumen sumber yang diserahkan client.
-        $templates[5] = [
-            'judul' => 'SURAT PENGANTAR SANTUNAN KEMATIAN',
-            'isi_template' => <<<'TEXT'
-Yang bertanda tangan di bawah ini menerangkan bahwa:
+            // Wali Hakim
+            16 => [
+                'judul' => 'SURAT KETERANGAN WALI HAKIM',
+                'isi_template' => <<<'TEXT'
+                Yang bertanda tangan dibawah ini Lurah {{ nama_kelurahan }} Kec. Magelang Utara Kota Magelang menerangkan dengan sesungguhnya :
 
-Nama: {{ nama_lengkap }}
+                I.
+                1. Nama Lengkap dan aliasnya : {{ nama_calon_wanita }}
+                2. Binti : {{ binti }}
+                3. Umur : {{ umur_wanita }}
+                4. Agama : {{ agama_wanita }}
+                5. Pekerjaan : {{ pekerjaan_wanita }}
+                6. Tempat Tinggal : {{ tempat_tinggal_wanita }}
 
-Jenis Kelamin: {{ jenis_kelamin }}
+                Akan melangsungkan pernikahan besuk pada tanggal {{ tanggal_pernikahan }} dengan seorang laki-laki :
 
-Tempat / Tanggal Lahir: {{ tempat_lahir }}, {{ tanggal_lahir }}
+                II.
+                1. Nama Lengkap dan aliasnya : {{ nama_calon_pria }}
+                2. Bin : {{ bin }}
+                3. Umur : {{ umur_pria }}
+                4. Agama : {{ agama_pria }}
+                5. Pekerjaan : {{ pekerjaan_pria }}
+                6. Tempat Tinggal : {{ tempat_tinggal_pria }}
 
-Pekerjaan: {{ pekerjaan }}
+                Dengan wali hakim dikarenakan / disebabkan : {{ alasan_wali_hakim }}
 
-Alamat: {{ alamat }} RT {{ rt }} RW {{ rw }}
+                Demikian surat keterangan ini dibuat agar menjadikan maklum dan dipergunakan seperlunya.
 
-Yang bersangkutan adalah ahli waris dari almarhum / almarhumah {{ nama_almarhum }} yang meninggal dunia pada {{ tanggal_meninggal }}.
+                Magelang, {{ tanggal }}
 
-Surat pengantar ini dibuat untuk persyaratan pengajuan usulan permohonan bantuan santunan kematian.
+                Mempelai Perempuan
+                {{ nama_calon_wanita }}
 
-Demikian surat pengantar ini dibuat agar dapat dipergunakan sebagaimana mestinya.
-TEXT
-        ];
-
-        $templates[16] = [
-            'judul' => 'FORM PERMOHONAN BANTUAN SANTUNAN KEMATIAN',
-            'isi_template' => <<<'TEXT'
-Lampiran: 1 (satu) bendel
-Perihal: Permohonan Bantuan Santunan Kematian
-
-Magelang, {{ tanggal }}
-
-Kepada Yth.
-Walikota Magelang
-di Magelang
-
-Yang bertanda tangan di bawah ini:
-
-Nama: {{ nama_lengkap }}
-NIK: {{ nik }}
-Tempat, tanggal lahir: {{ tanggal_lahir }}
-Alamat: {{ alamat }}, RT {{ rt }} RW {{ rw }}, Kelurahan {{ nama_kelurahan }}
-Nomor telepon / HP: {{ no_telp }}
-Hubungan selaku ahli waris: {{ hubungan_ahli_waris }}
-
-Selaku ahli waris dari:
-
-Nama: {{ nama_almarhum }}
-NIK: {{ nik_almarhum }}
-Tempat, tanggal lahir: {{ tanggal_lahir_almarhum }}
-Alamat: {{ alamat_almarhum }}
-Meninggal dunia di {{ tempat_meninggal }} pada tanggal {{ tanggal_meninggal }}.
-
-Bersama ini kami mengajukan permohonan bantuan santunan kematian dan menyampaikan persyaratan sesuai ketentuan yang berlaku.
-
-Dokumen persyaratan:
-1. Fotokopi KTP-el dan Kartu Keluarga penduduk yang meninggal dunia.
-2. Fotokopi Kutipan Akta Kematian.
-3. Fotokopi Kutipan Akta Kelahiran apabila penduduk yang meninggal dunia belum wajib memiliki KTP.
-4. Surat keterangan domisili dari Lurah setempat.
-5. Daftar DTKS atau berita acara musyawarah kelurahan pemutakhiran data kemiskinan.
-6. Fotokopi KTP-el dan Kartu Keluarga ahli waris.
-7. Surat pernyataan sebagai ahli waris bermeterai yang diketahui Ketua RT, Ketua RW, Lurah, dan Camat.
-8. Surat keterangan pihak yang merawat jenazah dan mengurus pemakaman dari Kelurahan.
-9. Daftar DTKS ahli waris atau berita acara musyawarah kelurahan pemutakhiran data kemiskinan.
-
-Demikian permohonan ini kami sampaikan. Atas perhatian Bapak, kami ucapkan terima kasih.
-
-Pemohon,
-
-({{ nama_lengkap }})
-
-Mengetahui,
-Ketua RT {{ rt }} / RW {{ rw }}                 Ketua RW {{ rw }}
-
-
-Lurah {{ nama_kelurahan }}
-
-
-Camat Magelang Utara
-
-[[HALAMAN_BARU]]
-SURAT PERNYATAAN SEBAGAI AHLI WARIS
-
-Yang bertanda tangan di bawah ini:
-
-Nama: {{ nama_lengkap }}
-NIK: {{ nik }}
-Tempat, tanggal lahir: {{ tanggal_lahir }}
-Alamat: {{ alamat }}, RT {{ rt }} RW {{ rw }}, Kelurahan {{ nama_kelurahan }}
-Nomor telepon / HP: {{ no_telp }}
-
-Dengan ini menyatakan bahwa saya adalah ahli waris dari:
-
-Nama: {{ nama_almarhum }}
-NIK: {{ nik_almarhum }}
-Tempat, tanggal lahir: {{ tanggal_lahir_almarhum }}
-Alamat: {{ alamat_almarhum }}
-Meninggal dunia di {{ tempat_meninggal }} pada tanggal {{ tanggal_meninggal }}.
-
-Demikian surat pernyataan ini saya buat dengan sebenar-benarnya.
-
-Yang membuat pernyataan,
-(Meterai Rp10.000)
-
-
-({{ nama_lengkap }})
-
-Mengetahui,
-Ketua RT {{ rt }} / RW {{ rw }}                 Ketua RW {{ rw }}
-
-
-Lurah {{ nama_kelurahan }}                 Camat Magelang Utara
-TEXT
+                LURAH {{ nama_kelurahan }}
+                {{ nama_lurah }}
+                NIP. {{ nip_lurah }}
+                TEXT
+            ],
         ];
 
         foreach ($templates as $layananId => $template) {
-
             $layanan = Layanan::find($layananId);
 
             if (!$layanan) {
@@ -576,9 +461,7 @@ TEXT
             }
 
             TemplateSurat::updateOrCreate(
-                [
-                    'layanan_id' => $layananId,
-                ],
+                ['layanan_id' => $layananId],
                 [
                     'judul' => $template['judul'],
                     'isi_template' => $template['isi_template'],
@@ -586,5 +469,10 @@ TEXT
                 ]
             );
         }
+                // Nonaktifkan template lama yang tidak dikelola seeder ini.
+        TemplateSurat::whereNotIn(
+            'layanan_id',
+            array_keys($templates)
+        )->update(['aktif' => false]);
     }
 }

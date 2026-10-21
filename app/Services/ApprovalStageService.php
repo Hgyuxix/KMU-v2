@@ -2,15 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Permohonan;
+use App\Models\AuditLog;
 use App\Models\DocumentReview;
 use App\Models\DokumenPersyaratan;
+use App\Models\Permohonan;
+use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ApprovalStageService
 {
+    /** Jabatan reviewer dan tahap review yang menjadi kewenangannya. */
     private const ROLE_STAGE = [
         'kasi_pemerintahan' => 'kasi_pemerintahan_review',
         'lurah' => 'lurah_review',
@@ -19,31 +22,29 @@ class ApprovalStageService
         'camat' => 'camat_review',
     ];
 
-    public function pendingFor(User $user) {
+    public function pendingFor(User $user)
+    {
+        $stage = self::ROLE_STAGE[$user->role] ?? null;
+        abort_unless($stage !== null, 403);
+
         $query = Permohonan::query()
             ->with(['layanan', 'kelurahan'])
-            ->where('status', 'diajukan');
+            ->where('status', 'diajukan')
+            ->where('current_stage', $stage);
 
-        if ($user->role === 'lurah') {
-            return $query->where('kelurahan_id', $user->kelurahan_id)
-                ->where('current_stage', 'lurah_review')
-                ->latest()
-                ->paginate(15);
-        }
-
-        $stage = self::ROLE_STAGE[$user->role] ?? null;
-        abort_unless($stage, 403);
-
+        // Role menentukan tahap; kelurahan_id membatasi cakupan akses.
         if ($user->kelurahan_id !== null) {
             $query->where('kelurahan_id', $user->kelurahan_id);
+        } elseif (in_array($user->role, ['kasi_pemerintahan', 'lurah'], true)) {
+            // Jabatan kelurahan wajib memiliki scope kelurahan.
+            abort(403, 'Akun reviewer kelurahan belum memiliki cakupan kelurahan.');
         }
 
-        return $query->where('current_stage', $stage)
-            ->latest()
-            ->paginate(15);
+        return $query->latest()->paginate(15);
     }
 
-    public function canAct(User $user, Permohonan $permohonan): bool {
+    public function canAct(User $user, Permohonan $permohonan): bool
+    {
         if (
             $permohonan->status !== 'diajukan' ||
             (self::ROLE_STAGE[$user->role] ?? null) !== $permohonan->current_stage
@@ -52,13 +53,17 @@ class ApprovalStageService
         }
 
         if (in_array($user->role, ['kasi_pemerintahan', 'lurah'], true)) {
-            return $user->kelurahan_id === $permohonan->kelurahan_id;
+            return $user->kelurahan_id !== null
+                && (int) $user->kelurahan_id === (int) $permohonan->kelurahan_id;
         }
 
-        return in_array($user->role, ['kasi_umum', 'sekcam', 'camat'], true);
+        return in_array($user->role, ['kasi_umum', 'sekcam', 'camat'], true)
+            && ($user->kelurahan_id === null
+                || (int) $user->kelurahan_id === (int) $permohonan->kelurahan_id);
     }
 
-    public function canView(User $user, Permohonan $permohonan): bool {
+    public function canView(User $user, Permohonan $permohonan): bool
+    {
         $isKelurahanRole = in_array($user->role, ['kasi_pemerintahan', 'lurah'], true);
         $isKecamatanRole = in_array($user->role, ['kasi_umum', 'sekcam', 'camat'], true);
 
@@ -66,10 +71,12 @@ class ApprovalStageService
             return false;
         }
 
-        if (
-            $isKelurahanRole &&
-            $user->kelurahan_id !== $permohonan->kelurahan_id
-        ) {
+        if ($user->kelurahan_id !== null
+            && (int) $user->kelurahan_id !== (int) $permohonan->kelurahan_id) {
+            return false;
+        }
+
+        if ($isKelurahanRole && $user->kelurahan_id === null) {
             return false;
         }
 
@@ -89,38 +96,61 @@ class ApprovalStageService
             default => null,
         };
 
-        $isPreviousApprover =
-            $approvalField !== null &&
-            (int) $permohonan->{$approvalField} === (int) $user->id;
+        $isPreviousApprover = $approvalField !== null
+            && (int) $permohonan->{$approvalField} === (int) $user->id;
 
-        return $canAct
-            || $canViewCompletedWithoutTte
-            || $isPreviousApprover;
+        return $canAct || $canViewCompletedWithoutTte || $isPreviousApprover;
     }
 
-    public function submitToReview(User $user, Permohonan $permohonan): void {
+    public function submitToReview(User $user, Permohonan $permohonan): void
+    {
         abort_unless(
             $user->role === 'fo' &&
-            $user->kelurahan_id === $permohonan->kelurahan_id &&
+            (int) $user->kelurahan_id === (int) $permohonan->kelurahan_id &&
             $permohonan->status === 'diajukan' &&
             $permohonan->current_stage === 'fo_input',
             403
         );
 
-        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans']);
-        $this->assertRequiredDocumentsReady($permohonan, requireReviewed: false);
-        $permohonan->update(['current_stage' => 'kasi_pemerintahan_review']);
-        $this->ensureStageReviews($permohonan, 'kasi_pemerintahan_review');
+        DB::transaction(function () use ($permohonan): void {
+            $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans']);
+            $this->assertRequiredDocumentsReady($permohonan, requireReviewed: false);
+
+            $permohonan->update(['current_stage' => 'kasi_pemerintahan_review']);
+            $this->ensureStageReviews($permohonan, 'kasi_pemerintahan_review');
+        });
     }
 
-    public function approve(User $user, Permohonan $permohonan): void {
+    public function submitTtdWargaToReview(User $user, Permohonan $permohonan): void
+    {
+        abort_unless(
+            $user->role === 'fo' &&
+            (int) $user->kelurahan_id === (int) $permohonan->kelurahan_id &&
+            $permohonan->status === 'diajukan' &&
+            $permohonan->current_stage === 'fo_ttd_warga',
+            403
+        );
+
+        DB::transaction(function () use ($permohonan): void {
+            $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans']);
+            $this->assertRequiredDocumentsReady($permohonan, requireReviewed: false);
+
+            $permohonan->update(['current_stage' => 'kasi_pemerintahan_review']);
+            $this->ensureStageReviews($permohonan, 'kasi_pemerintahan_review');
+        });
+    }
+
+    public function approve(User $user, Permohonan $permohonan): void
+    {
         abort_unless($this->canAct($user, $permohonan), 403);
 
         DB::transaction(function () use ($user, $permohonan): void {
-            $permohonan->loadMissing(['layanan.persyaratans', 'dokumenPersyaratans']);
-            $this->assertRequiredDocumentsReady($permohonan);
+            $locked = Permohonan::query()->lockForUpdate()->findOrFail($permohonan->id);
+            abort_unless($this->canAct($user, $locked), 403);
+            $locked->load(['layanan.persyaratans', 'dokumenPersyaratans']);
+            $this->assertRequiredDocumentsReady($locked);
 
-            $stage = $permohonan->current_stage;
+            $stage = $locked->current_stage;
             $trackingPrefix = match ($stage) {
                 'kasi_pemerintahan_review' => 'kasi_pemerintahan',
                 'lurah_review' => 'lurah',
@@ -130,106 +160,117 @@ class ApprovalStageService
                 default => abort(409, 'Tahap persetujuan tidak dikenali.'),
             };
 
-            $data = [
+            $nextStage = $locked->layanan->alur_tte === 'tanpa_tte'
+                && $stage === 'kasi_pemerintahan_review'
+                    ? 'selesai'
+                    : match ($stage) {
+                        'kasi_pemerintahan_review' => 'lurah_review',
+                        'lurah_review' => $locked->layanan->alur_tte === 'lurah_dan_camat'
+                            ? 'kasi_umum_review'
+                            : 'fo_finalisasi',
+                        'kasi_umum_review' => 'sekcam_review',
+                        'sekcam_review' => 'camat_review',
+                        'camat_review' => 'fo_finalisasi',
+                    };
+
+            $locked->update([
                 $trackingPrefix . '_oleh' => $user->id,
                 $trackingPrefix . '_at' => now(),
-            ];
-
-            $nextStage = match ($stage) {
-                'kasi_pemerintahan_review' => $permohonan->layanan->alur_tte === 'tanpa_tte'
-                    ? 'selesai'
-                    : 'lurah_review',
-                'lurah_review' => $permohonan->layanan->alur_tte === 'lurah_dan_camat'
-                    ? 'kasi_umum_review'
-                    : 'selesai',
-                'kasi_umum_review' => 'sekcam_review',
-                'sekcam_review' => 'camat_review',
-                'camat_review' => 'selesai',
-            };
-
-            $data['current_stage'] = $nextStage;
-
-            if ($nextStage !== 'selesai') {
-                $this->ensureStageReviews($permohonan, $nextStage);
-            }
-
-            if ($nextStage === 'selesai') {
-                $signed = $permohonan->layanan->alur_tte !== 'tanpa_tte';
-                $data['status'] = $signed ? 'disetujui' : 'selesai';
-                $data['nomor_surat'] = $permohonan->nomor_surat
-                    ?? SuratGenerator::buatNomorSurat($permohonan);
-
-                if ($signed) {
-                    $data['diproses_oleh'] = $user->id;
-                    $data['diproses_at'] = now();
-                } else {
-                    $data['selesai_oleh'] = $user->id;
-                    $data['selesai_at'] = now();
-                }
-            }
-
-            $permohonan->loadMissing([
-                'layanan.persyaratans',
-                'dokumenPersyaratans',
+                'current_stage' => $nextStage,
             ]);
 
-            $permohonan->update($data);
+            if ($nextStage === 'selesai') {
+                $locked->update([
+                    'status' => 'selesai',
+                    'current_stage' => 'selesai',
+                    'nomor_surat' => $locked->nomor_surat
+                        ?? SuratGenerator::buatNomorSurat($locked),
+                    'selesai_oleh' => $user->id,
+                    'selesai_at' => now(),
+                    'diproses_oleh' => $locked->diproses_oleh ?? $user->id,
+                    'diproses_at' => $locked->diproses_at ?? now(),
+                ]);
+            }
+
+            if (in_array($nextStage, [
+                'kasi_pemerintahan_review',
+                'lurah_review',
+                'kasi_umum_review',
+                'sekcam_review',
+                'camat_review',
+            ], true)) {
+                $this->ensureStageReviews($locked, $nextStage);
+            }
         });
     }
 
-    public function requestRevision(User $user, Permohonan $permohonan, string $note): void {
+    public function requestRevision(User $user, Permohonan $permohonan, string $note): void
+    {
         abort_unless($this->canAct($user, $permohonan), 403);
 
-        $permohonan->update([
-            'status' => 'revisi',
-            'current_stage' => 'fo_input',
-            'catatan_revisi' => $note,
-            'diproses_oleh' => null,
-            'diproses_at' => null,
-            'selesai_oleh' => null,
-            'selesai_at' => null,
-            'nomor_surat' => null,
-        ]);
+        DB::transaction(function () use ($user, $permohonan, $note): void {
+            $locked = Permohonan::query()->lockForUpdate()->findOrFail($permohonan->id);
+            abort_unless($this->canAct($user, $locked), 403);
+            $statusBefore = $locked->status;
+            // Simpan tahap sebelum current_stage dikembalikan ke FO.
+            $requestingStage = $locked->current_stage;
+
+            $locked->update([
+                'status' => 'revisi',
+                'current_stage' => 'fo_input',
+                'catatan_revisi' => $note,
+                'diproses_oleh' => null,
+                'diproses_at' => null,
+                'selesai_oleh' => null,
+                'selesai_at' => null,
+                'nomor_surat' => null,
+            ]);
+
+            // Assign properti satu per satu agar kolom stage tetap tersimpan
+            // meskipun belum dimasukkan ke $fillable model AuditLog.
+            $auditLog = new AuditLog();
+            $auditLog->permohonan_id = $locked->id;
+            $auditLog->user_id = $user->id;
+            $auditLog->aksi = 'revisi_diminta';
+            $auditLog->status_sebelum = $statusBefore;
+            $auditLog->status_sesudah = 'revisi';
+            $auditLog->catatan = $note;
+            $auditLog->stage = $requestingStage;
+            $auditLog->save();
+        });
     }
 
-    public function canComplete(User $user, Permohonan $permohonan): bool {
-        return $permohonan->status === 'disetujui'
-            && $permohonan->nomor_surat !== null
-            && (int) $permohonan->diproses_oleh === (int) $user->id
-            && in_array($user->role, ['lurah', 'camat'], true)
-            && ($user->role !== 'lurah' || $user->kelurahan_id === $permohonan->kelurahan_id);
+    public function canComplete(User $user, Permohonan $permohonan): bool
+    {
+        return $user->role === 'fo'
+            && (int) $user->kelurahan_id === (int) $permohonan->kelurahan_id
+            && $permohonan->status === 'diajukan'
+            && $permohonan->current_stage === 'fo_finalisasi';
     }
 
-    public function markComplete(User $user, Permohonan $permohonan): void {
+    public function markComplete(User $user, Permohonan $permohonan): void
+    {
         abort_unless($this->canComplete($user, $permohonan), 403);
 
-        $permohonan->update([
-            'status' => 'selesai',
-            'selesai_oleh' => $user->id,
-            'selesai_at' => now(),
-        ]);
+        DB::transaction(function () use ($user, $permohonan): void {
+            $locked = Permohonan::query()->lockForUpdate()->findOrFail($permohonan->id);
+            abort_unless($this->canComplete($user, $locked), 403);
+
+            $locked->update([
+                'status' => 'selesai',
+                'current_stage' => 'selesai',
+                'nomor_surat' => $locked->nomor_surat
+                    ?? SuratGenerator::buatNomorSurat($locked),
+                'selesai_oleh' => $user->id,
+                'selesai_at' => now(),
+            ]);
+        });
     }
 
-    private function ensureStageReviews(
-        Permohonan $permohonan,
-        string $stage
-        ): void {
-        \Log::info('ensureStageReviews dipanggil', [
-            'permohonan_id' => $permohonan->id,
-            'stage' => $stage,
-            'dokumen_count' => $permohonan->dokumenPersyaratans->count(),
-        ]);
-
-        $supersededIds = $permohonan->dokumenPersyaratans
-            ->pluck('menggantikan_id')
-            ->filter()
-            ->all();
-
-        $activeDocuments = $permohonan->dokumenPersyaratans
-            ->reject(
-                fn (DokumenPersyaratan $document) =>
-                    in_array($document->id, $supersededIds, true)
-            );
+    public function ensureStageReviews(Permohonan $permohonan, string $stage): void
+    {
+        $permohonan->loadMissing('dokumenPersyaratans');
+        $activeDocuments = $this->activeDocuments($permohonan->dokumenPersyaratans);
 
         foreach ($activeDocuments as $document) {
             DocumentReview::firstOrCreate(
@@ -237,58 +278,71 @@ class ApprovalStageService
                     'dokumen_persyaratan_id' => $document->id,
                     'stage' => $stage,
                 ],
-                [
-                    'status' => 'belum_dicek',
-                ]
+                ['status' => 'belum_dicek']
             );
         }
+    }
+
+    /** Ambil hanya versi aktif; dokumen yang sudah digantikan tetap menjadi riwayat. */
+    private function activeDocuments(Collection $documents): Collection
+    {
+        $supersededIds = $documents->pluck('menggantikan_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $documents->reject(
+            fn (DokumenPersyaratan $document) => in_array((int) $document->id, $supersededIds, true)
+        )->values();
     }
 
     private function assertRequiredDocumentsReady(
         Permohonan $permohonan,
         bool $requireReviewed = true
-        ): void {
-        $supersededIds = $permohonan->dokumenPersyaratans
-            ->pluck('menggantikan_id')
-            ->filter()
-            ->all();
+    ): void {
+        $permohonan->loadMissing(['layanan.persyaratans', 'dokumenPersyaratans']);
+        $activeDocuments = $this->activeDocuments($permohonan->dokumenPersyaratans);
 
-        $activeDocuments = $permohonan->dokumenPersyaratans
-            ->reject(fn (DokumenPersyaratan $document) => in_array($document->id, $supersededIds, true));
-
-        foreach ($permohonan->layanan->persyaratans as $persyaratan) {
+        foreach (
+            $permohonan->layanan->persyaratans
+                ->where('aktif', true) as $persyaratan
+        ) {
             if (!$persyaratan->wajib) {
                 continue;
             }
 
-            $documents = $activeDocuments->where('persyaratan_id', $persyaratan->id);
-            if ($documents->isEmpty()) {
+            $documents = $activeDocuments
+                ->where('persyaratan_id', $persyaratan->id)
+                ->values();
+
+            $minimum = max(1, (int) ($persyaratan->jumlah_file ?? 1));
+            if ($documents->count() < $minimum) {
                 throw ValidationException::withMessages([
-                    'dokumen' => "Dokumen wajib {$persyaratan->nama} belum diunggah.",
+                    'dokumen' => "Dokumen wajib {$persyaratan->nama} minimal {$minimum} file; saat ini {$documents->count()} file aktif.",
                 ]);
             }
 
-            $citizenSignatureRequired = $persyaratan->butuh_ttd_warga ?? false;
-            if ($citizenSignatureRequired) {
-                if (!$documents->contains(fn (DokumenPersyaratan $document) => $document->jenis === 'ttd_warga')) {
-                    throw ValidationException::withMessages([
-                        'dokumen' => "Dokumen bertanda tangan basah untuk {$persyaratan->nama} belum diunggah.",
-                    ]);
-                }
+            $hasCitizenSignature = $documents->contains(
+                fn (DokumenPersyaratan $document) => $document->jenis === 'ttd_warga'
+            );
+
+            if (($persyaratan->butuh_ttd_warga ?? false) && !$hasCitizenSignature) {
+                throw ValidationException::withMessages([
+                    'dokumen' => "Dokumen bertanda tangan basah untuk {$persyaratan->nama} belum diunggah.",
+                ]);
             }
 
             if ($requireReviewed) {
                 $allReviewed = $documents->every(
-                    fn (DokumenPersyaratan $document) =>
-                        $document->documentReviews()
-                            ->where('stage', $permohonan->current_stage)
-                            ->where('status', 'sesuai')
-                            ->exists()
+                    fn (DokumenPersyaratan $document) => $document->documentReviews()
+                        ->where('stage', $permohonan->current_stage)
+                        ->where('status', 'sesuai')
+                        ->exists()
                 );
 
                 if (!$allReviewed) {
                     throw ValidationException::withMessages([
-                        'dokumen' => "Dokumen wajib {$persyaratan->nama} belum dinyatakan sesuai.",
+                        'dokumen' => "Semua dokumen aktif untuk persyaratan {$persyaratan->nama} harus dinyatakan sesuai pada tahap ini.",
                     ]);
                 }
             }

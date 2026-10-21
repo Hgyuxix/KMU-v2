@@ -105,7 +105,10 @@
                                 <td>
                                     <div class="table-main">{{ $permohonan->nama_lengkap }}</div>
                                 </td>
-                                <td>{{ $permohonan->layanan->nama }}</td>
+                                <td>
+                                    {{ $permohonan->layanan->nama }}<br>
+                                    @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
+                                </td>
                                 <td>
                                     <span class="status-badge status-{{ $permohonan->status }}">
                                         @switch($permohonan->status)
@@ -126,6 +129,8 @@
                                 <td>
                                     @if($permohonan->current_stage === 'fo_input' && auth()->user()->role === 'fo')
                                         <a class="table-link" href="{{ route('kelurahan.pengajuan.revisi', $permohonan) }}">Lengkapi draf →</a>
+                                    @elseif($permohonan->current_stage === 'fo_ttd_warga' && auth()->user()->role === 'fo')
+                                        <a class="table-link" href="{{ route('kelurahan.pengajuan.ttd-warga', $permohonan) }}">Unggah TTD Warga →</a>
                                     @elseif($permohonan->status === 'revisi')
                                         <a
                                             class="table-link"
@@ -133,6 +138,13 @@
                                         >
                                             Perbaiki →
                                         </a>
+
+                                    @elseif($permohonan->current_stage === 'fo_finalisasi' && auth()->user()->role === 'fo')
+                                        <form method="POST" action="{{ route('workflow.finalize', $permohonan) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="table-link" type="submit">Finalisasi →</button>
+                                        </form>
 
                                     @else
                                         <a

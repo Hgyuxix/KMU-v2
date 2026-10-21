@@ -38,6 +38,7 @@
                 <span class="status-badge status-{{ $permohonan->status }}">
                     {{ ucfirst($permohonan->status) }}
                 </span>
+                @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
                 <a class="secondary-btn" href="{{ route('dashboard') }}" style="padding:6px 14px;font-size:12px">← Kembali</a>
             </div>
         </div>
@@ -78,6 +79,9 @@
                             $ext = strtolower(pathinfo($doc->file_original_name, PATHINFO_EXTENSION));
                             $isPdf = $ext === 'pdf';
                             $fileUrl = route('dokumen.file', $doc->uuid);
+                            $currentStageReview = $doc->documentReviews
+                                ->firstWhere('stage', $permohonan->current_stage);
+                            $fileAvailable = $documentFilesAvailable[$doc->id] ?? false;
                         @endphp
                         <button
                             type="button"
@@ -85,15 +89,25 @@
                             data-doc-id="{{ $doc->id }}"
                             data-file-url="{{ $fileUrl }}"
                             data-is-pdf="{{ $isPdf ? '1' : '0' }}"
+                            data-file-available="{{ $fileAvailable ? '1' : '0' }}"
                             data-doc-name="{{ $doc->persyaratan->nama ?? 'Dokumen' }}"
                             onclick="selectDocument(this)"
                         >
                             <span>{{ $isPdf ? '📄' : '🖼️' }}</span>
                             <span>{{ $doc->persyaratan->nama ?? 'Dokumen' }}</span>
-                            @if($doc->status === 'sesuai')
+                            @if($currentStageReview?->status === 'sesuai')
                                 <span style="color:#34d399">✓</span>
-                            @elseif($doc->status === 'tidak_sesuai')
+                            @elseif($currentStageReview?->status === 'tidak_sesuai')
                                 <span style="color:#f87171">✕</span>
+                            @elseif($currentStageReview?->status === 'belum_dicek')
+                                <span class="status-badge" style="background:#f1f5f9;color:#64748b">Belum dicek</span>
+                            @elseif(!$currentStageReview)
+                                <span class="status-badge" style="background:#f1f5f9;color:#64748b">Belum ada review tahap ini</span>
+                            @else
+                                <span class="status-badge" style="background:#f1f5f9;color:#64748b">Status review tidak dikenal</span>
+                            @endif
+                            @if(!$fileAvailable)
+                                <span style="color:#b91c1c" title="File lampiran tidak tersedia di server">Lampiran tidak tersedia</span>
                             @endif
                         </button>
                     @empty
@@ -110,22 +124,29 @@
                         $firstExt = strtolower(pathinfo($firstDoc->file_original_name, PATHINFO_EXTENSION));
                         $firstIsPdf = $firstExt === 'pdf';
                         $firstUrl = route('dokumen.file', $firstDoc->uuid);
+                        $firstFileAvailable = $documentFilesAvailable[$firstDoc->id] ?? false;
                     @endphp
 
-                    <div id="image-viewer-wrap" class="viewer-img-container" style="{{ $firstIsPdf ? 'display:none;' : '' }}">
-                        <img id="viewer-image" src="{{ $firstUrl }}" alt="Preview Dokumen">
+                    <div id="image-viewer-wrap" class="viewer-img-container" style="{{ $firstIsPdf || !$firstFileAvailable ? 'display:none;' : '' }}">
+                        <img id="viewer-image" src="{{ $firstFileAvailable ? $firstUrl : '' }}" alt="Preview Dokumen">
                     </div>
 
                     <iframe
                         id="pdf-viewer-frame"
                         class="viewer-iframe"
-                        src="{{ $firstIsPdf ? $firstUrl : '' }}"
+                        src="{{ $firstIsPdf && $firstFileAvailable ? $firstUrl : 'about:blank' }}"
                         title="Pratinjau dokumen PDF"
-                        style="{{ $firstIsPdf ? '' : 'display:none;' }}"
+                        style="{{ $firstIsPdf && $firstFileAvailable ? '' : 'display:none;' }}"
                     ></iframe>
 
+                    <div id="file-unavailable" class="viewer-empty" style="{{ $firstFileAvailable ? 'display:none;' : '' }}">
+                        <div class="viewer-empty-icon">⚠️</div>
+                        <strong>Lampiran tidak tersedia</strong>
+                        <p style="margin:6px 0 0">File dokumen tidak ditemukan pada penyimpanan server.</p>
+                    </div>
+
                     <!-- Floating Translucent Toolbar -->
-                    <div class="floating-toolbar" id="floating-toolbar" style="{{ $firstIsPdf ? 'display:none;' : '' }}">
+                    <div class="floating-toolbar" id="floating-toolbar" style="{{ $firstIsPdf || !$firstFileAvailable ? 'display:none;' : '' }}">
                         <button type="button" class="toolbar-btn" onclick="zoomIn()" title="Perbesar (+)">＋</button>
                         <button type="button" class="toolbar-btn" onclick="zoomOut()" title="Perkecil (-)">－</button>
                         <div class="toolbar-separator"></div>
@@ -206,53 +227,132 @@
             <!-- 3. Checklist Dokumen Persyaratan -->
             <div class="sidebar-card">
                 <h3>
-                    <span>Verifikasi Persyaratan</span>
-                    <span style="font-size:12px;font-weight:600;color:#64748b">{{ $permohonan->dokumenPersyaratans->count() }} Dokumen</span>
+                    <span>Review Dokumen per Tahap</span>
+                    <span style="font-size:12px;font-weight:600;color:#64748b">
+                        {{ $dokumenAktif->count() }} Dokumen Aktif
+                    </span>
                 </h3>
 
                 <div class="doc-checklist-wrap">
-                    @forelse($permohonan->dokumenPersyaratans as $dokumen)
+                    @forelse($permohonan->dokumenPersyaratans->sortBy('id') as $dokumen)
+                        @php
+                            $isReplaced = in_array(
+                                (int) $dokumen->id,
+                                $digantikanIds,
+                                true
+                            );
+                        @endphp
+
                         <div class="doc-check-item" id="doc-row-{{ $dokumen->id }}">
                             <div class="doc-check-info">
-                                <span class="doc-check-name">{{ $dokumen->persyaratan->nama }}</span>
-                                <span class="doc-check-filename">{{ $dokumen->file_original_name }}</span>
+                                <span class="doc-check-name">
+                                    {{ $dokumen->persyaratan->nama ?? 'Persyaratan' }}
+                                </span>
+
+                                <span class="doc-check-filename">
+                                    {{ $dokumen->file_original_name }}
+                                </span>
                             </div>
 
-                            <div style="display:flex;align-items:center;gap:6px">
-                                @if($dokumen->status === 'sesuai')
-                                    <span class="status-badge status-selesai">✓ Sesuai</span>
-                                @elseif($dokumen->status === 'tidak_sesuai')
-                                    <span class="status-badge status-revisi">✕ Tidak Sesuai</span>
-                                @else
-                                    <span class="status-badge" style="background:#f1f5f9;color:#64748b">Belum Dicek</span>
-                                @endif
+                            @if($documentFilesAvailable[$dokumen->id] ?? false)
+                                <span class="status-badge status-selesai" style="font-size:10px">Lampiran tersedia</span>
+                            @else
+                                <span class="status-badge status-revisi" style="font-size:10px">Lampiran tidak tersedia</span>
+                            @endif
 
-                                @if($permohonan->status === 'diajukan')
-                                    <form method="POST" action="{{ route('dashboard.dokumen.status', $dokumen) }}" style="display:inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="sesuai">
-                                        <button
-                                            type="submit"
-                                            title="Tandai Sesuai"
-                                            style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid #10b981;background:#ecfdf5;color:#047857;cursor:pointer;font-weight:700"
-                                        >✓</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('dashboard.dokumen.status', $dokumen) }}" style="display:inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="tidak_sesuai">
-                                        <button
-                                            type="submit"
-                                            title="Tandai Tidak Sesuai"
-                                            style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid #ef4444;background:#fef2f2;color:#b91c1c;cursor:pointer;font-weight:700"
-                                        >✕</button>
-                                    </form>
-                                @endif
+                            @if($isReplaced)
+                                <span
+                                    class="status-badge"
+                                    style="background:#f1f5f9;color:#64748b"
+                                >
+                                    Versi Digantikan
+                                </span>
+                            @else
+                                <span
+                                    class="status-badge status-selesai"
+                                >
+                                    Dokumen Aktif
+                                </span>
+                            @endif
+                        </div>
+
+                        <div style="margin:0 0 18px 12px;padding-left:12px;border-left:2px solid #e2e8f0">
+                            <div style="font-size:12px;font-weight:700;margin-bottom:8px">
+                                Riwayat review
                             </div>
+
+                            @forelse($dokumen->documentReviews->sortBy('id') as $review)
+                                @php
+                                    $stageLabel = match ($review->stage) {
+                                        'kasi_pemerintahan_review' => 'Kasi Pemerintahan',
+                                        'lurah_review' => 'Lurah',
+                                        'kasi_umum_review' => 'Kasi Umum',
+                                        'sekcam_review' => 'Sekcam',
+                                        'camat_review' => 'Camat',
+                                        default => ucwords(
+                                            str_replace('_', ' ', $review->stage)
+                                        ),
+                                    };
+                                @endphp
+
+                                <div style="padding:8px 0;border-bottom:1px solid #f1f5f9">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                                        <strong style="font-size:12px">
+                                            {{ $stageLabel }}
+                                        </strong>
+
+                                        @if($review->status === 'sesuai')
+                                            <span class="status-badge status-selesai">
+                                                Sesuai
+                                            </span>
+                                        @elseif($review->status === 'tidak_sesuai')
+                                            <span class="status-badge status-revisi">
+                                                Tidak Sesuai
+                                            </span>
+                                        @elseif($review->status === 'belum_dicek')
+                                            <span
+                                                class="status-badge"
+                                                style="background:#f1f5f9;color:#64748b"
+                                            >
+                                                Belum Dicek
+                                            </span>
+                                        @else
+                                            <span
+                                                class="status-badge"
+                                                style="background:#f1f5f9;color:#64748b"
+                                            >
+                                                Status review tidak dikenal
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <div style="font-size:12px;color:#64748b;margin-top:4px">
+                                        Reviewer:
+                                        {{ $review->reviewer?->name
+                                            ?? ($review->reviewed_by !== null
+                                                ? 'Reviewer tidak tersedia'
+                                                : ($review->status === 'belum_dicek'
+                                                    ? 'Belum ditinjau'
+                                                    : 'Reviewer tidak tercatat')) }}
+                                    </div>
+
+                                    <div style="font-size:11px;color:#94a3b8;margin-top:2px">
+                                        {{ $review->reviewed_at?->translatedFormat('d M Y, H:i')
+                                            ?? ($review->status === 'belum_dicek'
+                                                ? 'Belum ada waktu pemeriksaan'
+                                                : 'Waktu pemeriksaan tidak tercatat') }}
+                                    </div>
+                                </div>
+                            @empty
+                                <div style="font-size:12px;color:#64748b;padding:6px 0">
+                                    Belum ada riwayat review pada dokumen ini.
+                                </div>
+                            @endforelse
                         </div>
                     @empty
-                        <div style="color:#64748b;font-size:13px">Tidak ada berkas persyaratan.</div>
+                        <div style="color:#64748b;font-size:13px">
+                            Belum ada berkas persyaratan.
+                        </div>
                     @endforelse
                 </div>
             </div>
@@ -295,8 +395,28 @@
                                     <span class="audit-time">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
                                 </div>
                                 <div class="audit-user">
-                                    Oleh <strong>{{ $log->user->name ?? 'Sistem' }}</strong>
+                                    Oleh <strong>{{ $log->user?->name
+                                        ?? ($log->user_id !== null
+                                            ? 'Pengguna tidak tersedia'
+                                            : 'Sistem') }}</strong>
                                 </div>
+
+                                @if($log->aksi === 'dokumen_status_diubah')
+                                    @php
+                                        $reviewStageLabel = match ($log->stage) {
+                                            'kasi_pemerintahan_review' => 'Kasi Pemerintahan',
+                                            'lurah_review' => 'Lurah',
+                                            'kasi_umum_review' => 'Kasi Umum',
+                                            'sekcam_review' => 'Sekcam',
+                                            'camat_review' => 'Camat',
+                                            null, '' => 'Tahap tidak tercatat',
+                                            default => ucwords(str_replace('_', ' ', $log->stage)),
+                                        };
+                                    @endphp
+                                    <div class="audit-user">
+                                        Review tahap: <strong>{{ $reviewStageLabel }}</strong>
+                                    </div>
+                                @endif
 
                                 @if($log->status_sebelum || $log->status_sesudah)
                                     <div class="audit-status">
@@ -329,193 +449,28 @@
                 </div>
             </div>
 
-            <!-- 5. Action Card (CTA Buttons) -->
+            <!-- 5. Workflow -->
             <div class="action-card">
-                @if($permohonan->status === 'diajukan')
-                    <div class="action-help">Periksa seluruh berkas di panel kiri dan pastikan semua dokumen wajib sudah berstatus Sesuai sebelum ACC.</div>
-                @elseif($permohonan->status === 'disetujui')
-                    <div class="action-help">Surat sudah disetujui. Cetak surat atau tandai selesai setelah dokumen diserahkan.</div>
-                @endif
-                @if($permohonan->status === 'diajukan')
-                    <div class="cta-btn-group">
-                        <form method="POST" action="{{ route('dashboard.pengajuan.approve', $permohonan) }}" style="flex:1">
-                            @csrf
-                            @method('PATCH')
-                            <button class="btn-emerald" type="submit" style="width:100%" onclick="return confirm('Apakah seluruh dokumen sudah diperiksa dan dinyatakan sesuai untuk di-ACC?')">
-                                ✓ Setujui (ACC)
-                            </button>
-                        </form>
-
-                        <button class="btn-rose" type="button" onclick="openRejectModal()">
-                            ✕ Kembalikan Revisi
-                        </button>
+                <div class="action-help">
+                    <strong>Monitoring Permohonan</strong>
+                    <div style="margin-top:6px">
+                        Halaman ini digunakan untuk memantau data permohonan,
+                        dokumen persyaratan, serta riwayat aktivitas.
                     </div>
+                </div>
 
-                @elseif($permohonan->status === 'revisi')
-                    <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:12px 16px;border-radius:10px;font-size:13px">
-                        <strong>Sedang Menunggu Revisi dari Kelurahan.</strong>
-                        @if($permohonan->catatan_revisi)
-                            <div style="margin-top:6px"><strong>Catatan:</strong> {{ $permohonan->catatan_revisi }}</div>
-                        @endif
-                    </div>
-
-                @elseif($permohonan->status === 'disetujui')
-                    <div style="display:flex;flex-direction:column;gap:12px">
-                        <div style="display:flex;gap:10px">
-                            <a class="primary-btn" href="{{ route('permohonan.preview', $permohonan) }}" style="flex:1;text-align:center;padding:12px">
-                                🖨️ Cetak Surat Resmi →
-                            </a>
-
-                            <form method="POST" action="{{ route('dashboard.pengajuan.selesai', $permohonan) }}" style="flex:1">
-                                @csrf
-                                @method('PATCH')
-                                <button class="btn-emerald" type="submit" style="width:100%">
-                                    ✓ Tandai Selesai
-                                </button>
-                            </form>
-                        </div>
-
-                        <button class="secondary-btn" type="button" onclick="openReopenModal()" style="font-size:12px;color:#b91c1c;border-color:#fecaca">
-                            ↻ Buka Kembali untuk Revisi (Koreksi)
-                        </button>
-                    </div>
-
-                @elseif($permohonan->status === 'selesai')
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-                        <div>
-                            <div style="font-size:13px;font-weight:700;color:#047857">✓ Pengajuan Selesai Diproses</div>
-                            <div style="font-size:11px;color:#64748b">Diselesaikan oleh {{ $permohonan->penyelesai->name ?? '-' }}</div>
-                        </div>
-                        <a class="primary-btn" href="{{ route('permohonan.preview', $permohonan) }}" style="padding:8px 16px;font-size:13px">
-                            🖨️ Preview Surat
-                        </a>
-                    </div>
-                @endif
+                <div style="margin-top:12px">
+                    <a
+                        class="primary-btn"
+                        href="{{ route('dashboard') }}"
+                        style="display:block;text-align:center;padding:12px"
+                    >
+                        ← Kembali ke Dashboard
+                    </a>
+                </div>
             </div>
         </section>
     </main>
-
-    <!-- REJECT / REVISI MODAL WITH QUICK REASONS -->
-    <div class="modal-backdrop" id="reject-modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>✕ Kembalikan Pengajuan untuk Revisi</h3>
-                <button type="button" class="modal-close-btn" onclick="closeRejectModal()">✕</button>
-            </div>
-            <form method="POST" action="{{ route('dashboard.pengajuan.revisi', $permohonan) }}">
-                @csrf
-                @method('PATCH')
-                <div class="modal-body">
-                    <p style="margin:0 0 14px;font-size:13px;color:#64748b">
-                        Pilih template alasan penolakan di bawah untuk mengisi catatan secara instan, atau tulis catatan tambahan.
-                    </p>
-
-                    <div class="quick-reasons-wrap">
-                        <div
-                            style="font-size:12px;font-weight:700;color:#334155;margin-bottom:8px"
-                            id="quick-reasons-label"
-                        >
-                            Alasan Cepat (Klik untuk memilih):
-                        </div>
-
-                        <div class="quick-tags" aria-labelledby="quick-reasons-label">
-                            <button
-                                type="button"
-                                class="quick-tag"
-                                onclick="appendReason('Foto KTP buram atau tidak terbaca dengan jelas.')"
-                            >
-                                📷 Foto KTP Buram
-                            </button>
-
-                            <button
-                                type="button"
-                                class="quick-tag"
-                                onclick="appendReason('Data identitas (NIK / Nama / Tanggal Lahir) tidak cocok dengan berkas.')"
-                            >
-                                ⚠️ Data Tidak Cocok
-                            </button>
-
-                            <button
-                                type="button"
-                                class="quick-tag"
-                                onclick="appendReason('Dokumen pengantar RT/RW belum dilampirkan atau sudah kadaluwarsa.')"
-                            >
-                                📄 Pengantar Kadaluwarsa
-                            </button>
-
-                            <button
-                                type="button"
-                                class="quick-tag"
-                                onclick="appendReason('Dokumen persyaratan yang diunggah belum lengkap.')"
-                            >
-                                📑 Berkas Tidak Lengkap
-                            </button>
-
-                            <button
-                                type="button"
-                                class="quick-tag"
-                                onclick="appendReason('Format dokumen terbalik / terpotong.')"
-                            >
-                                🔄 Orientasi Terbalik
-                            </button>
-                        </div>
-                    </div>
-
-                    <label for="catatan_revisi_input" style="font-size:12px;font-weight:700;color:#334155;display:block;margin-bottom:6px">
-                        Catatan Instruksi untuk Kelurahan *
-                    </label>
-                    <textarea
-                        id="catatan_revisi_input"
-                        name="catatan_revisi"
-                        rows="4"
-                        required
-                        maxlength="2000"
-                        placeholder="Jelaskan bagian yang harus diperbaiki oleh pihak kelurahan..."
-                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-family:inherit;font-size:13px"
-                    >{{ old('catatan_revisi') }}</textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="secondary-btn" onclick="closeRejectModal()">Batal</button>
-                    <button type="submit" class="btn-rose">Kirim Catatan Revisi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- REOPEN MODAL (FOR APPROVED SUBMISSIONS) -->
-    <div class="modal-backdrop" id="reopen-modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>↻ Buka Kembali Pengajuan (Koreksi)</h3>
-                <button type="button" class="modal-close-btn" onclick="closeReopenModal()">✕</button>
-            </div>
-            <form method="POST" action="{{ route('dashboard.pengajuan.reopen', $permohonan) }}">
-                @csrf
-                @method('PATCH')
-                <div class="modal-body">
-                    <p style="margin:0 0 14px;font-size:13px;color:#64748b">
-                        Pengajuan yang sudah disetujui dapat dibuka kembali jika ditemukan kesalahan sebelum dicetak dan diserahkan.
-                    </p>
-                    <label for="catatan_reopen_input" style="font-size:12px;font-weight:700;color:#334155;display:block;margin-bottom:6px">
-                        Catatan Koreksi *
-                    </label>
-                    <textarea
-                        id="catatan_reopen_input"
-                        name="catatan_revisi"
-                        rows="4"
-                        required
-                        maxlength="2000"
-                        placeholder="Jelaskan kesalahan yang ditemukan dan bagian yang perlu diperbaiki..."
-                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-family:inherit;font-size:13px"
-                    >{{ old('catatan_revisi') }}</textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="secondary-btn" onclick="closeReopenModal()">Batal</button>
-                    <button type="submit" class="btn-rose">Buka Kembali Pengajuan</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- JAVASCRIPT CONTROLLER FOR SPLIT-SCREEN VIEWER & MODALS -->
     <script>
@@ -525,6 +480,7 @@
         const imgWrap = document.getElementById('image-viewer-wrap');
         const pdfFrame = document.getElementById('pdf-viewer-frame');
         const toolbar = document.getElementById('floating-toolbar');
+        const fileUnavailable = document.getElementById('file-unavailable');
 
         function applyTransform() {
             if (viewerImg) {
@@ -575,6 +531,18 @@
 
             resetTransform();
 
+            if (btn.getAttribute('data-file-available') !== '1') {
+                imgWrap.style.display = 'none';
+                viewerImg.removeAttribute('src');
+                toolbar.style.display = 'none';
+                pdfFrame.style.display = 'none';
+                pdfFrame.src = 'about:blank';
+                fileUnavailable.style.display = 'flex';
+                return;
+            }
+
+            fileUnavailable.style.display = 'none';
+
             if (isPdf) {
                 imgWrap.style.display = 'none';
                 toolbar.style.display = 'none';
@@ -587,33 +555,6 @@
                 toolbar.style.display = 'flex';
                 viewerImg.src = fileUrl;
             }
-        }
-
-        // Reject Modal handlers
-        function openRejectModal() {
-            document.getElementById('reject-modal').classList.add('open');
-        }
-
-        function closeRejectModal() {
-            document.getElementById('reject-modal').classList.remove('open');
-        }
-
-        function openReopenModal() {
-            document.getElementById('reopen-modal').classList.add('open');
-        }
-
-        function closeReopenModal() {
-            document.getElementById('reopen-modal').classList.remove('open');
-        }
-
-        function appendReason(reasonText) {
-            const textarea = document.getElementById('catatan_revisi_input');
-            if (textarea.value.trim().length > 0) {
-                textarea.value += ' ' + reasonText;
-            } else {
-                textarea.value = reasonText;
-            }
-            textarea.focus();
         }
     </script>
 </body>

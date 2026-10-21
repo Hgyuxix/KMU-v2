@@ -2,261 +2,140 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Layanan;
-use App\Models\AuditLog;
 use App\Models\Kelurahan;
+use App\Models\Layanan;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
-use App\Services\SuratGenerator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request){
-        $query = Permohonan::with('layanan','kelurahan')->latest();
+    /**
+     * Dashboard monitoring tingkat kecamatan.
+     *
+     * Pengguna kecamatan memang dapat memantau seluruh kelurahan. Pembatasan
+     * per-kelurahan tetap diterapkan pada workflow jabatan yang memiliki scope
+     * kelurahan, bukan pada dashboard monitoring tingkat kecamatan ini.
+     */
+    public function index(Request $request)
+    {
+        abort_unless($request->user()?->role === 'kecamatan', 403);
 
-        if ($request->filled('q')) {
-            $q = trim($request->input('q'));
-            $query->where(function ($builder) use ($q) {
-                $builder->where('nama_lengkap', 'like', "%{$q}%")
-                    ->orWhere('id', is_numeric($q) ? (int) $q : -1);
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'layanan_id' => ['nullable', 'integer', 'min:1'],
+            'kelurahan_id' => ['nullable', 'integer', 'min:1'],
+            'status' => ['nullable', Rule::in(['diajukan', 'revisi', 'disetujui', 'selesai'])],
+        ]);
+
+        $query = Permohonan::query()
+            ->with(['layanan', 'kelurahan'])
+            ->latest();
+
+        if (!empty($filters['q'])) {
+            $search = trim($filters['q']);
+
+            $query->where(function ($builder) use ($search) {
+                $builder->where('nama_lengkap', 'like', '%' . $search . '%');
+
+                if (is_numeric($search)) {
+                    $builder->orWhere('id', (int) $search);
+                }
             });
         }
 
-        if ($request->filled('layanan_id')) {
-            $query->where('layanan_id', $request->integer('layanan_id'));
+        if (!empty($filters['layanan_id'])) {
+            $query->where('layanan_id', (int) $filters['layanan_id']);
         }
 
-        if ($request->filled('kelurahan_id')) {
-            $query->where('kelurahan_id', $request->integer('kelurahan_id'));
+        if (!empty($filters['kelurahan_id'])) {
+            $query->where('kelurahan_id', (int) $filters['kelurahan_id']);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
         }
 
         $permohonans = $query->paginate(10)->withQueryString();
 
-        $stats = Permohonan::selectRaw("
-            COUNT(*) as total,
-            COUNT(CASE WHEN status = 'diajukan' THEN 1 END) as diajukan,
-            COUNT(CASE WHEN status = 'revisi' THEN 1 END) as revisi,
-            COUNT(CASE WHEN status = 'disetujui' THEN 1 END) as disetujui,
-            COUNT(CASE WHEN status = 'selesai' THEN 1 END) as selesai
-        ")->first();
+        // Statistik tetap mencakup seluruh wilayah karena halaman ini adalah
+        // dashboard monitoring untuk akun kecamatan.
+        $stats = Permohonan::query()
+            ->selectRaw(<<<'SQL'
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'diajukan' THEN 1 END) as diajukan,
+                COUNT(CASE WHEN status = 'revisi' THEN 1 END) as revisi,
+                COUNT(CASE WHEN status = 'disetujui' THEN 1 END) as disetujui,
+                COUNT(CASE WHEN status = 'selesai' THEN 1 END) as selesai
+            SQL)
+            ->first();
 
-        $layanans = Layanan::where('aktif', true)->orderBy('id')->get(['id', 'nama']);
+        $layanans = Layanan::query()
+            ->where('aktif', true)
+            ->orderBy('id')
+            ->get(['id', 'nama']);
 
-        $kelurahans = Kelurahan::orderBy('nama')->get(['id', 'nama']);
+        $kelurahans = Kelurahan::query()
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
 
-        return view('dashboard.index', compact('permohonans', 'stats', 'layanans', 'kelurahans'));
+        return view('dashboard.index', compact(
+            'permohonans',
+            'stats',
+            'layanans',
+            'kelurahans'
+        ));
     }
 
-    public function show(Permohonan $permohonan)
+    public function show(Request $request, Permohonan $permohonan)
     {
-        $permohonan->load(['layanan.persyaratans', 'dokumenPersyaratans.persyaratan', 'auditLogs.user', 'auditLogs.dokumenPersyaratan.persyaratan', 'pemroses', 'penyelesai']);
-        return view('dashboard.show', compact('permohonan'));
-    }
-
-    public function approve(Request $request, Permohonan $permohonan){
-        abort_unless(
-            $permohonan->status === 'diajukan',
-            409,
-            'Pengajuan hanya dapat disetujui pada status diajukan.'
-        );
+        abort_unless($request->user()?->role === 'kecamatan', 403);
 
         $permohonan->load([
             'layanan.persyaratans',
-            'dokumenPersyaratans',
+            'kelurahan',
+            'dokumenPersyaratans.persyaratan',
+            'dokumenPersyaratans.documentReviews.reviewer',
+            'auditLogs.user',
+            'auditLogs.dokumenPersyaratan.persyaratan',
+            'pemroses',
+            'penyelesai',
         ]);
 
-        // Semua persyaratan WAJIB harus sudah memiliki dokumen
-        // dan status dokumennya harus "sesuai".
-        foreach ($permohonan->layanan->persyaratans as $persyaratan) {
-            if (!$persyaratan->wajib) {
-                continue;
-            }
+        $documents = $permohonan->dokumenPersyaratans;
+        $disk = Storage::disk('local');
+        $documentFilesAvailable = $documents
+            ->mapWithKeys(fn ($document) => [
+                $document->id => is_string($document->file_path)
+                    && $document->file_path !== ''
+                    && $disk->exists($document->file_path),
+            ])
+            ->all();
 
-            $dokumen = $permohonan->dokumenPersyaratans
-                ->firstWhere('persyaratan_id', $persyaratan->id);
+        $digantikanIds = $documents
+            ->pluck('menggantikan_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
-            if (!$dokumen) {
-                return back()->withErrors([
-                    'approve' => "Dokumen wajib \"{$persyaratan->nama}\" belum diunggah.",
-                ]);
-            }
+        $dokumenAktif = $documents
+            ->reject(
+                fn ($document) => in_array(
+                    (int) $document->id,
+                    $digantikanIds,
+                    true
+                )
+            )
+            ->values();
 
-            if ($dokumen->status !== 'sesuai') {
-                return back()->withErrors([
-                    'approve' => "Dokumen wajib \"{$persyaratan->nama}\" belum dinyatakan sesuai.",
-                ]);
-            }
-        }
-
-        abort_if(
-            $permohonan->status === 'disetujui',
-            409,
-            'Pengajuan ini sudah disetujui sebelumnya.'
-        );
-
-        $permohonan->update([
-            'status' => 'disetujui',
-            'diproses_oleh' => $request->user()->id,
-            'diproses_at' => now(),
-            'nomor_surat' => $permohonan->nomor_surat
-                ?? SuratGenerator::buatNomorSurat($permohonan),
-        ]);
-
-        return back()->with(
-            'success',
-            'Pengajuan disetujui, surat resmi diterbitkan.'
-        );
-    }
-
-    public function markComplete(Request $request, Permohonan $permohonan){
-        abort_unless(
-            $permohonan->status === 'disetujui',
-            409,
-            'Pengajuan hanya dapat ditandai selesai jika statusnya sudah disetujui.'
-        );
-
-        abort_unless(
-            $permohonan->nomor_surat,
-            409,
-            'Nomor surat belum diterbitkan.'
-        );
-
-        $permohonan->update([
-            'status' => 'selesai',
-            'selesai_oleh' => $request->user()->id,
-            'selesai_at' => now(),
-        ]);
-
-        return back()->with(
-            'success',
-            'Pengajuan ditandai selesai.'
-        );
-    }
-
-    public function reopenForRevision(
-        Request $request,
-        Permohonan $permohonan) {
-        abort_unless(
-            $permohonan->status === 'disetujui',
-            409,
-            'Pengajuan hanya dapat dibuka kembali setelah disetujui dan sebelum selesai.'
-        );
-
-        $data = $request->validate([
-            'catatan_revisi' => [
-                'required',
-                'string',
-                'max:2000',
-            ],
-        ]);
-
-        $permohonan->update([
-            'status' => 'revisi',
-            'catatan_revisi' => $data['catatan_revisi'],
-
-            // Persetujuan sebelumnya tidak lagi menjadi persetujuan aktif.
-            'diproses_oleh' => null,
-            'diproses_at' => null,
-
-            // Nomor surat lama tidak dipakai lagi.
-            // Setelah diajukan ulang dan di-ACC, nomor baru akan dibuat.
-            'nomor_surat' => null,
-
-            // Pastikan tracking selesai tidak terbawa.
-            'selesai_oleh' => null,
-            'selesai_at' => null,
-        ]);
-
-        return redirect()
-            ->route('dashboard.pengajuan.show', $permohonan)
-            ->with(
-                'success',
-                'Pengajuan dibuka kembali untuk revisi.'
-            );
-    }
-
-    /**
-     * Kecamatan tandain 1 dokumen sesuai / tidak sesuai.
-     */
-    public function updateDokumenStatus(
-        Request $request,
-        DokumenPersyaratan $dokumen) {
-        $dokumen->load([
+        return view('dashboard.show', compact(
             'permohonan',
-            'persyaratan',
-        ]);
-
-        abort_unless(
-            $dokumen->permohonan->status === 'diajukan',
-            409,
-            'Status dokumen hanya dapat diubah saat pengajuan sedang diperiksa.'
-        );
-
-        $data = $request->validate([
-            'status' => [
-                'required',
-                'in:sesuai,tidak_sesuai',
-            ],
-        ]);
-
-        $statusSebelum = $dokumen->status;
-        $statusSesudah = $data['status'];
-
-        // Tidak perlu membuat audit baru kalau status sebenarnya tidak berubah.
-        if ($statusSebelum === $statusSesudah) {
-            return back()->with(
-                'success',
-                'Status dokumen tidak berubah.'
-            );
-        }
-
-        $dokumen->update([
-            'status' => $statusSesudah,
-        ]);
-
-        \App\Models\AuditLog::create([
-            'permohonan_id' => $dokumen->permohonan_id,
-            'dokumen_persyaratan_id' => $dokumen->id,
-            'user_id' => $request->user()->id,
-            'aksi' => 'dokumen_status_diubah',
-            'status_sebelum' => $statusSebelum,
-            'status_sesudah' => $statusSesudah,
-            'catatan' => sprintf(
-                'Dokumen "%s" diubah dari "%s" menjadi "%s".',
-                $dokumen->persyaratan->nama,
-                $statusSebelum ?? 'belum_dicek',
-                $statusSesudah
-            ),
-        ]);
-
-        return back()->with(
-            'success',
-            'Status dokumen diperbarui.'
-        );
-    }
-
-    public function requestRevision(Request $request, Permohonan $permohonan){
-        abort_unless(
-            $permohonan->status === 'diajukan',
-            409,
-            'Pengajuan hanya dapat dikembalikan untuk revisi saat berstatus diajukan.'
-        );
-
-        $data = $request->validate([
-            'catatan_revisi' => ['required', 'string', 'max:2000'],
-        ]);
-
-        $permohonan->update([
-            'status' => 'revisi',
-            'catatan_revisi' => $data['catatan_revisi'],
-        ]);
-
-        return redirect()
-            ->route('dashboard.pengajuan.show', $permohonan)
-            ->with('success', 'Pengajuan dikembalikan untuk revisi.');
+            'dokumenAktif',
+            'digantikanIds',
+            'documentFilesAvailable'
+        ));
     }
 }

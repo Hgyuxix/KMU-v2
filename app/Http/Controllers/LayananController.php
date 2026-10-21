@@ -20,7 +20,9 @@ class LayananController extends Controller
     {
         abort_if(!$layanan->aktif, 404);
 
-        $layanan->load('persyaratans');
+        $layanan->load([
+            'persyaratans' => fn ($query) => $query->where('aktif', true),
+        ]);
 
         return view('layanan.show', compact('layanan'));
     }
