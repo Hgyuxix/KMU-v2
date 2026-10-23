@@ -351,7 +351,7 @@ class PersyaratanSeeder extends Seeder
                 'persyaratan' => [
                     [
                         'nama' => 'KTP Calon Mempelai Pria',
-                        'wajib' => true,
+                        'wajib' => false,
                         'jumlah_file' => 1,
                     ],
                     [
@@ -361,7 +361,7 @@ class PersyaratanSeeder extends Seeder
                     ],
                     [
                         'nama' => 'KK Calon Mempelai Pria',
-                        'wajib' => true,
+                        'wajib' => false,
                         'jumlah_file' => 1,
                     ],
                     [
@@ -371,7 +371,7 @@ class PersyaratanSeeder extends Seeder
                     ],
                     [
                         'nama' => 'Akta Kelahiran Calon Mempelai Pria',
-                        'wajib' => true,
+                        'wajib' => false,
                         'jumlah_file' => 1,
                     ],
                     [

@@ -7,21 +7,15 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+@include('partials.main-nav')
 <div class="container">
-    <header class="page-header">
+    <section class="section-head">
         <div>
             <div class="eyebrow">KMU v3 · Alur Persetujuan</div>
             <h1>Antrian Persetujuan</h1>
             <p>Permohonan yang menunggu tindakan sesuai kewenangan akun Anda.</p>
         </div>
-        <div class="header-actions">
-            @include('partials.user-chip')
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button class="secondary-btn" type="submit">Keluar</button>
-            </form>
-        </div>
-    </header>
+    </section>
 
     @if(session('success'))
         <div class="alert success">{{ session('success') }}</div>
@@ -33,7 +27,7 @@
     <section class="section-box">
         <h2>Menunggu tindakan Anda</h2>
         <div class="table-wrap">
-            <table>
+            <table class="kmu-theme-table">
                 <thead>
                     <tr><th>No.</th><th>Pemohon</th><th>Layanan</th><th>Kelurahan</th><th>Tahap</th><th></th></tr>
                 </thead>
@@ -47,8 +41,8 @@
                             @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
                         </td>
                         <td>{{ $permohonan->kelurahan->nama ?? '—' }}</td>
-                        <td>{{ str_replace('_', ' ', ucfirst($permohonan->current_stage)) }}</td>
-                        <td><a class="table-link" href="{{ route('workflow.show', $permohonan) }}">Tinjau →</a></td>
+                        <td><span class="kmu-theme-badge-neutral">{{ str_replace('_', ' ', ucfirst($permohonan->current_stage)) }}</span></td>
+                        <td><a class="kmu-theme-btn-outline" href="{{ route('workflow.show', $permohonan) }}">Tinjau →</a></td>
                     </tr>
                 @empty
                     <tr><td colspan="6">Tidak ada permohonan yang menunggu di tahap Anda.</td></tr>
@@ -64,7 +58,7 @@
             <h2>Monitoring layanan tanpa TTE pejabat</h2>
             <p class="muted">Daftar ini hanya untuk pemantauan Lurah; persetujuan sudah diselesaikan oleh Kasi Pemerintahan.</p>
             <div class="table-wrap">
-                <table>
+                <table class="kmu-theme-table">
                     <thead><tr><th>No.</th><th>Pemohon</th><th>Layanan</th><th>Status</th><th></th></tr></thead>
                     <tbody>
                     @forelse($monitoring as $permohonan)
@@ -76,7 +70,7 @@
                                 @include('partials.tte-badge', ['layanan' => $permohonan->layanan])
                             </td>
                             <td>{{ ucfirst($permohonan->status) }}</td>
-                            <td><a class="table-link" href="{{ route('workflow.show', $permohonan) }}">Lihat →</a></td>
+                            <td><a class="kmu-theme-btn-outline" href="{{ route('workflow.show', $permohonan) }}">Lihat →</a></td>
                         </tr>
                     @empty
                         <tr><td colspan="5">Belum ada permohonan selesai tanpa TTE pejabat.</td></tr>

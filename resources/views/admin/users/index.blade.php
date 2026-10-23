@@ -60,7 +60,7 @@
 
             <div class="table-wrap">
 
-                <table class="data-table account-table">
+                <table class="account-table kmu-theme-table">
                     <thead>
                         <tr>
                             <th>Nama</th>
@@ -109,11 +109,11 @@
 
                                 <td>
                                     @if($user->is_active)
-                                        <span class="status-badge status-selesai">
+                                        <span class="kmu-theme-badge-success">
                                             Aktif
                                         </span>
                                     @else
-                                        <span class="status-badge status-ditolak">
+                                        <span class="kmu-theme-badge-neutral">
                                             Nonaktif
                                         </span>
                                     @endif
@@ -126,7 +126,7 @@
                                     @else
                                         <div class="table-actions">
                                             <a
-                                                class="table-action table-action-primary"
+                                                class="table-action kmu-theme-btn-outline kmu-theme-btn-sm"
                                                 href="{{ route('admin.users.edit', $user) }}"
                                             >
                                                 Edit
@@ -139,7 +139,7 @@
                                             >
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="table-action {{ $user->is_active ? 'table-action-danger' : 'table-action-success' }}">
+                                                <button type="submit" class="table-action {{ $user->is_active ? 'table-action-danger' : 'table-action-success' }} kmu-theme-btn-danger kmu-theme-btn-sm">
                                                     {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                                 </button>
                                             </form>

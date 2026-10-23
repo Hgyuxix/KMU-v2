@@ -314,7 +314,7 @@ class TemplateSuratSeeder extends Seeder
 
             // KUR
             11 => [
-                'judul' => 'SURAT PENGANTAR PENGAJUAN KUR',
+                'judul' => 'SURAT KETERANGAN USAHA',
                 'isi_template' => <<<'TEXT'
                 Yang bertanda tangan di bawah ini, menerangkan dengan sesungguhnya bahwa :
 

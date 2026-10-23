@@ -8,21 +8,7 @@
     </head>
 
     <body>
-        <nav class="kmu-nav">
-            <a class="kmu-brand" href="{{ route('layanan.index') }}">
-                <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
-                <span>Pelayanan Administrasi<br>Kecamatan Magelang Utara</span>
-            </a>
-            <div class="kmu-navlinks">
-                @include('partials.user-chip')
-                <a href="{{ route('layanan.index') }}">Beranda</a>
-                <a class="active" href="{{ route('dashboard') }}">Dashboard Pelayanan</a>
-                <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                    @csrf
-                    <button class="nav-logout" type="submit">Keluar</button>
-                </form>
-            </div>
-        </nav>
+        @include('partials.main-nav')
 
         <main class="dashboard-wrap">
             <div class="dashboard-head">

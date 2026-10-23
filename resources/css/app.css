@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import 'tailwindcss';
 @import './kmu-legacy.css';
 
@@ -8,6 +10,175 @@
 
 @theme {
     --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* AKSARA-MU reference tokens and reusable components. */
+:root {
+    --kmu-primary: #00152f;
+    --kmu-primary-container: #0f2a4a;
+    --kmu-on-primary: #ffffff;
+    --kmu-on-primary-container: #7a92b7;
+    --kmu-primary-fixed: #d4e3ff;
+    --kmu-primary-fixed-dim: #b0c8f0;
+    --kmu-secondary: #805600;
+    --kmu-secondary-container: #feb63c;
+    --kmu-on-secondary: #ffffff;
+    --kmu-on-secondary-container: #6e4900;
+    --kmu-secondary-fixed: #ffddb0;
+    --kmu-secondary-fixed-dim: #ffba46;
+    --kmu-tertiary: #00123e;
+    --kmu-tertiary-container: #002469;
+    --kmu-error: #ba1a1a;
+    --kmu-error-container: #ffdad6;
+    --kmu-surface-container-lowest: #ffffff;
+    --kmu-surface-container-low: #f2f4f6;
+    --kmu-surface-container: #eceef0;
+    --kmu-surface-container-high: #e6e8ea;
+    --kmu-surface-container-highest: #e0e3e5;
+    --kmu-surface-variant: #e0e3e5;
+    --kmu-surface-bright: #f7f9fb;
+    --kmu-surface-dim: #d8dadc;
+    --kmu-on-surface: #191c1e;
+    --kmu-on-surface-variant: #43474e;
+    --kmu-on-background: #191c1e;
+    --kmu-background: #f7f9fb;
+    --kmu-outline: #74777f;
+    --kmu-outline-variant: #c4c6cf;
+    --kmu-inverse-surface: #2d3133;
+    --kmu-inverse-on-surface: #eff1f3;
+    --kmu-inverse-primary: #b0c8f0;
+    --kmu-surface-tint: #485f82;
+    --kmu-on-error: #ffffff;
+    --kmu-on-error-container: #93000a;
+    --kmu-font-headline: 'Newsreader', serif;
+    --kmu-font-body: 'Plus Jakarta Sans', sans-serif;
+    --kmu-radius-default: 0.25rem;
+    --kmu-radius-lg: 0.5rem;
+    --kmu-radius-xl: 0.75rem;
+    --kmu-radius-full: 9999px;
+    --kmu-space-xs: 0.25rem;
+    --kmu-space-sm: 0.5rem;
+    --kmu-space-md: 1rem;
+    --kmu-space-lg: 1.5rem;
+    --kmu-space-xl: 2.5rem;
+    --kmu-gutter: 1.5rem;
+    --kmu-margin: 2rem;
+
+    /* Alias protects the existing legacy --kmu-surface value declared below. */
+    --kmu-theme-surface: #f7f9fb;
+}
+
+.kmu-theme-badge-success,
+.kmu-theme-badge-neutral {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: fit-content;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid transparent;
+    border-radius: var(--kmu-radius-full);
+    font-family: var(--kmu-font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+}
+
+.kmu-theme-badge-success {
+    color: #176b4b;
+    background: #e8f5ed;
+    border-color: #b8dfc8;
+}
+
+.kmu-theme-badge-neutral {
+    color: var(--kmu-on-surface-variant);
+    background: var(--kmu-surface-container-low);
+    border-color: var(--kmu-outline-variant);
+}
+
+.kmu-theme-btn-primary,
+.kmu-theme-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--kmu-radius-lg);
+    font-family: var(--kmu-font-body);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.kmu-theme-btn-primary {
+    color: var(--kmu-on-primary);
+    background: var(--kmu-primary);
+    box-shadow: 0 2px 5px rgb(0 21 47 / 16%);
+}
+
+.kmu-theme-btn-primary:hover {
+    background: var(--kmu-primary-container);
+}
+
+.kmu-theme-btn-outline {
+    color: var(--kmu-primary);
+    background: transparent;
+    border-color: var(--kmu-outline-variant);
+}
+
+.kmu-theme-btn-outline:hover {
+    background: var(--kmu-surface-container-low);
+    border-color: var(--kmu-primary);
+}
+
+.kmu-theme-btn-primary:focus-visible,
+.kmu-theme-btn-outline:focus-visible {
+    outline: 3px solid rgb(72 95 130 / 28%);
+    outline-offset: 2px;
+}
+
+.kmu-theme-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    color: var(--kmu-on-surface);
+    background: var(--kmu-surface-container-lowest);
+    border: 1px solid var(--kmu-outline-variant);
+    border-radius: var(--kmu-radius-xl);
+    font-family: var(--kmu-font-body);
+    font-size: 0.875rem;
+}
+
+.kmu-theme-table th,
+.kmu-theme-table td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--kmu-outline-variant);
+}
+
+.kmu-theme-table th {
+    color: var(--kmu-on-surface-variant);
+    background: var(--kmu-surface-container-low);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.kmu-theme-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.kmu-theme-card {
+    color: var(--kmu-on-surface);
+    background: var(--kmu-theme-surface);
+    border: 1px solid var(--kmu-outline-variant);
+    border-radius: var(--kmu-radius-xl);
+    box-shadow: 0 1px 3px rgb(0 21 47 / 8%), 0 8px 24px rgb(0 21 47 / 5%);
 }
 
 :root {
@@ -324,6 +495,7 @@ textarea:focus-visible {
 .section-box {
     padding: 22px;
     margin-bottom: 16px;
+    border-top: 3px solid var(--kmu-gold);
 }
 
 .dashboard-panel,
@@ -335,6 +507,10 @@ textarea:focus-visible {
 .section-box:hover {
     border-color: #d1dee9;
     box-shadow: var(--kmu-shadow-sm);
+}
+
+.section-box:hover {
+    border-top-color: var(--kmu-gold);
 }
 
 .panel-title-row {
@@ -2004,4 +2180,57 @@ textarea:disabled {
     font-size: 12px !important;
     line-height: 1.45 !important;
     box-sizing: border-box !important;
+}
+
+.kmu-theme-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--kmu-error);
+    border-radius: var(--kmu-radius-lg);
+    color: var(--kmu-error);
+    background: transparent;
+    font-family: var(--kmu-font-body);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.kmu-theme-btn-danger:hover {
+    color: var(--kmu-error);
+    background: color-mix(in srgb, var(--kmu-error-container) 55%, white);
+    border-color: var(--kmu-error);
+}
+
+.kmu-theme-btn-danger:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--kmu-error) 28%, transparent);
+    outline-offset: 2px;
+}
+
+.account-table td:nth-child(6) {
+    white-space: normal;
+}
+
+.account-table .table-actions {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.account-table .table-actions form {
+    min-width: 0;
+}
+
+.kmu-theme-btn-sm {
+    min-height: 2rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
 }
