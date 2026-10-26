@@ -399,6 +399,7 @@
     </head>
 
     <body>
+        @php
         $alurTte = $permohonan->layanan->alur_tte ?? 'tanpa_tte';
         $layananId = (int) $permohonan->layanan_id;
 
@@ -426,10 +427,9 @@
             'CAMAT MAGELANG UTARA'
         );
 
-        $verificationUrl = route(
-            'verifikasi.show',
-            $permohonan->nomor_surat
-        );
+        $verificationUrl = filled($permohonan->nomor_surat)
+            ? route('verifikasi.show', $permohonan->nomor_surat)
+            : null;
 
         $formData = $permohonan->data_surat ?? [];
 
@@ -583,6 +583,7 @@
                 );
             }
         }
+        @endphp
 
         @php
             /*
@@ -849,7 +850,9 @@
                             LURAH {{ $kelurahanName }}
                         </div>
 
-                        <div id="tte-qr-lurah" class="tte-qr"></div>
+                        @if($verificationUrl)
+                            <div id="tte-qr-lurah" class="tte-qr"></div>
+                        @endif
 
                         <div class="signer-name">
                             {{ $lurahName }}
@@ -877,7 +880,9 @@
                                 {{ $camatJabatan }}
                             </div>
 
-                            <div id="tte-qr-camat" class="tte-qr"></div>
+                            @if($verificationUrl)
+                                <div id="tte-qr-camat" class="tte-qr"></div>
+                            @endif
 
                             <div class="signer-name">
                                 {{ $camatName }}
@@ -893,43 +898,45 @@
 
                 </div>
 
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                @if($verificationUrl)
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-                <script>
-                    const verificationUrl = @json($verificationUrl);
+                    <script>
+                        const verificationUrl = @json($verificationUrl);
 
-                    const qrLurah = document.getElementById('tte-qr-lurah');
+                        const qrLurah = document.getElementById('tte-qr-lurah');
 
-                    if (qrLurah) {
-                        new QRCode(qrLurah, {
-                            text: verificationUrl,
-                            width: 90,
-                            height: 90
-                        });
-                    }
-
-                    @if($alurTte === 'lurah_dan_camat')
-                        const qrCamat = document.getElementById('tte-qr-camat');
-
-                        if (qrCamat) {
-                            new QRCode(qrCamat, {
+                        if (qrLurah) {
+                            new QRCode(qrLurah, {
                                 text: verificationUrl,
                                 width: 90,
                                 height: 90
                             });
                         }
-                    @endif
-                </script>
+
+                        @if($alurTte === 'lurah_dan_camat')
+                            const qrCamat = document.getElementById('tte-qr-camat');
+
+                            if (qrCamat) {
+                                new QRCode(qrCamat, {
+                                    text: verificationUrl,
+                                    width: 90,
+                                    height: 90
+                                });
+                            }
+                        @endif
+                    </script>
+                @endif
             @endif
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-            @if($permohonan->layanan->alur_tte !== 'tanpa_tte')
-            <script>
-                new QRCode(document.getElementById("tte-qr"), {
-                    text: "{{ route('verifikasi.show', $permohonan->nomor_surat) }}",
-                    width: 90,
-                    height: 90
-                });
-            </script>
+            @if($verificationUrl && $permohonan->layanan->alur_tte !== 'tanpa_tte')
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                <script>
+                    new QRCode(document.getElementById("tte-qr"), {
+                        text: @json($verificationUrl),
+                        width: 90,
+                        height: 90
+                    });
+                </script>
             @endif
         </div>
         @else
