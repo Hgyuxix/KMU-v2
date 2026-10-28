@@ -86,9 +86,42 @@
         @csrf
         @method('PATCH')
 
+        @if((int) $permohonan->layanan_id === 7)
+            @php
+                $serviceSevenParentFields = [
+                    'tempat_lahir_orang_tua',
+                    'agama_orang_tua',
+                    'pekerjaan',
+                    'alamat_orang_tua',
+                ];
+                $serviceSevenChildFields = [
+                    'nama_anak',
+                    'jenis_kelamin_anak',
+                    'alamat_anak',
+                ];
+                $serviceSevenIncomeFields = [
+                    'penghasilan_per_bulan',
+                    'keperluan',
+                ];
+                $serviceSevenGroupedFields = array_merge(
+                    $serviceSevenParentFields,
+                    $serviceSevenChildFields,
+                    $serviceSevenIncomeFields
+                );
+                $serviceSevenUnassignedFields = array_values(array_diff(
+                    array_keys($fields),
+                    $serviceSevenGroupedFields
+                ));
+            @endphp
+        @endif
+
         {{-- DATA WARGA --}}
-        <section class="section-box">
-            <h2>1. Data Warga</h2>
+        <section class="section-box" @if((int) $permohonan->layanan_id === 7) id="service-seven-parent-guardian-group" @endif>
+            <h2>1. {{ (int) $permohonan->layanan_id === 7 ? 'Data Orang Tua/Wali' : 'Data Warga' }}</h2>
+            @if((int) $permohonan->layanan_id === 7)
+                <h3>Identitas Pemohon / Data Warga</h3>
+                <p class="hint">Data pada bagian ini adalah identitas orang tua/wali yang mengajukan surat.</p>
+            @endif
 
             <div class="grid-2">
 
@@ -120,6 +153,7 @@
                         minlength="16"
                         inputmode="numeric"
                         placeholder="Masukkan ulang 16 digit NIK"
+                        pattern="[0-9]{16}"
                         required
                     >
 
@@ -189,113 +223,306 @@
                 </div>
 
             </div>
+
+            @if((int) $permohonan->layanan_id === 7)
+                <div class="service-seven-field-group" style="margin-top:20px;padding-top:12px;border-top:1px solid #d8e2eb">
+                    <h3>Data Tambahan Orang Tua/Wali</h3>
+                    <div class="grid-2">
+                        @foreach($serviceSevenParentFields as $field)
+                            @if(isset($fields[$field]))
+                                @php
+                                    $config = $fields[$field];
+                                    $value = old('data_surat.' . $field, $permohonan->data_surat[$field] ?? '');
+                                    $fieldId = 'data_surat_' . $field;
+                                @endphp
+                                <div class="form-group" @if(($config['type'] ?? 'text') === 'textarea') style="grid-column:1/-1" @endif>
+                                    <label for="{{ $fieldId }}">{{ $config['label'] }} <span>*</span></label>
+                                    @if(($config['type'] ?? 'text') === 'select')
+                                        <select id="{{ $fieldId }}" name="data_surat[{{ $field }}]" required>
+                                            <option value="">-- Pilih --</option>
+                                            @foreach($config['options'] as $option)
+                                                <option value="{{ $option }}" @selected($value === $option)>{{ $option }}</option>
+                                            @endforeach
+                                        </select>
+                                    @elseif(($config['type'] ?? 'text') === 'textarea')
+                                        <textarea id="{{ $fieldId }}" name="data_surat[{{ $field }}]" class="cap-sentence" required>{{ $value }}</textarea>
+                                    @elseif(($config['type'] ?? 'text') === 'money')
+                                        <div class="input-money">
+                                            <span>Rp</span>
+                                            <input id="{{ $fieldId }}" type="text" name="data_surat[{{ $field }}]" value="{{ $value }}" class="rupiah" inputmode="numeric" required>
+                                        </div>
+                                    @elseif(($config['type'] ?? 'text') === 'date')
+                                        <input id="{{ $fieldId }}" type="date" name="data_surat[{{ $field }}]" value="{{ $value }}" required>
+                                    @else
+                                        <input id="{{ $fieldId }}" type="{{ ($config['type'] ?? 'text') === 'number' ? 'number' : 'text' }}" name="data_surat[{{ $field }}]" value="{{ $value }}" class="cap-word" required>
+                                    @endif
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </section>
 
         {{-- DATA SURAT --}}
         @if(count($fields) > 0)
 
-        <section class="section-box">
-            <h2>2. Data Surat</h2>
-
-            <div class="grid-2">
-
-                @foreach($fields as $field => $config)
-
+            @if((int) $permohonan->layanan_id === 7)
+                <section class="section-box">
+                    <h2>2. Data Surat</h2>
+                    <p class="hint">Bagian ini memuat data anak serta informasi penghasilan dan keperluan. Data tambahan orang tua/wali sudah dikelompokkan bersama identitas pemohon di atas.</p>
                     @php
-                        $value = old(
-                            'data_surat.' . $field,
-                            $permohonan->data_surat[$field] ?? ''
-                        );
+                        $serviceSevenContentGroups = [
+                            [
+                                'id' => 'service-seven-child-group',
+                                'title' => 'Data Anak',
+                                'fields' => $serviceSevenChildFields,
+                            ],
+                            [
+                                'id' => 'service-seven-income-group',
+                                'title' => 'Informasi Penghasilan dan Keperluan',
+                                'fields' => $serviceSevenIncomeFields,
+                            ],
+                        ];
+                        if (count($serviceSevenUnassignedFields) > 0) {
+                            $serviceSevenContentGroups[] = [
+                                'id' => 'service-seven-extra-group',
+                                'title' => 'Informasi Tambahan',
+                                'fields' => $serviceSevenUnassignedFields,
+                            ];
+                        }
                     @endphp
-
-                    @php
-                        $fieldId = 'data_surat_' . $field;
-                    @endphp
-
-                    <div
-                        class="form-group"
-                        @if(($config['type'] ?? 'text') === 'textarea')
-                            style="grid-column:1/-1"
-                        @endif
-                    >
-
-                        <label for="{{ $fieldId }}">
-                            {{ $config['label'] }}
-                            <span>*</span>
-                        </label>
-
-                        @if(($config['type'] ?? 'text') === 'select')
-
-                            <select
-                                id="{{ $fieldId }}"
-                                name="data_surat[{{ $field }}]"
-                                required
-                            >
-                                <option value="">-- Pilih --</option>
-
-                                @foreach($config['options'] as $option)
-                                    <option
-                                        value="{{ $option }}"
-                                        @selected($value === $option)
-                                    >
-                                        {{ $option }}
-                                    </option>
+                    @foreach($serviceSevenContentGroups as $group)
+                        <section class="service-seven-field-group" id="{{ $group['id'] }}" style="margin-top:16px;padding:16px;border:1px solid #d8e2eb;border-radius:10px;background:#fff">
+                            <h3>{{ $group['title'] }}</h3>
+                            <div class="grid-2">
+                                @foreach($group['fields'] as $field)
+                                    @if(isset($fields[$field]))
+                                        @php
+                                            $config = $fields[$field];
+                                            $value = old('data_surat.' . $field, $permohonan->data_surat[$field] ?? '');
+                                            $fieldId = 'data_surat_' . $field;
+                                        @endphp
+                                        <div class="form-group" @if(($config['type'] ?? 'text') === 'textarea') style="grid-column:1/-1" @endif>
+                                            <label for="{{ $fieldId }}">{{ $config['label'] }} <span>*</span></label>
+                                            @if(($config['type'] ?? 'text') === 'select')
+                                                <select id="{{ $fieldId }}" name="data_surat[{{ $field }}]" required>
+                                                    <option value="">-- Pilih --</option>
+                                                    @foreach($config['options'] as $option)
+                                                        <option value="{{ $option }}" @selected($value === $option)>{{ $option }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @elseif(($config['type'] ?? 'text') === 'textarea')
+                                                <textarea id="{{ $fieldId }}" name="data_surat[{{ $field }}]" class="cap-sentence" required>{{ $value }}</textarea>
+                                            @elseif(($config['type'] ?? 'text') === 'money')
+                                                <div class="input-money">
+                                                    <span>Rp</span>
+                                                    <input id="{{ $fieldId }}" type="text" name="data_surat[{{ $field }}]" value="{{ $value }}" class="rupiah" inputmode="numeric" required>
+                                                </div>
+                                            @elseif(($config['type'] ?? 'text') === 'date')
+                                                <input id="{{ $fieldId }}" type="date" name="data_surat[{{ $field }}]" value="{{ $value }}" required>
+                                            @else
+                                                <input id="{{ $fieldId }}" type="{{ ($config['type'] ?? 'text') === 'number' ? 'number' : 'text' }}" name="data_surat[{{ $field }}]" value="{{ $value }}" class="cap-word" required>
+                                            @endif
+                                        </div>
+                                    @endif
                                 @endforeach
-                            </select>
-
-                        @elseif(($config['type'] ?? 'text') === 'textarea')
-
-                            <textarea
-                                id="{{ $fieldId }}"
-                                name="data_surat[{{ $field }}]"
-                                class="cap-sentence"
-                                required
-                            >{{ $value }}</textarea>
-
-                        @elseif(($config['type'] ?? 'text') === 'money')
-
-                            <div class="input-money">
-                                <span>Rp</span>
-                                <input
-                                    id="{{ $fieldId }}"
-                                    type="text"
-                                    name="data_surat[{{ $field }}]"
-                                    value="{{ $value }}"
-                                    class="rupiah"
-                                    inputmode="numeric"
-                                    required
-                                >
                             </div>
+                        </section>
+                    @endforeach
+                </section>
+            @else
+                <section class="section-box">
+                    <h2>2. Data Surat</h2>
+                    @php
+                        $hasGroups = collect($fields)->contains(fn ($cfg) => !empty($cfg['group']));
+                        if ($hasGroups) {
+                            $groupedFields = [];
+                            foreach ($fields as $field => $config) {
+                                $groupName = $config['group'] ?? '';
+                                $groupedFields[$groupName][$field] = $config;
+                            }
+                        } else {
+                            $groupedFields = ['' => $fields];
+                        }
+                    @endphp
 
-                        @elseif(($config['type'] ?? 'text') === 'date')
-
-                            <input
-                                id="{{ $fieldId }}"
-                                type="date"
-                                name="data_surat[{{ $field }}]"
-                                value="{{ $value }}"
-                                required
-                            >
-
+                    @foreach($groupedFields as $groupTitle => $groupFields)
+                        @if($hasGroups)
+                            <div class="form-field-group" style="margin-top:16px;padding:16px;border:1px solid #d8e2eb;border-radius:10px;background:#fff">
+                                @if($groupTitle !== '')
+                                    <h3 style="margin-top:0">{{ $groupTitle }}</h3>
+                                @endif
+                                <div class="grid-2">
                         @else
-
-                            <input
-                                id="{{ $fieldId }}"
-                                type="{{ ($config['type'] ?? 'text') === 'number' ? 'number' : 'text' }}"
-                                name="data_surat[{{ $field }}]"
-                                value="{{ $value }}"
-                                class="cap-word"
-                                required
-                            >
-
+                            <div class="grid-2">
                         @endif
+                                @foreach($groupFields as $field => $config)
+                                    @if((int) $permohonan->layanan_id === 14 && $field === 'ahli_waris')
+                                        @php
+                                            $storedServiceFourteenHeirs = $permohonan->data_surat['ahli_waris'] ?? null;
+                                            $submittedServiceFourteenHeirs = old('data_surat.ahli_waris');
+                                            $serviceFourteenLegacyHeirs = old(
+                                                'data_surat.ahli_waris_legacy_raw',
+                                                $permohonan->data_surat['ahli_waris_legacy_raw']
+                                                    ?? (is_string($storedServiceFourteenHeirs) ? $storedServiceFourteenHeirs : null)
+                                            );
 
-                    </div>
+                                            if (is_array($submittedServiceFourteenHeirs)) {
+                                                $serviceFourteenHeirRows = $submittedServiceFourteenHeirs;
+                                            } elseif (is_array($storedServiceFourteenHeirs)) {
+                                                $serviceFourteenHeirRows = $storedServiceFourteenHeirs;
+                                            } elseif (is_string($submittedServiceFourteenHeirs) || is_string($storedServiceFourteenHeirs)) {
+                                                $legacyValue = is_string($submittedServiceFourteenHeirs)
+                                                    ? $submittedServiceFourteenHeirs
+                                                    : $storedServiceFourteenHeirs;
+                                                $serviceFourteenHeirRows = [];
+                                                $legacyLines = preg_split('/\r\n|\r|\n/', trim($legacyValue));
 
-                @endforeach
+                                                foreach ($legacyLines as $legacyLine) {
+                                                    $legacyLine = trim($legacyLine);
+                                                    if ($legacyLine === '') continue;
 
-            </div>
-        </section>
+                                                    $legacyParts = array_map('trim', explode('|', $legacyLine));
+                                                    $legacyGender = $legacyParts[1] ?? '-';
+                                                    if ($legacyGender === 'L') $legacyGender = 'Laki-laki';
+                                                    elseif ($legacyGender === 'P') $legacyGender = 'Perempuan';
+
+                                                    $serviceFourteenHeirRows[] = [
+                                                        'nama' => $legacyParts[0] ?? '-',
+                                                        'jenis_kelamin' => $legacyGender,
+                                                        'alamat' => $legacyParts[2] ?? '-',
+                                                        'hubungan' => $legacyParts[3] ?? '-',
+                                                    ];
+                                                }
+                                            } else {
+                                                $serviceFourteenHeirRows = [];
+                                            }
+
+                                            $serviceFourteenHeirRows = array_values(array_map(
+                                                fn ($heir) => is_array($heir) ? $heir : [],
+                                                $serviceFourteenHeirRows
+                                            ));
+                                            if ($serviceFourteenHeirRows === []) {
+                                                $serviceFourteenHeirRows = [[
+                                                    'nama' => '', 'jenis_kelamin' => '', 'alamat' => '', 'hubungan' => '',
+                                                ]];
+                                            }
+                                            $serviceFourteenHeirFields = $config['fields'];
+                                            $serviceFourteenNextHeirIndex = count($serviceFourteenHeirRows);
+                                        @endphp
+
+                                        @if(is_string($serviceFourteenLegacyHeirs))
+                                            <input type="hidden" name="data_surat[ahli_waris_legacy_raw]" value="{{ $serviceFourteenLegacyHeirs }}">
+                                        @endif
+
+                                        <div class="form-group" style="grid-column:1/-1">
+                                            <label>{{ $config['label'] }} <span>*</span></label>
+                                            <div class="hint" style="margin-bottom:10px">{{ $config['help'] ?? 'Satu record untuk setiap ahli waris. Data lama tetap dipertahankan saat revisi.' }}</div>
+                                            <div id="service-14-heirs" data-next-index="{{ $serviceFourteenNextHeirIndex }}">
+                                                @foreach($serviceFourteenHeirRows as $index => $heir)
+                                                    <fieldset data-heir-row style="border:1px solid #d8e2eb;border-radius:8px;padding:12px;margin:0 0 12px">
+                                                        <legend>Ahli Waris {{ $loop->iteration }}</legend>
+                                                        <div class="grid-2">
+                                                            <div class="form-group">
+                                                                <label for="service-14-heir-name-{{ $index }}">{{ $serviceFourteenHeirFields['nama']['label'] }} <span>*</span></label>
+                                                                <input id="service-14-heir-name-{{ $index }}" type="text" name="data_surat[ahli_waris][{{ $index }}][nama]" value="{{ $heir['nama'] ?? '' }}" maxlength="255" required>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label for="service-14-heir-gender-{{ $index }}">{{ $serviceFourteenHeirFields['jenis_kelamin']['label'] }} <span>*</span></label>
+                                                                <select id="service-14-heir-gender-{{ $index }}" name="data_surat[ahli_waris][{{ $index }}][jenis_kelamin]" required>
+                                                                    <option value="">-- Pilih --</option>
+                                                                    @foreach($serviceFourteenHeirFields['jenis_kelamin']['options'] as $option)
+                                                                        <option value="{{ $option }}" @selected(($heir['jenis_kelamin'] ?? '') === $option)>{{ $option }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="form-group" style="grid-column:1/-1">
+                                                                <label for="service-14-heir-address-{{ $index }}">{{ $serviceFourteenHeirFields['alamat']['label'] }} <span>*</span></label>
+                                                                <textarea id="service-14-heir-address-{{ $index }}" name="data_surat[ahli_waris][{{ $index }}][alamat]" maxlength="1000" required>{{ $heir['alamat'] ?? '' }}</textarea>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label for="service-14-heir-relationship-{{ $index }}">{{ $serviceFourteenHeirFields['hubungan']['label'] }} <span>*</span></label>
+                                                                <input id="service-14-heir-relationship-{{ $index }}" type="text" name="data_surat[ahli_waris][{{ $index }}][hubungan]" value="{{ $heir['hubungan'] ?? '' }}" maxlength="255" required>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" class="secondary-btn" data-remove-heir>Hapus ahli waris ini</button>
+                                                    </fieldset>
+                                                @endforeach
+                                            </div>
+                                            <template id="service-14-heir-template">
+                                                <fieldset data-heir-row style="border:1px solid #d8e2eb;border-radius:8px;padding:12px;margin:0 0 12px">
+                                                    <legend>Ahli Waris</legend>
+                                                    <div class="grid-2">
+                                                        <div class="form-group">
+                                                            <label for="service-14-heir-name-__INDEX__">{{ $serviceFourteenHeirFields['nama']['label'] }} <span>*</span></label>
+                                                            <input id="service-14-heir-name-__INDEX__" type="text" name="data_surat[ahli_waris][__INDEX__][nama]" maxlength="255" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="service-14-heir-gender-__INDEX__">{{ $serviceFourteenHeirFields['jenis_kelamin']['label'] }} <span>*</span></label>
+                                                            <select id="service-14-heir-gender-__INDEX__" name="data_surat[ahli_waris][__INDEX__][jenis_kelamin]" required>
+                                                                <option value="">-- Pilih --</option>
+                                                                @foreach($serviceFourteenHeirFields['jenis_kelamin']['options'] as $option)
+                                                                    <option value="{{ $option }}">{{ $option }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group" style="grid-column:1/-1">
+                                                            <label for="service-14-heir-address-__INDEX__">{{ $serviceFourteenHeirFields['alamat']['label'] }} <span>*</span></label>
+                                                            <textarea id="service-14-heir-address-__INDEX__" name="data_surat[ahli_waris][__INDEX__][alamat]" maxlength="1000" required></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="service-14-heir-relationship-__INDEX__">{{ $serviceFourteenHeirFields['hubungan']['label'] }} <span>*</span></label>
+                                                            <input id="service-14-heir-relationship-__INDEX__" type="text" name="data_surat[ahli_waris][__INDEX__][hubungan]" maxlength="255" required>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="secondary-btn" data-remove-heir>Hapus ahli waris ini</button>
+                                                </fieldset>
+                                            </template>
+                                            <button type="button" class="secondary-btn" id="service-14-add-heir">Tambah ahli waris</button>
+                                        </div>
+                                    @else
+                                        @php
+                                            $required = $config['required'] ?? true;
+                                            $value = old('data_surat.' . $field, $permohonan->data_surat[$field] ?? '');
+                                            $fieldId = 'data_surat_' . $field;
+                                        @endphp
+                                        <div class="form-group" @if(($config['type'] ?? 'text') === 'textarea') style="grid-column:1/-1" @endif>
+                                            <label for="{{ $fieldId }}">{{ $config['label'] }} @if($required)<span>*</span>@endif</label>
+                                            @if(($config['type'] ?? 'text') === 'select')
+                                                <select id="{{ $fieldId }}" name="data_surat[{{ $field }}]" @if($required) required @endif>
+                                                    <option value="">-- Pilih --</option>
+                                                    @foreach($config['options'] as $option)
+                                                        <option value="{{ $option }}" @selected($value === $option)>{{ $option }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @elseif(($config['type'] ?? 'text') === 'textarea')
+                                                <textarea id="{{ $fieldId }}" name="data_surat[{{ $field }}]" class="cap-sentence" @if($required) required @endif>{{ $value }}</textarea>
+                                            @elseif(($config['type'] ?? 'text') === 'money')
+                                                <div class="input-money">
+                                                    <span>Rp</span>
+                                                    <input id="{{ $fieldId }}" type="text" name="data_surat[{{ $field }}]" value="{{ $value }}" class="rupiah" inputmode="numeric" @if($required) required @endif>
+                                                </div>
+                                            @elseif(($config['type'] ?? 'text') === 'date')
+                                                <input id="{{ $fieldId }}" type="date" name="data_surat[{{ $field }}]" value="{{ $value }}" @if($required) required @endif>
+                                            @else
+                                                <input id="{{ $fieldId }}" type="{{ ($config['type'] ?? 'text') === 'number' ? 'number' : 'text' }}" name="data_surat[{{ $field }}]" value="{{ $value }}" class="cap-word" @if($field === 'nik_orang_tua') maxlength="16" minlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif @if($required) required @endif>
+                                            @endif
+                                            @if(!empty($config['help']))
+                                                <div class="hint">{{ $config['help'] }}</div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                @endforeach
+                        @if($hasGroups)
+                                </div>
+                            </div>
+                        @else
+                            </div>
+                        @endif
+                    @endforeach
+                </section>
+            @endif
 
         @endif
 
@@ -344,6 +571,17 @@
                         ->values();
                     $rejectedCount = $rejectedDocuments->count();
                     $activeCount = $requirementDocuments->count();
+                    $isServiceFourteenHeirKtp = (int) $permohonan->layanan_id === 14
+                        && str_contains(strtolower($persyaratan->nama), 'ktp')
+                        && str_contains(strtolower($persyaratan->nama), 'ahli waris');
+                    $allowsMultipleFiles = $persyaratan->multiple || $isServiceFourteenHeirKtp;
+                    $serviceFourteenHeirCount = $isServiceFourteenHeirKtp
+                        ? count($serviceFourteenHeirRows ?? [])
+                        : 0;
+                    $serviceFourteenAdditionalKtpNeeded = max(
+                        0,
+                        $serviceFourteenHeirCount - $activeCount
+                    );
                     // Dokumen wajib seharusnya sudah lengkap sebelum pengajuan maju.
                     // Saat revisi, input pengganti dibuat per dokumen yang ditolak.
                     $needsReplacement = $rejectedCount > 0;
@@ -408,6 +646,10 @@
                                         @endif
                                     @elseif($persyaratan->jumlah_file > 1)
                                         · Persyaratan ini dikonfigurasi untuk {{ $persyaratan->jumlah_file }} file
+                                    @endif
+                                    @if($isServiceFourteenHeirKtp)
+                                        · KTP yang dibutuhkan: <span data-service-fourteen-ktp-count data-active-count="{{ $activeCount }}">{{ $serviceFourteenHeirCount }}</span>
+                                        · Tambahan diperlukan: <span data-service-fourteen-ktp-additional>{{ $serviceFourteenAdditionalKtpNeeded }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -477,20 +719,24 @@
 
                         @php
                             $canAddFiles = $persyaratan->aktif
-                                && ($persyaratan->multiple || $requirementDocuments->isEmpty());
+                                && ($allowsMultipleFiles || $requirementDocuments->isEmpty());
                         @endphp
 
                         @if($canAddFiles)
                             <div class="form-group" style="margin-top:12px">
                                 <label for="additional-{{ $persyaratan->id }}">
-                                    @if($persyaratan->multiple)
+                                    @if($isServiceFourteenHeirKtp)
+                                        Tambah KTP ahli waris yang dibutuhkan
+                                    @elseif($persyaratan->multiple)
                                         Tambah file (opsional)
                                     @else
                                         Unggah {{ $persyaratan->wajib ? 'dokumen wajib' : 'dokumen opsional' }}
                                     @endif
                                 </label>
                                 <div class="hint" style="margin-bottom:8px">
-                                    @if($persyaratan->multiple)
+                                    @if($isServiceFourteenHeirKtp)
+                                        Jumlah file KTP tambahan harus mengikuti kekurangan dari total ahli waris. Dokumen aktif tetap dipertahankan.
+                                    @elseif($persyaratan->multiple)
                                         File baru akan ditambahkan tanpa mengganti dokumen yang sudah tersimpan.
                                     @elseif($persyaratan->wajib)
                                         Dokumen wajib ini belum ada; unggah agar pengajuan dapat dikirim kembali.
@@ -501,11 +747,15 @@
                                 <input
                                     id="additional-{{ $persyaratan->id }}"
                                     type="file"
-                                    name="persyaratan_tambahan[{{ $persyaratan->id }}]{{ $persyaratan->multiple ? '[]' : '' }}"
+                                    name="persyaratan_tambahan[{{ $persyaratan->id }}]{{ $allowsMultipleFiles ? '[]' : '' }}"
                                     accept="{{ $acceptAttr }}"
                                     data-max-size="{{ $persyaratan->maks_size }}"
-                                    @if($persyaratan->multiple) multiple @endif
-                                    @required($persyaratan->wajib && $requirementDocuments->isEmpty())
+                                    @if($allowsMultipleFiles) multiple @endif
+                                    @if($isServiceFourteenHeirKtp) data-service-fourteen-ktp data-expected-additional="{{ $serviceFourteenAdditionalKtpNeeded }}" @endif
+                                    @required(
+                                        ($persyaratan->wajib && $requirementDocuments->isEmpty())
+                                        || ($isServiceFourteenHeirKtp && $serviceFourteenAdditionalKtpNeeded > 0)
+                                    )
                                 >
                             </div>
                         @elseif($isLocked)
@@ -700,6 +950,74 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+@if((int) $permohonan->layanan_id === 14)
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('service-14-heirs');
+    const template = document.getElementById('service-14-heir-template');
+    const addButton = document.getElementById('service-14-add-heir');
+    const form = document.querySelector('form');
+
+    if (!container || !template) return;
+
+    function syncCounts() {
+        const heirCount = container.querySelectorAll('[data-heir-row]').length;
+
+        document.querySelectorAll('[data-service-fourteen-ktp-count]').forEach(function (counter) {
+            counter.textContent = heirCount;
+            const activeCount = Number(counter.dataset.activeCount || 0);
+            const extra = Math.max(0, heirCount - activeCount);
+            const additionalCounter = counter.closest('.form-group')?.querySelector('[data-service-fourteen-ktp-additional]');
+            if (additionalCounter) additionalCounter.textContent = extra;
+        });
+
+        document.querySelectorAll('[data-service-fourteen-ktp]').forEach(function (input) {
+            const activeCount = Number(document.querySelector('[data-service-fourteen-ktp-count]')?.dataset.activeCount || 0);
+            const expected = Math.max(0, heirCount - activeCount);
+            input.dataset.expectedAdditional = expected;
+            input.setCustomValidity(input.files.length === expected
+                ? ''
+                : 'Pilih tepat ' + expected + ' KTP tambahan untuk jumlah ahli waris saat ini.');
+        });
+    }
+
+    function renumberRows() {
+        container.querySelectorAll('[data-heir-row]').forEach(function (row, index) {
+            const legend = row.querySelector('legend');
+            if (legend) legend.textContent = 'Ahli Waris ' + (index + 1);
+        });
+    }
+
+    addButton?.addEventListener('click', function () {
+        const index = Number(container.dataset.nextIndex || 0);
+        container.dataset.nextIndex = index + 1;
+        container.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', String(index)));
+        renumberRows();
+        syncCounts();
+    });
+
+    container.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-remove-heir]');
+        if (!button) return;
+
+        const row = button.closest('[data-heir-row]');
+        const rows = container.querySelectorAll('[data-heir-row]');
+        if (rows.length > 1) row.remove();
+        else row.querySelectorAll('input, textarea, select').forEach(function (field) { field.value = ''; });
+
+        renumberRows();
+        syncCounts();
+    });
+
+    document.querySelectorAll('[data-service-fourteen-ktp]').forEach(function (input) {
+        input.addEventListener('change', syncCounts);
+    });
+    form?.addEventListener('submit', syncCounts);
+    syncCounts();
+});
+</script>
+@endif
 
 </body>
 </html>

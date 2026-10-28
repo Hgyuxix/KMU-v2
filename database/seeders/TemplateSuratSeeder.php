@@ -189,7 +189,7 @@ class TemplateSuratSeeder extends Seeder
                 TEXT
             ],
 
-            // Pensiun (surat kuasa). Redaksi "an. ......" menunggu konfirmasi.
+            // Pensiun (surat kuasa).
             6 => [
                 'judul' => 'SURAT KETERANGAN KUASA PENGAMBILAN PENSIUN',
                 'isi_template' => <<<'TEXT'
@@ -229,12 +229,12 @@ class TemplateSuratSeeder extends Seeder
                 'isi_template' => <<<'TEXT'
                 Yang bertanda tangan di bawah ini:
 
-                Nama : {{ nama_wali }}
-                NIK : {{ nik_wali }}
-                Tempat, Tanggal Lahir : {{ tempat_lahir_wali }}, {{ tanggal_lahir_wali }}
+                Nama : {{ nama_lengkap }}
+                NIK : {{ nik }}
+                Tempat, Tanggal Lahir : {{ tempat_lahir_orang_tua }}, {{ tanggal_lahir }}
                 Pekerjaan : {{ pekerjaan }}
-                Agama : {{ agama_wali }}
-                Alamat : {{ alamat_wali }}
+                Agama : {{ agama_orang_tua }}
+                Alamat : {{ alamat_orang_tua }}
 
                 Adalah Wali dari :
 
@@ -254,11 +254,11 @@ class TemplateSuratSeeder extends Seeder
 
                 Materai 10000
 
-                {{ nama_wali }}
+                {{ nama_lengkap }}
 
                 Tercatat di registrasi Kelurahan
                 Nomor : ....
-                Tanggal : {{ tanggal }}
+                Tanggal : ....
                 TEXT
             ],
 
@@ -282,8 +282,10 @@ class TemplateSuratSeeder extends Seeder
                 KK : {{ nama_kk }}
                 Nomor : {{ nomor_kk }}
 
-                Sertifikat : {{ nama_sertifikat }}
+                {{ dokumen_perbedaan }} : {{ nama_sertifikat }}
                 Nomor : {{ nomor_sertifikat }}
+
+                Nama yang benar : {{ nama_yang_benar }}
 
                 Data tersebut diatas adalah benar nama orang yang sama (satu orang).
 

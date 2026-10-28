@@ -33,12 +33,49 @@ class PermohonanService
 
         $fields = config('surat.' . $layanan->id, []);
 
+        $messages = (int) $layanan->id === 7
+            ? $this->nikOrangTuaValidationMessages()
+            : [];
+
+        $storeRules = $this->buildStoreRules(
+            $fields,
+            $layanan,
+            $ocrPersyaratan
+        );
+
+        if ((int) $layanan->id === 14) {
+            $heirCount = $this->serviceFourteenHeirCount(
+                $request->input('data_surat.ahli_waris')
+            );
+            $ktpRequirement = $this->serviceFourteenKtpRequirement($layanan);
+            $reservedOcrCount = $ocrPersyaratan
+                && (int) $ocrPersyaratan->id === (int) $ktpRequirement->id
+                ? 1
+                : 0;
+            $this->addServiceFourteenKtpUploadRules(
+                $storeRules,
+                $ktpRequirement,
+                $heirCount,
+                0,
+                false,
+                $reservedOcrCount
+            );
+            $messages = array_merge(
+                $messages,
+                $this->serviceFourteenHeirValidationMessages(),
+                $this->serviceFourteenKtpValidationMessages(
+                    $ktpRequirement,
+                    max(0, $heirCount - $reservedOcrCount),
+                    $heirCount,
+                    false,
+                    $reservedOcrCount
+                )
+            );
+        }
+
         $validated = $request->validate(
-            $this->buildStoreRules(
-                $fields,
-                $layanan,
-                $ocrPersyaratan
-            )
+            $storeRules,
+            $messages
         );
 
         $operationId = $this->documentService->beginFileOperation();
@@ -98,14 +135,68 @@ class PermohonanService
             $isFoDraft ? null : $revisionStage
         );
 
-        $validated = $request->validate(
-            $this->buildRevisionRules(
-                $layanan,
-                $permohonan,
-                $revisionStage,
-                $revisionRequirements
-            )
+        $messages = (int) $layanan->id === 7
+            ? $this->nikOrangTuaValidationMessages()
+            : [];
+
+        $revisionRules = $this->buildRevisionRules(
+            $layanan,
+            $permohonan,
+            $revisionStage,
+            $revisionRequirements
         );
+        $serviceFourteenKtpContext = null;
+
+        if ((int) $layanan->id === 14) {
+            $heirCount = $this->serviceFourteenHeirCount(
+                $request->input('data_surat.ahli_waris')
+            );
+            $ktpRequirement = $this->serviceFourteenKtpRequirement($layanan);
+            $activeKtpCount = $this->activeRevisionDocuments($permohonan)
+                ->where('persyaratan_id', $ktpRequirement->id)
+                ->count();
+
+            $this->addServiceFourteenKtpUploadRules(
+                $revisionRules,
+                $ktpRequirement,
+                $heirCount,
+                $activeKtpCount,
+                true
+            );
+            $messages = array_merge(
+                $messages,
+                $this->serviceFourteenHeirValidationMessages(),
+                $this->serviceFourteenKtpValidationMessages(
+                    $ktpRequirement,
+                    max(0, $heirCount - $activeKtpCount),
+                    $heirCount,
+                    true
+                )
+            );
+            $serviceFourteenKtpContext = [
+                'heir_count' => $heirCount,
+                'active_count' => $activeKtpCount,
+            ];
+        }
+
+        $validated = $request->validate(
+            $revisionRules,
+            $messages
+        );
+
+        if (
+            $serviceFourteenKtpContext !== null
+            && $serviceFourteenKtpContext['active_count']
+                > $serviceFourteenKtpContext['heir_count']
+        ) {
+            throw ValidationException::withMessages([
+                'data_surat.ahli_waris' => sprintf(
+                    'Jumlah KTP aktif (%d) melebihi jumlah ahli waris (%d). Hubungi admin untuk menyesuaikan dokumen.',
+                    $serviceFourteenKtpContext['active_count'],
+                    $serviceFourteenKtpContext['heir_count']
+                ),
+            ]);
+        }
 
         $updateData = $this->buildRevisionUpdateData(
             $validated,
@@ -273,24 +364,51 @@ class PermohonanService
         $rules = $this->buildCitizenRules();
 
         foreach ($fields as $field => $config) {
+            if ((int) $layanan->id === 14 && $field === 'ahli_waris') {
+                continue;
+            }
+
             $type = is_array($config)
                 ? ($config['type'] ?? 'text')
                 : 'text';
+            $required = !is_array($config) || ($config['required'] ?? true);
+
+            if ($type === 'date') {
+                $dateRules = [
+                    $required ? 'required' : 'nullable',
+                    'date',
+                ];
+
+                if (
+                    (int) $layanan->id === 11
+                    && $field === 'tanggal_berdiri_usaha'
+                ) {
+                    $dateRules[] = 'before_or_equal:today';
+                }
+
+                $rules['data_surat.' . $field] = $dateRules;
+
+                continue;
+            }
 
             $rules['data_surat.' . $field] =
                 $type === 'select' &&
                 isset($config['options']) &&
                 is_array($config['options'])
                     ? [
-                        'required',
+                        $required ? 'required' : 'nullable',
                         'string',
                         'in:' . implode(',', $config['options']),
                     ]
                     : [
-                        'required',
+                        $required ? 'required' : 'nullable',
                         'string',
                         'max:1000',
                     ];
+        }
+
+        if ((int) $layanan->id === 14) {
+            $this->addServiceFourteenHeirRules($rules);
         }
 
         foreach ($layanan->persyaratans as $persyaratan) {
@@ -349,7 +467,10 @@ class PermohonanService
 
         $required = $persyaratan->wajib && !$isOcrKtp;
 
-        if ($persyaratan->multiple) {
+        $multiple = $persyaratan->multiple
+            || $this->isServiceFourteenKtpRequirement($persyaratan);
+
+        if ($multiple) {
             $rules[$key] = [
                 $required ? 'required' : 'nullable',
                 'array',
@@ -373,6 +494,169 @@ class PermohonanService
             'file',
             'mimes:' . $extensions,
             'max:' . $persyaratan->maks_size,
+        ];
+    }
+
+    private function addServiceFourteenHeirRules(array &$rules): void
+    {
+        $rules['data_surat.ahli_waris'] = [
+            'required',
+            'array',
+            'min:1',
+        ];
+        $rules['data_surat.ahli_waris.*'] = [
+            'required',
+            'array:nama,jenis_kelamin,alamat,hubungan',
+        ];
+        $rules['data_surat.ahli_waris.*.nama'] = [
+            'required',
+            'string',
+            'max:255',
+        ];
+        $rules['data_surat.ahli_waris.*.jenis_kelamin'] = [
+            'required',
+            'string',
+            'in:Laki-laki,Perempuan',
+        ];
+        $rules['data_surat.ahli_waris.*.alamat'] = [
+            'required',
+            'string',
+            'max:1000',
+        ];
+        $rules['data_surat.ahli_waris.*.hubungan'] = [
+            'required',
+            'string',
+            'max:255',
+        ];
+        $rules['data_surat.ahli_waris_legacy_raw'] = [
+            'nullable',
+            'string',
+        ];
+    }
+
+    private function serviceFourteenHeirValidationMessages(): array
+    {
+        return [
+            'data_surat.ahli_waris.required' => 'Tambahkan minimal satu ahli waris.',
+            'data_surat.ahli_waris.array' => 'Data ahli waris harus berupa daftar record.',
+            'data_surat.ahli_waris.min' => 'Tambahkan minimal satu ahli waris.',
+            'data_surat.ahli_waris.*.required' => 'Setiap record ahli waris harus diisi.',
+            'data_surat.ahli_waris.*.array' => 'Setiap ahli waris harus berupa satu record data.',
+            'data_surat.ahli_waris.*.nama.required' => 'Nama wajib diisi untuk setiap ahli waris.',
+            'data_surat.ahli_waris.*.nama.string' => 'Nama ahli waris harus berupa teks.',
+            'data_surat.ahli_waris.*.nama.max' => 'Nama ahli waris maksimal 255 karakter.',
+            'data_surat.ahli_waris.*.jenis_kelamin.required' => 'Pilih jenis kelamin untuk setiap ahli waris.',
+            'data_surat.ahli_waris.*.jenis_kelamin.string' => 'Jenis kelamin ahli waris harus berupa pilihan yang tersedia.',
+            'data_surat.ahli_waris.*.jenis_kelamin.in' => 'Jenis kelamin ahli waris harus Laki-laki atau Perempuan.',
+            'data_surat.ahli_waris.*.alamat.required' => 'Alamat wajib diisi untuk setiap ahli waris.',
+            'data_surat.ahli_waris.*.alamat.string' => 'Alamat ahli waris harus berupa teks.',
+            'data_surat.ahli_waris.*.alamat.max' => 'Alamat ahli waris maksimal 1000 karakter.',
+            'data_surat.ahli_waris.*.hubungan.required' => 'Hubungan wajib diisi untuk setiap ahli waris.',
+            'data_surat.ahli_waris.*.hubungan.string' => 'Hubungan ahli waris harus berupa teks.',
+            'data_surat.ahli_waris.*.hubungan.max' => 'Hubungan ahli waris maksimal 255 karakter.',
+        ];
+    }
+
+    private function serviceFourteenHeirCount($heirs): int
+    {
+        if (!is_array($heirs)) {
+            return 0;
+        }
+
+        return count(array_filter($heirs, 'is_array'));
+    }
+
+    private function isServiceFourteenKtpRequirement($persyaratan): bool
+    {
+        $name = strtolower((string) ($persyaratan->nama ?? ''));
+
+        return (int) ($persyaratan->layanan_id ?? 0) === 14
+            && str_contains($name, 'ktp')
+            && str_contains($name, 'ahli waris');
+    }
+
+    private function serviceFourteenKtpRequirement(Layanan $layanan)
+    {
+        $requirement = $layanan->persyaratans->first(
+            fn ($item) => $this->isServiceFourteenKtpRequirement($item)
+        );
+
+        if (!$requirement) {
+            throw ValidationException::withMessages([
+                'persyaratan' => 'Persyaratan KTP Ahli Waris belum tersedia. Hubungi admin.',
+            ]);
+        }
+
+        return $requirement;
+    }
+
+    private function addServiceFourteenKtpUploadRules(
+        array &$rules,
+        $persyaratan,
+        int $heirCount,
+        int $activeCount,
+        bool $revision,
+        int $reservedCount = 0
+    ): void {
+        $key = ($revision ? 'persyaratan_tambahan.' : 'persyaratan.')
+            . $persyaratan->id;
+        if ($revision && $activeCount > $heirCount) {
+            $rules[$key] = ['nullable', 'array'];
+            $rules[$key . '.*'] = [
+                'file',
+                'mimes:' . $this->getAllowedExtensions($persyaratan),
+                'max:' . $persyaratan->maks_size,
+            ];
+
+            return;
+        }
+
+        $needed = $revision
+            ? max(0, $heirCount - $activeCount)
+            : max(0, $heirCount - $reservedCount);
+        $rules[$key] = $needed > 0
+            ? ['required', 'array', 'size:' . $needed]
+            : ['nullable', 'array', 'size:0'];
+        $rules[$key . '.*'] = [
+            'file',
+            'mimes:' . $this->getAllowedExtensions($persyaratan),
+            'max:' . $persyaratan->maks_size,
+        ];
+    }
+
+    private function serviceFourteenKtpValidationMessages(
+        $persyaratan,
+        int $expectedCount,
+        int $heirCount,
+        bool $additional,
+        int $reservedCount = 0
+    ): array {
+        $message = $additional
+            ? sprintf(
+                'Tambahkan tepat %d file KTP; setelah revisi jumlah total harus sama dengan %d ahli waris.',
+                $expectedCount,
+                $heirCount
+            )
+            : ($reservedCount > 0
+                ? sprintf(
+                    'Unggah tepat %d file KTP tambahan di luar hasil OCR; total harus %d untuk %d ahli waris.',
+                    $expectedCount,
+                    $heirCount,
+                    $heirCount
+                )
+                : sprintf(
+                'Unggah tepat %d file KTP untuk %d ahli waris.',
+                $expectedCount,
+                $heirCount
+                ));
+
+        return [
+            'persyaratan.' . $persyaratan->id . '.required' => $message,
+            'persyaratan.' . $persyaratan->id . '.array' => $message,
+            'persyaratan.' . $persyaratan->id . '.size' => $message,
+            'persyaratan_tambahan.' . $persyaratan->id . '.required' => $message,
+            'persyaratan_tambahan.' . $persyaratan->id . '.array' => $message,
+            'persyaratan_tambahan.' . $persyaratan->id . '.size' => $message,
         ];
     }
 
@@ -469,7 +753,13 @@ class PermohonanService
                 continue;
             }
 
-            if ($persyaratan->multiple) {
+            if (
+                $persyaratan->multiple
+                || (
+                    (int) $layanan->id === 14
+                    && $this->isServiceFourteenKtpRequirement($persyaratan)
+                )
+            ) {
                 foreach ((array) $uploadedFile as $file) {
                     if (!$file) {
                         continue;
@@ -510,7 +800,10 @@ class PermohonanService
             )
             ->exists();
 
-        if ($exists) {
+        if (
+            $exists
+            && !$this->isServiceFourteenKtpRequirement($ocrPersyaratan)
+        ) {
             return;
         }
 
@@ -656,18 +949,60 @@ class PermohonanService
         $fields = config('surat.' . $layanan->id, []);
 
         foreach ($fields as $field => $config) {
-            $rules['data_surat.' . $field] = isset($config['options'])
+            if ((int) $layanan->id === 14 && $field === 'ahli_waris') {
+                continue;
+            }
+
+            $type = is_array($config)
+                ? ($config['type'] ?? 'text')
+                : 'text';
+            $required = !is_array($config) || ($config['required'] ?? true);
+
+            if ($type === 'date') {
+                $dateRules = [
+                    $required ? 'required' : 'nullable',
+                    'date',
+                ];
+
+                if (
+                    (int) $layanan->id === 11
+                    && $field === 'tanggal_berdiri_usaha'
+                ) {
+                    $dateRules[] = 'before_or_equal:today';
+                }
+
+                $rules['data_surat.' . $field] = $dateRules;
+
+                continue;
+            }
+
+            $rules['data_surat.' . $field] =
+                $type === 'select' &&
+                isset($config['options']) &&
+                is_array($config['options'])
                 ? [
-                    'required',
+                    $required ? 'required' : 'nullable',
                     'string',
                     'in:' . implode(',', $config['options']),
                 ]
                 : [
-                    'required',
+                    $required ? 'required' : 'nullable',
                     'string',
                     'max:1000',
                 ];
         }
+
+        if ((int) $layanan->id === 14) {
+            $this->addServiceFourteenHeirRules($rules);
+        }
+    }
+
+    private function nikOrangTuaValidationMessages(): array
+    {
+        return [
+            'nik.required' => 'NIK orang tua/wali wajib diisi.',
+            'nik.digits' => 'NIK orang tua/wali harus terdiri dari tepat 16 digit angka.',
+        ];
     }
 
     /**
@@ -805,7 +1140,9 @@ class PermohonanService
         $requirementDocuments,
         string $extensions
         ): void {
-        $canAddFiles = $persyaratan->multiple
+        $multiple = $persyaratan->multiple
+            || $this->isServiceFourteenKtpRequirement($persyaratan);
+        $canAddFiles = $multiple
             || $requirementDocuments->isEmpty();
 
         if (!$canAddFiles) {
@@ -814,7 +1151,7 @@ class PermohonanService
 
         $key = 'persyaratan_tambahan.' . $persyaratan->id;
 
-        if ($persyaratan->multiple) {
+        if ($multiple) {
             $additionalRules = ['nullable', 'array'];
 
             if ($persyaratan->wajib) {
@@ -1059,14 +1396,17 @@ class PermohonanService
             return;
         }
 
-        if (!$persyaratan->multiple && $requirementDocuments->isNotEmpty()) {
+        $multiple = $persyaratan->multiple
+            || $this->isServiceFourteenKtpRequirement($persyaratan);
+
+        if (!$multiple && $requirementDocuments->isNotEmpty()) {
             abort(
                 409,
                 'Persyaratan satu-file yang sudah memiliki dokumen tidak dapat ditambah atau diganti kecuali dokumennya ditolak pada tahap peminta revisi.'
             );
         }
 
-        $files = $persyaratan->multiple
+        $files = $multiple
             ? array_values((array) $additionalFiles)
             : [$additionalFiles];
 
@@ -1150,10 +1490,19 @@ class PermohonanService
             $permohonan
         );
 
+        $heirCount = (int) $layanan->id === 14
+            ? $this->serviceFourteenHeirCount(
+                $permohonan->data_surat['ahli_waris'] ?? null
+            )
+            : null;
+
         foreach ($layanan->persyaratans->where('aktif', true) as $persyaratan) {
+            $serviceFourteenKtp = (int) $layanan->id === 14
+                && $this->isServiceFourteenKtpRequirement($persyaratan);
+
             if (
-                !$persyaratan->wajib ||
-                !$persyaratan->multiple ||
+                (!$persyaratan->wajib && !$serviceFourteenKtp) ||
+                (!$persyaratan->multiple && !$serviceFourteenKtp) ||
                 $persyaratan->butuh_ttd_warga
             ) {
                 continue;
@@ -1162,6 +1511,16 @@ class PermohonanService
             $activeCount = $activeDocuments
                 ->get($persyaratan->id, collect())
                 ->count();
+
+            if ($serviceFourteenKtp && $activeCount !== $heirCount) {
+                throw ValidationException::withMessages([
+                    'data_surat.ahli_waris' => sprintf(
+                        'Jumlah KTP aktif (%d) harus sama dengan jumlah ahli waris (%d).',
+                        $activeCount,
+                        $heirCount
+                    ),
+                ]);
+            }
 
             if ($activeCount < (int) $persyaratan->jumlah_file) {
                 abort(

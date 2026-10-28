@@ -163,7 +163,8 @@ class SuratGenerator
         ];
 
         /*
-         * ID 14 menggunakan daftar ahli waris.
+         * ID 14 memakai record ahli waris terstruktur. Data lama yang berupa
+         * string delimited tetap diparse sebagai fallback.
          *
          * Format input sementara:
          * satu ahli waris per baris:
@@ -178,9 +179,16 @@ class SuratGenerator
          * - {{ ahli_waris_ttd }} : baris tanda tangan "Istri : 1) ......"
          */
         if ((int) $permohonan->layanan_id === 14) {
-            $rows = $this->parseAhliWaris(
-                (string) ($data['ahli_waris'] ?? '')
-            );
+            $structuredHeirs = $data['ahli_waris'] ?? null;
+            $rows = is_array($structuredHeirs) && $structuredHeirs !== []
+                ? $this->normalizeAhliWarisRecords($structuredHeirs)
+                : $this->parseAhliWaris(
+                    is_string($structuredHeirs)
+                        ? $structuredHeirs
+                        : (is_string($data['ahli_waris_legacy_raw'] ?? null)
+                            ? $data['ahli_waris_legacy_raw']
+                            : '')
+                );
 
             $data['ahli_waris'] = $this->buildAhliWarisText($rows);
             $data['ahli_waris_ttd'] = $this->buildAhliWarisTtdText($rows);
@@ -197,10 +205,125 @@ class SuratGenerator
             ] = (string) $value;
         }
 
+        // Layanan 16 memakai key payload yang lebih deskriptif daripada
+        // placeholder pada template wali hakim. Pertahankan key data lama
+        // dan batasi alias ini hanya untuk layanan tersebut.
+        if ((int) $permohonan->layanan_id === 16) {
+            $serviceSixteenPlaceholders = [
+                'nama_calon_mempelai_perempuan' => 'nama_calon_wanita',
+                'nama_ayah_calon' => 'binti',
+                'umur_calon_perempuan' => 'umur_wanita',
+                'agama_calon_perempuan' => 'agama_wanita',
+                'pekerjaan_calon_perempuan' => 'pekerjaan_wanita',
+                'alamat_calon_perempuan' => 'tempat_tinggal_wanita',
+                'nama_calon_mempelai_laki' => 'nama_calon_pria',
+                'nama_ayah_calon_laki' => 'bin',
+                'umur_calon_laki' => 'umur_pria',
+                'agama_calon_laki' => 'agama_pria',
+                'pekerjaan_calon_laki' => 'pekerjaan_pria',
+                'alamat_calon_laki' => 'tempat_tinggal_pria',
+            ];
+
+            foreach ($serviceSixteenPlaceholders as $field => $placeholder) {
+                if (!array_key_exists($field, $data) || is_array($data[$field])) {
+                    continue;
+                }
+
+                $replacements[
+                    '{{ ' . $placeholder . ' }}'
+                ] = (string) $data[$field];
+            }
+        }
+
+        // Layanan 10 mempertahankan key payload lama, tetapi template
+        // menggunakan nama placeholder yang khusus untuk dokumen pembanding.
+        if ((int) $permohonan->layanan_id === 10) {
+            $serviceTenPlaceholders = [
+                'nama_lain' => 'nama_sertifikat',
+                'nomor_dokumen_perbedaan' => 'nomor_sertifikat',
+            ];
+
+            foreach ($serviceTenPlaceholders as $field => $placeholder) {
+                if (!array_key_exists($field, $data) || is_array($data[$field])) {
+                    continue;
+                }
+
+                $replacements[
+                    '{{ ' . $placeholder . ' }}'
+                ] = (string) $data[$field];
+            }
+
+            $serviceTenDocumentName = trim((string) ($data['nama_lain'] ?? ''));
+            $serviceTenDocumentType = trim((string) ($data['dokumen_perbedaan'] ?? ''));
+            $serviceTenDocumentNumber = trim((string) ($data['nomor_dokumen_perbedaan'] ?? ''));
+
+            if ($serviceTenDocumentName !== '' && $serviceTenDocumentType === '') {
+                $replacements['{{ dokumen_perbedaan }}'] = 'Dokumen Pembanding';
+            }
+
+            $templateContent = $template->isi_template;
+
+            if ($serviceTenDocumentName === '') {
+                $templateContent = preg_replace(
+                    '/^[ \t]*(?:\{\{\s*dokumen_perbedaan\s*\}\}|Sertifikat)\s*:\s*\{\{\s*nama_sertifikat\s*\}\}[ \t]*\r?\n/im',
+                    '',
+                    $templateContent
+                ) ?? $templateContent;
+            }
+
+            if ($serviceTenDocumentNumber === '') {
+                $templateContent = preg_replace(
+                    '/^[ \t]*Nomor\s*:\s*\{\{\s*nomor_sertifikat\s*\}\}[ \t]*\r?\n/im',
+                    '',
+                    $templateContent
+                ) ?? $templateContent;
+            }
+        } else {
+            $templateContent = $template->isi_template;
+        }
+
+        // Pertahankan key lama untuk data layanan 14 dan petakan hanya
+        // ke placeholder akta kematian yang digunakan template.
+        if ((int) $permohonan->layanan_id === 14) {
+            $serviceFourteenPlaceholders = [
+                'nomor_surat_kematian' => 'nomor_akta_kematian',
+                'tanggal_surat_kematian' => 'tanggal_akta_kematian',
+            ];
+
+            foreach ($serviceFourteenPlaceholders as $field => $placeholder) {
+                if (!array_key_exists($field, $data) || is_array($data[$field])) {
+                    continue;
+                }
+
+                $replacements[
+                    '{{ ' . $placeholder . ' }}'
+                ] = (string) $data[$field];
+            }
+        }
+
+        // Key alamat pada payload layanan 15 tetap kompatibel; template
+        // wali nikah memakai placeholder tempat tinggal.
+        if ((int) $permohonan->layanan_id === 15) {
+            $serviceFifteenPlaceholders = [
+                'alamat_wali' => 'tempat_tinggal_wali',
+                'alamat_calon' => 'tempat_tinggal_calon',
+            ];
+
+            foreach ($serviceFifteenPlaceholders as $field => $placeholder) {
+                if (!array_key_exists($field, $data) || is_array($data[$field])) {
+                    continue;
+                }
+
+                $replacements[
+                    '{{ ' . $placeholder . ' }}'
+                ] = (string) $data[$field];
+            }
+        }
+
         // strtr (bukan str_replace): satu kali proses, sehingga isi field
         // yang kebetulan memuat teks "{{ ... }}" tidak ikut diganti dan
         // satu key tidak bisa merusak key lain.
-        $hasil = strtr($template->isi_template, $replacements);
+        $hasil = strtr($templateContent, $replacements);
 
         // Placeholder yang tidak ada datanya dicatat di log supaya
         // ketahuan sebelum surat dicetak.
@@ -239,6 +362,43 @@ class SuratGenerator
                 $parts[1] ?? '-',
                 $parts[2] ?? '-',
                 $parts[3] ?? '-',
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<int|string, mixed> $records
+     * @return array<int, array{0:string,1:string,2:string,3:string}>
+     */
+    private function normalizeAhliWarisRecords(array $records): array
+    {
+        $rows = [];
+
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+
+            $text = static function ($value): string {
+                return is_scalar($value) && trim((string) $value) !== ''
+                    ? trim((string) $value)
+                    : '-';
+            };
+
+            $gender = $text($record['jenis_kelamin'] ?? null);
+            if ($gender === 'Laki-laki') {
+                $gender = 'L';
+            } elseif ($gender === 'Perempuan') {
+                $gender = 'P';
+            }
+
+            $rows[] = [
+                $text($record['nama'] ?? null),
+                $gender,
+                $text($record['alamat'] ?? null),
+                $text($record['hubungan'] ?? null),
             ];
         }
 

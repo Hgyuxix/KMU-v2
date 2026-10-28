@@ -155,6 +155,11 @@ return [
     */
     3 => [
 
+        'alamat_domisili' => [
+            'label' => 'Alamat Domisili',
+            'type' => 'textarea',
+        ],
+
         'keperluan' => [
             'label' => 'Keperluan',
             'type' => 'textarea',
@@ -168,14 +173,99 @@ return [
     */
     4 => [
 
+        'jenis_kelamin' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Jenis Kelamin',
+            'type' => 'select',
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
+            'help' => 'Pilih jenis kelamin pemohon.',
+        ],
+
+        'tempat_lahir' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Tempat Lahir',
+            'type' => 'text',
+            'help' => 'Kota atau kabupaten tempat pemohon lahir.',
+        ],
+
+        'status' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Status Perkawinan',
+            'type' => 'select',
+            'options' => [
+                'Belum Kawin',
+                'Kawin',
+                'Cerai Hidup',
+                'Cerai Mati',
+            ],
+            'help' => 'Status perkawinan pemohon saat ini.',
+        ],
+
+        'agama' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Agama',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+            'help' => 'Agama yang dianut oleh pemohon.',
+        ],
+
+        'pekerjaan' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Pekerjaan',
+            'type' => 'text',
+            'help' => 'Pekerjaan atau profesi pemohon saat ini.',
+        ],
+
+        'alamat' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Alamat',
+            'type' => 'textarea',
+            'help' => 'Alamat lengkap tempat tinggal pemohon.',
+        ],
+
+        'kota' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Kota',
+            'type' => 'text',
+            'help' => 'Kota domisili pemohon.',
+        ],
+
+        'berlaku_mulai' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Berlaku Mulai',
+            'type' => 'date',
+            'help' => 'Tanggal awal masa berlaku surat pengantar.',
+        ],
+
+        'berlaku_sampai' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Berlaku Sampai',
+            'type' => 'date',
+            'help' => 'Tanggal akhir masa berlaku surat pengantar.',
+        ],
+
         'nama_pasangan' => [
+            'group' => 'Data Pasangan',
             'label' => 'Nama Suami / Istri',
             'type' => 'text',
+            'help' => 'Nama lengkap suami atau istri yang bersangkutan.',
         ],
 
         'alasan_perceraian' => [
+            'group' => 'Alasan Perceraian',
             'label' => 'Alasan Perceraian',
             'type' => 'textarea',
+            'help' => 'Uraikan alasan pokok pengajuan permohonan cerai.',
         ],
     ],
 
@@ -187,42 +277,126 @@ return [
     5 => [
 
         'jenis_kelamin' => [
+            'group' => 'Data Pemohon (tambahan)',
             'label' => 'Jenis Kelamin',
             'type' => 'select',
             'options' => [
                 'Laki-laki',
                 'Perempuan',
             ],
+            'help' => 'Pilih jenis kelamin pemohon.',
         ],
 
         'tempat_lahir' => [
+            'group' => 'Data Pemohon (tambahan)',
             'label' => 'Tempat Lahir',
             'type' => 'text',
+            'help' => 'Kota atau kabupaten tempat pemohon lahir.',
+        ],
+
+        'status' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Status Perkawinan',
+            'type' => 'select',
+            'options' => [
+                'Belum Kawin',
+                'Kawin',
+                'Cerai Hidup',
+                'Cerai Mati',
+            ],
+            'help' => 'Status perkawinan pemohon saat ini.',
+        ],
+
+        'agama' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Agama',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+            'help' => 'Agama yang dianut oleh pemohon.',
         ],
 
         'pekerjaan' => [
+            'group' => 'Data Pemohon (tambahan)',
             'label' => 'Pekerjaan',
             'type' => 'text',
+            'help' => 'Pekerjaan atau profesi pemohon saat ini.',
         ],
 
         'alamat' => [
+            'group' => 'Data Pemohon (tambahan)',
             'label' => 'Alamat',
             'type' => 'textarea',
+            'help' => 'Alamat tempat tinggal pemohon.',
+        ],
+
+        'kota' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Kota',
+            'type' => 'text',
+            'help' => 'Kota domisili pemohon.',
+        ],
+
+        'berlaku_mulai' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Berlaku Mulai',
+            'type' => 'date',
+            'help' => 'Tanggal awal masa berlaku surat pengantar.',
+        ],
+
+        'berlaku_sampai' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Berlaku Sampai',
+            'type' => 'date',
+            'help' => 'Tanggal akhir masa berlaku surat pengantar.',
+        ],
+
+        'alamat_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
+            'label' => 'Alamat Almarhum / Almarhumah',
+            'type' => 'textarea',
+            'help' => 'Alamat domisili terakhir almarhum/almarhumah.',
+        ],
+
+        'rt_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
+            'label' => 'RT Almarhum / Almarhumah',
+            'type' => 'text',
+            'help' => 'Nomor RT domisili terakhir almarhum/almarhumah.',
+        ],
+
+        'rw_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
+            'label' => 'RW Almarhum / Almarhumah',
+            'type' => 'text',
+            'help' => 'Nomor RW domisili terakhir almarhum/almarhumah.',
         ],
 
         'nama_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
+            'help' => 'Nama lengkap almarhum/almarhumah yang meninggal dunia.',
         ],
 
         'tanggal_meninggal' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Tanggal Meninggal',
             'type' => 'date',
+            'help' => 'Tanggal meninggalnya almarhum/almarhumah.',
         ],
 
         'hubungan_ahli_waris' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Hubungan dengan Almarhum / Almarhumah',
             'type' => 'text',
+            'help' => 'Hubungan kekerabatan pemohon dengan almarhum/almarhumah (contoh: Anak Kandung, Suami, Istri).',
         ],
     ],
 
@@ -233,19 +407,106 @@ return [
     */
     6 => [
 
+        'jenis_kelamin' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Jenis Kelamin',
+            'type' => 'select',
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
+            'help' => 'Jenis kelamin penerima kuasa.',
+        ],
+
+        'tempat_lahir' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Tempat Lahir',
+            'type' => 'text',
+            'help' => 'Tempat lahir penerima kuasa.',
+        ],
+
+        'status' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Status Perkawinan',
+            'type' => 'select',
+            'options' => [
+                'Belum Kawin',
+                'Kawin',
+                'Cerai Hidup',
+                'Cerai Mati',
+            ],
+            'help' => 'Status perkawinan penerima kuasa saat ini.',
+        ],
+
+        'agama' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Agama',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+            'help' => 'Agama yang dianut oleh penerima kuasa.',
+        ],
+
+        'pekerjaan' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Pekerjaan',
+            'type' => 'text',
+            'help' => 'Pekerjaan penerima kuasa saat ini.',
+        ],
+
+        'alamat' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Alamat',
+            'type' => 'textarea',
+            'help' => 'Alamat tempat tinggal penerima kuasa.',
+        ],
+
+        'kota' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Kota',
+            'type' => 'text',
+            'help' => 'Kota domisili penerima kuasa.',
+        ],
+
+        'berlaku_mulai' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Berlaku Mulai',
+            'type' => 'date',
+            'help' => 'Tanggal awal masa berlaku surat kuasa.',
+        ],
+
+        'berlaku_sampai' => [
+            'group' => 'Data Penerima Kuasa',
+            'label' => 'Berlaku Sampai',
+            'type' => 'date',
+            'help' => 'Tanggal akhir masa berlaku surat kuasa.',
+        ],
+
         'nama_pemberi_kuasa' => [
+            'group' => 'Data Pemberi Kuasa',
             'label' => 'Nama Pemberi Kuasa',
             'type' => 'text',
+            'help' => 'Nama lengkap pensiunan atau orang yang memberikan kuasa.',
         ],
 
         'nama_penerima_kuasa' => [
+            'group' => 'Data Penerima Kuasa',
             'label' => 'Nama Penerima Kuasa',
             'type' => 'text',
+            'help' => 'Nama lengkap orang yang diberi kuasa untuk mengambil pensiun.',
         ],
 
         'keperluan' => [
+            'group' => 'Data Pemberi Kuasa',
             'label' => 'Keperluan Pengambilan Pensiun',
             'type' => 'textarea',
+            'help' => 'Keperluan atau peruntukan kuasa pengambilan pensiun.',
         ],
     ],
 
@@ -256,19 +517,9 @@ return [
     */
     7 => [
 
-        'nik_orang_tua' => [
-            'label' => 'NIK Orang Tua / Wali',
-            'type' => 'text',
-        ],
-
         'tempat_lahir_orang_tua' => [
             'label' => 'Tempat Lahir Orang Tua / Wali',
             'type' => 'text',
-        ],
-
-        'tanggal_lahir_orang_tua' => [
-            'label' => 'Tanggal Lahir Orang Tua / Wali',
-            'type' => 'date',
         ],
 
         'agama_orang_tua' => [
@@ -345,24 +596,77 @@ return [
     */
     10 => [
 
-        'nama_lain' => [
-            'label' => 'Nama pada Dokumen Lain',
+        'alamat' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Alamat Pemohon',
+            'type' => 'textarea',
+            'help' => 'Alamat domisili pemohon saat ini.',
+        ],
+
+        'pekerjaan' => [
+            'group' => 'Data Pemohon (tambahan)',
+            'label' => 'Pekerjaan Pemohon',
             'type' => 'text',
+            'help' => 'Pekerjaan atau profesi pemohon saat ini.',
+        ],
+
+        'nama_ktp' => [
+            'group' => 'Dokumen KTP',
+            'label' => 'Nama sesuai KTP',
+            'type' => 'text',
+            'help' => 'Penulisan nama lengkap sebagaimana tercantum pada KTP.',
+        ],
+
+        'nomor_ktp' => [
+            'group' => 'Dokumen KTP',
+            'label' => 'Nomor KTP',
+            'type' => 'text',
+            'help' => '16 digit Nomor Induk Kependudukan pada KTP.',
+        ],
+
+        'nama_kk' => [
+            'group' => 'Dokumen KK',
+            'label' => 'Nama sesuai KK',
+            'type' => 'text',
+            'help' => 'Penulisan nama lengkap sebagaimana tercantum pada Kartu Keluarga.',
+        ],
+
+        'nomor_kk' => [
+            'group' => 'Dokumen KK',
+            'label' => 'Nomor KK',
+            'type' => 'text',
+            'help' => '16 digit nomor Kartu Keluarga.',
+        ],
+
+        'nama_lain' => [
+            'group' => 'Dokumen Pembanding (opsional)',
+            'label' => 'Nama sesuai Dokumen Pembanding',
+            'type' => 'text',
+            'required' => false,
+            'help' => 'Nama yang tercantum pada dokumen pembanding (kosongkan jika tidak ada).',
         ],
 
         'dokumen_perbedaan' => [
-            'label' => 'Dokumen yang Berbeda Nama',
+            'group' => 'Dokumen Pembanding (opsional)',
+            'label' => 'Jenis Dokumen Pembanding',
             'type' => 'text',
+            'required' => false,
+            'help' => 'Jenis dokumen pembanding, misal: Ijazah, Akta Kelahiran, Sertifikat (kosongkan jika tidak ada).',
         ],
 
         'nama_yang_benar' => [
+            'group' => 'Pernyataan Nama yang Benar',
             'label' => 'Nama yang Benar',
             'type' => 'text',
+            'help' => 'Nama yang dinyatakan benar dan digunakan dalam surat pernyataan ini.',
         ],
 
         'nomor_dokumen_perbedaan' => [
-            'label' => 'Nomor Dokumen',
+            'group' => 'Dokumen Pembanding (opsional)',
+            'label' => 'Nomor Dokumen Pembanding',
             'type' => 'text',
+            'required' => false,
+            'help' => 'Nomor dokumen pembanding yang bersangkutan (kosongkan jika tidak ada).',
         ],
     ],
 
@@ -373,14 +677,88 @@ return [
     */
     11 => [
 
+        'jenis_kelamin' => [
+            'label' => 'Jenis Kelamin',
+            'type' => 'select',
+            'options' => [
+                'Laki-laki',
+                'Perempuan',
+            ],
+        ],
+
+        'tempat_lahir' => [
+            'label' => 'Tempat Lahir',
+            'type' => 'text',
+        ],
+
+        'status' => [
+            'label' => 'Status',
+            'type' => 'select',
+            'options' => [
+                'Belum Kawin',
+                'Kawin',
+                'Cerai Hidup',
+                'Cerai Mati',
+            ],
+        ],
+
+        'agama' => [
+            'label' => 'Agama',
+            'type' => 'select',
+            'options' => [
+                'Islam',
+                'Kristen',
+                'Katolik',
+                'Hindu',
+                'Buddha',
+                'Konghucu',
+            ],
+        ],
+
+        'pekerjaan' => [
+            'label' => 'Pekerjaan',
+            'type' => 'text',
+        ],
+
+        'alamat' => [
+            'label' => 'Alamat',
+            'type' => 'textarea',
+        ],
+
+        'kota' => [
+            'label' => 'Kota',
+            'type' => 'text',
+        ],
+
+        'berlaku_mulai' => [
+            'label' => 'Berlaku Mulai',
+            'type' => 'date',
+        ],
+
+        'berlaku_sampai' => [
+            'label' => 'Berlaku Sampai',
+            'type' => 'date',
+        ],
+
+        'rt_usaha' => [
+            'label' => 'RT Usaha',
+            'type' => 'text',
+        ],
+
+        'rw_usaha' => [
+            'label' => 'RW Usaha',
+            'type' => 'text',
+        ],
+
         'nama_usaha' => [
             'label' => 'Nama Usaha',
             'type' => 'text',
         ],
 
-        'lama_usaha' => [
-            'label' => 'Lama Menjalankan Usaha',
-            'type' => 'text',
+        'tanggal_berdiri_usaha' => [
+            'label' => 'Tanggal Berdiri Usaha',
+            'type' => 'date',
+            'required' => true,
         ],
 
         'alamat_usaha' => [
@@ -426,42 +804,85 @@ return [
     14 => [
 
         'nama_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Nama Almarhum / Almarhumah',
             'type' => 'text',
+            'help' => 'Nama lengkap almarhum/almarhumah yang telah meninggal dunia.',
         ],
 
         'jenis_kelamin_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Jenis Kelamin Almarhum / Almarhumah',
             'type' => 'select',
             'options' => [
                 'Laki-laki',
                 'Perempuan',
             ],
+            'help' => 'Pilih jenis kelamin almarhum/almarhumah.',
         ],
 
         'alamat_almarhum' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Alamat Almarhum / Almarhumah',
             'type' => 'textarea',
+            'help' => 'Alamat domisili terakhir almarhum/almarhumah.',
         ],
 
         'tanggal_meninggal' => [
+            'group' => 'Data Almarhum / Almarhumah',
             'label' => 'Tanggal Meninggal',
             'type' => 'date',
+            'help' => 'Tanggal almarhum/almarhumah meninggal dunia.',
+        ],
+
+        'tempat_meninggal' => [
+            'group' => 'Data Almarhum / Almarhumah',
+            'label' => 'Tempat Meninggal',
+            'type' => 'text',
+            'help' => 'Kota atau tempat almarhum/almarhumah meninggal dunia.',
         ],
 
         'nomor_surat_kematian' => [
+            'group' => 'Dokumen Kematian',
             'label' => 'Nomor Surat Keterangan Kematian',
             'type' => 'text',
+            'help' => 'Nomor surat kematian dari kelurahan/rumah sakit atau akta kematian.',
         ],
 
         'tanggal_surat_kematian' => [
+            'group' => 'Dokumen Kematian',
             'label' => 'Tanggal Surat Keterangan Kematian',
             'type' => 'date',
+            'help' => 'Tanggal penerbitan surat keterangan kematian.',
         ],
 
         'ahli_waris' => [
+            'group' => 'Data Ahli Waris',
             'label' => 'Data Ahli Waris',
-            'type' => 'textarea',
+            'type' => 'repeatable',
+            'help' => 'Daftar nama seluruh ahli waris yang sah.',
+            'fields' => [
+                'nama' => [
+                    'label' => 'Nama Ahli Waris',
+                    'type' => 'text',
+                ],
+                'jenis_kelamin' => [
+                    'label' => 'Jenis Kelamin',
+                    'type' => 'select',
+                    'options' => [
+                        'Laki-laki',
+                        'Perempuan',
+                    ],
+                ],
+                'alamat' => [
+                    'label' => 'Alamat',
+                    'type' => 'textarea',
+                ],
+                'hubungan' => [
+                    'label' => 'Hubungan dengan Almarhum / Almarhumah',
+                    'type' => 'text',
+                ],
+            ],
         ],
     ],
 
