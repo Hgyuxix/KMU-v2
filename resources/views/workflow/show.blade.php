@@ -145,6 +145,97 @@
             color: #fff !important;
             margin-top: 8px;
         }
+        .workflow-stage-tte {
+            background: linear-gradient(135deg, #0b3760 0%, #0d5ea6 100%) !important;
+            border-color: #0b3760 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(11, 55, 96, 0.2);
+        }
+        .workflow-stage-tte:hover {
+            background: linear-gradient(135deg, #082846 0%, #0a4b84 100%) !important;
+            transform: translateY(-1px);
+        }
+        .workflow-stage-tte:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-card {
+            background: #ffffff;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            transform: scale(0.96);
+            transition: transform 0.2s ease;
+            border: 1px solid #d9e3ec;
+        }
+        .modal-backdrop.open .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8eef4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            color: #0b3760;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            color: #8193a3;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .modal-close-btn:hover {
+            color: #17324d;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e8eef4;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+        }
         .workflow-tool {
             appearance: none;
         }
@@ -352,17 +443,52 @@
             </section>
 
             @if($canAct)
+                @php
+                    $stage = $permohonan->current_stage;
+                    $alurTte = $permohonan->layanan?->alur_tte;
+                    $isTteStage = in_array($stage, ['lurah_review', 'camat_review'], true);
+
+                    if ($stage === 'lurah_review') {
+                        $nextRecipient = $alurTte === 'lurah_dan_camat' ? 'Kecamatan' : 'FO';
+                        $approveButtonLabel = "Bubuhkan TTE Lurah & Teruskan ke {$nextRecipient}";
+                    } elseif ($stage === 'camat_review') {
+                        $approveButtonLabel = 'Bubuhkan TTE Camat & Terbitkan';
+                    } else {
+                        $nextStageKey = ($alurTte === 'tanpa_tte' && $stage === 'kasi_pemerintahan_review')
+                            ? 'selesai'
+                            : match ($stage) {
+                                'kasi_pemerintahan_review' => 'lurah_review',
+                                'kasi_umum_review' => 'sekcam_review',
+                                'sekcam_review' => 'camat_review',
+                                default => null,
+                            };
+
+                        $nextStageName = match ($nextStageKey) {
+                            'lurah_review' => 'Lurah',
+                            'sekcam_review' => 'Sekcam',
+                            'camat_review' => 'Camat',
+                            'selesai' => 'Selesai',
+                            default => 'Tahap Berikutnya',
+                        };
+
+                        $approveButtonLabel = "Setujui & Teruskan ke {$nextStageName}";
+                    }
+                @endphp
                 <section class="workflow-card">
                     <div class="workflow-card-head">
                         <div class="workflow-card-kicker">Tindakan Tahap</div>
-                        <div class="workflow-card-title">Kirim ke Tahap Berikutnya</div>
+                        <div class="workflow-card-title">{{ $isTteStage ? 'Persetujuan & TTE' : 'Persetujuan Tahap' }}</div>
                     </div>
                     <div class="workflow-actions">
-                        <p>Setelah seluruh dokumen wajib dinyatakan sesuai, Anda dapat menyetujui tahap ini.</p>
+                        <p>Setelah seluruh dokumen wajib dinyatakan sesuai, Anda dapat {{ $isTteStage ? 'membubuhkan tanda tangan elektronik untuk tahap ini.' : 'menyetujui tahap ini.' }}</p>
 
-                        <form class="workflow-stage-approve-form" method="POST" action="{{ route('workflow.approve', $permohonan) }}" onsubmit="return confirm('Setujui permohonan pada tahap ini?')">
+                        <form id="workflow-approve-form" class="workflow-stage-approve-form" method="POST" action="{{ route('workflow.approve', $permohonan) }}" @if(!$isTteStage) onsubmit="return confirm('Setujui permohonan pada tahap ini?')" @endif>
                             @csrf @method('PATCH')
-                            <button class="workflow-stage-action workflow-stage-approve" type="submit">Kirim ke Tahap Berikutnya</button>
+                            @if(!$isTteStage)
+                                <button class="workflow-stage-action workflow-stage-approve" type="submit">{{ $approveButtonLabel }}</button>
+                            @else
+                                <button class="workflow-stage-action workflow-stage-tte" type="button" id="open-tte-modal-btn">{{ $approveButtonLabel }}</button>
+                            @endif
                         </form>
 
                         <form class="workflow-stage-revision-form" method="POST" action="{{ route('workflow.revisi', $permohonan) }}">
@@ -373,6 +499,53 @@
                         </form>
                     </div>
                 </section>
+
+                @if($isTteStage)
+                    <div id="tte-confirmation-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tte-modal-title">
+                        <div class="modal-card">
+                            <div class="modal-header">
+                                <h3 id="tte-modal-title">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
+                                    <span>Konfirmasi Pembubuhan TTE</span>
+                                </h3>
+                                <button type="button" class="modal-close-btn" id="close-tte-modal-btn" aria-label="Tutup">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="tte-modal-summary" style="margin-bottom: 16px; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                    <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Ringkasan Permohonan</div>
+                                    <div style="font-size: 13px; color: #1e293b; line-height: 1.6;">
+                                        <div><strong style="color: #475569;">Jenis Layanan:</strong> <span id="tte-layanan-nama">{{ $permohonan->layanan->nama }}</span></div>
+                                        <div><strong style="color: #475569;">Nama Pemohon:</strong> <span id="tte-pemohon-nama">{{ $permohonan->nama_lengkap }}</span></div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 18px; padding: 10px 14px; background: #f0f7ff; border: 1px solid #cbe4ff; border-radius: 8px;">
+                                    <a href="{{ route('permohonan.preview', $permohonan) }}" target="_blank" rel="noopener noreferrer" class="tte-preview-link" style="display: inline-flex; align-items: center; gap: 6px; color: #0d5ea6; font-size: 13px; font-weight: 700; text-decoration: none;">
+                                        <span>📄 Buka Pratinjau Surat</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                    <div style="font-size: 11px; color: #475569; margin-top: 3px;">Surat akan terbuka di tab baru untuk pemeriksaan isi sebelum pembubuhan tanda tangan.</div>
+                                </div>
+
+                                <div class="tte-declaration-wrap" style="padding: 12px 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;">
+                                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 12px; color: #92400e; line-height: 1.5; font-weight: 600;">
+                                        <input type="checkbox" id="tte-statement-checkbox" style="margin-top: 2px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
+                                        <span>Saya telah memeriksa isi surat dan berkas pendukung, dan menyatakan surat ini siap dibubuhi tanda tangan elektronik.</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn-secondary" id="cancel-tte-modal-btn" style="padding: 9px 14px; border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: #475569;">Batal</button>
+                                <button type="submit" form="workflow-approve-form" id="confirm-tte-submit-btn" class="workflow-stage-action workflow-stage-tte" style="width: auto; min-height: 38px; padding: 8px 18px;" disabled>
+                                    {{ $approveButtonLabel }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @endif
         </aside>
     </div>
@@ -520,6 +693,74 @@
         counter.textContent = '0 / 0';
         prev.disabled = true;
         next.disabled = true;
+    }
+})();
+
+(() => {
+    const modal = document.getElementById('tte-confirmation-modal');
+    if (!modal) return;
+
+    const openBtn = document.getElementById('open-tte-modal-btn');
+    const closeBtn = document.getElementById('close-tte-modal-btn');
+    const cancelBtn = document.getElementById('cancel-tte-modal-btn');
+    const checkbox = document.getElementById('tte-statement-checkbox');
+    const confirmBtn = document.getElementById('confirm-tte-submit-btn');
+    const approveForm = document.getElementById('workflow-approve-form');
+
+    const openModal = () => {
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+        }
+    };
+
+    const closeModal = () => {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+    };
+
+    if (openBtn) {
+        openBtn.addEventListener('click', openModal);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal);
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) {
+            closeModal();
+        }
+    });
+
+    if (checkbox && confirmBtn) {
+        checkbox.addEventListener('change', () => {
+            confirmBtn.disabled = !checkbox.checked;
+        });
+    }
+
+    if (confirmBtn && approveForm) {
+        confirmBtn.addEventListener('click', (e) => {
+            if (confirmBtn.disabled) {
+                e.preventDefault();
+                return;
+            }
+            if (!confirmBtn.form) {
+                approveForm.submit();
+            }
+        });
     }
 })();
 </script>
