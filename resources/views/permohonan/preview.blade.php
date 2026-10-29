@@ -127,6 +127,7 @@
                 }
                 .signature{margin-top:3mm !important;font-size:8pt !important;line-height:1.2 !important}
                 .signature img{width:34mm !important;height:16mm !important;margin:1mm auto !important}
+                .draft-banner{display:none !important}
             }
         </style>
     </head>
@@ -135,6 +136,7 @@
         @php
         $alurTte = $permohonan->layanan->alur_tte ?? 'tanpa_tte';
         $layananId = (int) $permohonan->layanan_id;
+        $isDraftPreview = !in_array($permohonan->status, ['disetujui', 'selesai'], true);
 
         $kelurahanName = $permohonan->kelurahan?->nama
             ?? '[NAMA KELURAHAN BELUM DIISI]';
@@ -539,8 +541,13 @@
             @endif
         </div>
 
-        @if(in_array($permohonan->status, ['disetujui', 'selesai']))
+        @if(in_array($permohonan->status, ['disetujui', 'selesai']) || filled($surat))
         <div class="paper">
+            @if($isDraftPreview)
+                <div class="draft-banner">
+                    DRAFT: surat ini belum ditandatangani dan bukan dokumen resmi.
+                </div>
+            @endif
             <div class="kop">
                 <img class="logo" src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang">
                 <div class="kop-text">
