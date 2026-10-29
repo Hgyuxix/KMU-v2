@@ -65,8 +65,14 @@ class ServiceFourteenHeirsTest extends TestCase
         $this->assertStringContainsString('name="data_surat[ahli_waris][0][jenis_kelamin]"', $html);
         $this->assertStringContainsString('name="data_surat[ahli_waris][0][alamat]"', $html);
         $this->assertStringContainsString('name="data_surat[ahli_waris][0][hubungan]"', $html);
+        $this->assertStringContainsString('<select id="service-14-heir-relationship-0"', $html);
+        $this->assertStringContainsString('<option value="Anak Kandung">Anak Kandung</option>', $html);
         $this->assertStringContainsString('KTP yang dibutuhkan:', $html);
         $this->assertStringContainsString('name="persyaratan[' . $ktpRequirement->id . '][]"', $html);
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*id="persyaratan-' . preg_quote((string) $ktpRequirement->id, '/') . '")(?=[^>]*\smultiple(?:\s|>))[^>]*>/s',
+            $html
+        );
         $this->assertStringContainsString('data-remove-heir', $html);
     }
 
@@ -87,6 +93,22 @@ class ServiceFourteenHeirsTest extends TestCase
         $this->assertSame(1, DokumenPersyaratan::query()
             ->where('persyaratan_id', $ktpRequirement->id)
             ->count());
+    }
+
+    public function test_submit_rejects_relationship_not_in_configured_options(): void
+    {
+        [, $fo, $service, $ktpRequirement] = $this->context();
+        $heir = $this->heir('Siti One', 'Perempuan', 'Alamat Uji', 'Hubungan tidak dikenal');
+
+        $this->actingAs($fo)
+            ->from(route('permohonan.create', $service))
+            ->post(route('permohonan.store', $service), $this->submitPayload([$heir], [
+                $this->validPdf('ktp-siti.pdf'),
+            ], $ktpRequirement))
+            ->assertRedirect(route('permohonan.create', $service))
+            ->assertSessionHasErrors('data_surat.ahli_waris.0.hubungan');
+
+        $this->assertDatabaseMissing('permohonans', ['layanan_id' => 14]);
     }
 
     public function test_submit_accepts_multiple_heirs_and_exactly_matching_ktps(): void
@@ -171,11 +193,39 @@ class ServiceFourteenHeirsTest extends TestCase
         }
     }
 
+    public function test_submit_rejects_more_than_twenty_heirs_and_ktp_files(): void
+    {
+        [, $fo, $service, $ktpRequirement] = $this->context();
+        $heirs = array_map(
+            fn ($index) => $this->heir('Ahli Waris ' . $index),
+            range(1, 21)
+        );
+        $files = array_map(
+            fn ($index) => $this->validPdf('ktp-' . $index . '.pdf'),
+            range(1, 21)
+        );
+
+        $this->actingAs($fo)
+            ->from(route('permohonan.create', $service))
+            ->post(route('permohonan.store', $service), $this->submitPayload(
+                $heirs,
+                $files,
+                $ktpRequirement
+            ))
+            ->assertRedirect(route('permohonan.create', $service))
+            ->assertSessionHasErrors([
+                'data_surat.ahli_waris',
+                'persyaratan.' . $ktpRequirement->id,
+            ]);
+
+        $this->assertDatabaseMissing('permohonans', ['layanan_id' => 14]);
+    }
+
     public function test_edit_prefills_structured_heirs_and_legacy_rows(): void
     {
         [$kelurahan, $fo, $service, $ktpRequirement] = $this->context();
         $structured = $this->makeApplication($kelurahan, $fo, $service, [
-            $this->heir('Nina Prefill', 'Perempuan', 'Alamat Nina', 'Anak'),
+            $this->heir('Nina Prefill', 'Perempuan', 'Alamat Nina', 'Anak Kandung'),
         ]);
         $this->addStoredKtp($structured, $ktpRequirement, 'nina.pdf');
 
@@ -185,7 +235,7 @@ class ServiceFourteenHeirsTest extends TestCase
             ->assertSee('value="Nina Prefill"', false)
             ->assertSee('value="Perempuan" selected', false)
             ->assertSee('>Alamat Nina</textarea>', false)
-            ->assertSee('value="Anak"', false)
+            ->assertSee('value="Anak Kandung" selected', false)
             ->assertSee('KTP yang dibutuhkan:', false);
 
         $legacy = $this->makeApplication(
@@ -263,13 +313,13 @@ class ServiceFourteenHeirsTest extends TestCase
     public function test_generator_renders_all_structured_heirs_and_signature_rows(): void
     {
         $result = app(SuratGenerator::class)->generate($this->generatorApplication([
-            $this->heir('Budi', 'Laki-laki', 'Alamat Budi', 'Anak'),
+            $this->heir('Budi', 'Laki-laki', 'Alamat Budi', 'Anak Kandung'),
             $this->heir('Siti', 'Perempuan', 'Alamat Siti', 'Istri'),
         ]));
 
-        $this->assertStringContainsString('Budi | L | Alamat Budi | Anak', $result);
+        $this->assertStringContainsString('Budi | L | Alamat Budi | Anak Kandung', $result);
         $this->assertStringContainsString('Siti | P | Alamat Siti | Istri', $result);
-        $this->assertStringContainsString('Anak : 1)', $result);
+        $this->assertStringContainsString('Anak Kandung : 1)', $result);
         $this->assertStringContainsString('Istri : 2)', $result);
         $this->assertStringNotContainsString('{{', $result);
         $this->assertStringNotContainsString('}}', $result);
@@ -373,7 +423,7 @@ class ServiceFourteenHeirsTest extends TestCase
         string $name,
         string $gender = 'Laki-laki',
         string $address = 'Alamat Uji',
-        string $relationship = 'Anak'
+        string $relationship = 'Anak Kandung'
     ): array {
         return [
             'nama' => $name,
