@@ -821,8 +821,7 @@
                 <div class="nomor">Nomor: {{ $permohonan->nomor_surat ?? '(belum diterbitkan)' }}</div>
             </div>
             <div class="isi">
-                {!! $renderSuratContent($surat) !!}
-            </div>
+                {!! $renderSuratContent($suratUntukRender) !!}            </div>
             @if($signatureDate)
                 <div class="signature-date-row">
                     {{ $signatureDate }}
@@ -927,16 +926,6 @@
                         @endif
                     </script>
                 @endif
-            @endif
-            @if($verificationUrl && $permohonan->layanan->alur_tte !== 'tanpa_tte')
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-                <script>
-                    new QRCode(document.getElementById("tte-qr"), {
-                        text: @json($verificationUrl),
-                        width: 90,
-                        height: 90
-                    });
-                </script>
             @endif
         </div>
         @else
