@@ -5,395 +5,128 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Preview {{ $permohonan->layanan->nama }}</title>
         <style>
-            @page{size:A4;margin:0}*{box-sizing:border-box}
-            body{
-                margin:0;
-                background:#e5e7eb;
-                font-family:Arial,sans-serif;
-                color:#111
-            }
+            @page{size:A4;margin:0}
+            *{box-sizing:border-box}
+            body{margin:0;background:#e5e7eb;font-family:Arial,sans-serif;color:#111}
+
             .toolbar{
-                height:64px;
-                background:#fff;
-                border-bottom:1px solid #ddd;
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-                padding:0 24px;position:sticky;
-                top:0;z-index:3
+                height:64px;background:#fff;border-bottom:1px solid #ddd;
+                display:flex;align-items:center;justify-content:space-between;
+                padding:0 24px;position:sticky;top:0;z-index:3
             }
-            .toolbar h2{
-                font-size:17px;
-                margin:0
-            }
+            .toolbar h2{font-size:17px;margin:0}
             .toolbar .btn{
-                background:#0b5cff;
-                color:#fff;
-                border:0;
-                border-radius:8px;
-                padding:10px 16px;
-                font-weight:700;
-                cursor:pointer
-            }.paper{
-                width:210mm;
-                min-height:297mm;
-                margin:24px auto;
-                background:#fff;
-                padding:15mm 17mm;
-                box-shadow:0 5px 22px rgba(0,0,0,.12);
-                overflow:hidden
+                background:#0b5cff;color:#fff;border:0;border-radius:8px;
+                padding:10px 16px;font-weight:700;cursor:pointer
+            }
+
+            .paper{
+                width:210mm;min-height:297mm;margin:24px auto;background:#fff;
+                padding:15mm 17mm;box-shadow:0 5px 22px rgba(0,0,0,.12);
+                overflow:visible
             }
             .kop{
-                display:grid;
-                grid-template-columns:25mm 1fr;
-                column-gap:7mm;align-items:center;
-                padding-bottom:4mm;border-bottom:1.4mm solid #111;
-                position:relative
+                display:grid;grid-template-columns:25mm 1fr;column-gap:7mm;align-items:center;
+                padding-bottom:4mm;border-bottom:1.4mm solid #111;position:relative
             }
-            .logo{
-                width:24mm;
-                height:24mm;
-                object-fit:contain
+            .logo{width:24mm;height:24mm;object-fit:contain}
+            .kop-text{text-align:center}
+            .pemerintah{font-size:14pt;font-weight:700}
+            .kecamatan{font-size:16pt;font-weight:700}
+            .alamat{font-size:8.5pt;margin-top:1mm}
+            .judul{text-align:center;margin:7mm 0 5mm}
+            .judul h1{font-size:12pt;text-decoration:underline;margin:0 0 2mm}
+            .nomor{font-size:9pt}
+            .isi{font-size:10.5pt;line-height:1.48;white-space:normal}
+
+            /* ===== Isi surat: tabel tanpa border ===== */
+            .letter-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}
+            .letter-table td{
+                padding:0;border:0;vertical-align:top;font-size:11pt;line-height:1.55;
+                overflow-wrap:anywhere
             }
-            .kop-text{
-                text-align:center
+            .letter-table .number{width:7mm;white-space:nowrap}
+            .letter-table .label{width:52mm;padding-right:2mm}
+            .letter-table .colon{width:5mm;text-align:center;white-space:nowrap}
+            .letter-table .value{width:auto;min-width:0}
+            .letter-table .continuation{padding-left:5mm}
+            .letter-paragraph{margin:0 0 7px;font-size:11pt;line-height:1.55}
+            .letter-spacer{height:5px}
+
+            .witness-signature-space{height:20mm;flex-shrink:0;break-inside:avoid;page-break-inside:avoid}
+            .declaration-signature{
+                width:62mm;margin:4mm 0 4mm auto;text-align:center;font-size:10.5pt;
+                line-height:1.48;break-inside:avoid;page-break-inside:avoid
             }
-            .pemerintah{
-                font-size:14pt;
-                font-weight:700
+            .declaration-signature-space{height:20mm}
+            .witness-grid{
+                display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+                column-gap:12mm;row-gap:5mm;margin-top:2mm
             }
-            .kecamatan{
-                font-size:16pt;
-                font-weight:700
+            .witness-card{
+                min-height:34mm;display:flex;flex-direction:column;
+                break-inside:avoid;page-break-inside:avoid
+            }
+            .witness-name{font-size:10.5pt;line-height:1.4;overflow-wrap:anywhere}
+            .page-break{break-before:page;page-break-before:always}
+
+            /* ===== Paket penutup: tanggal + TTE tidak boleh terpisah ===== */
+            .closing-block{break-inside:avoid;page-break-inside:avoid}
+
+            /* ===== Tanggal: sejajar kolom kanan ===== */
+            .signature-date-row{
+                width:calc((100% - 12mm) / 2);
+                margin:4mm 0 3mm auto;
+                text-align:center;font-size:10.5pt;
+                break-inside:avoid;page-break-inside:avoid
             }
 
-            .alamat{
-                font-size:8.5pt;
-                margin-top:1mm
+            /* ===== Blok TTE (layar = cetak) ===== */
+            .tte-signatures{
+                display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+                column-gap:12mm;row-gap:6mm;align-items:start;margin-top:4mm;
+                break-inside:avoid;page-break-inside:avoid
+            }
+            .signer-block{
+                width:62mm;min-height:40mm;justify-self:center;min-width:0;
+                text-align:center;font-size:8.5pt;line-height:1.3;
+                break-inside:avoid;page-break-inside:avoid
+            }
+            /* 1 TTE (lurah_saja tanpa pemohon): kolom kanan */
+            .signer-block.lurah-only{grid-column:2}
+            /* 3 TTE: Camat di baris bawah, tengah */
+            .signer-block.camat-after-lurah{grid-column:1 / -1;justify-self:center}
+
+            .signer-space{height:28mm} /* setara tinggi QR + margin, supaya nama sejajar */
+            .tte-qr{
+                width:24mm;height:24mm;margin:2mm auto;
+                display:flex;align-items:center;justify-content:center
+            }
+            .tte-qr canvas,.tte-qr img{width:24mm !important;height:24mm !important;margin:0 auto}
+            .signer-name{font-weight:700;overflow-wrap:anywhere}
+            .signer-note{margin-top:1mm;font-size:7pt;font-style:italic}
+
+            /* ===== Lama (tetap) ===== */
+            .signature{width:62mm;margin-left:auto;margin-top:4mm;text-align:center;font-size:8.5pt;line-height:1.25}
+            .signature img{display:block;width:38mm;height:18mm;object-fit:contain;margin:1mm auto}
+
+            /* ===== Banner draft (dipakai nanti untuk preview reviewer) ===== */
+            .draft-banner{
+                margin:0 0 5mm;padding:3mm 4mm;border:1.5px dashed #b45309;background:#fffbeb;
+                color:#92400e;font-size:10pt;font-weight:700;text-align:center
             }
 
-            .judul{
-                text-align:center;
-                margin:7mm 0 5mm
-            }
-
-            .judul h1{
-                font-size:12pt;
-                text-decoration:underline;
-                margin:0 0 2mm
-            }
-
-            .nomor{
-                font-size:9pt}
-
-            .isi{
-                font-size:10.5pt;
-                line-height:1.48;
-                white-space:normal
-            }
-
-            /* ==============================
-                Format isi surat seperti tabel
-                tanpa border
-            ============================== */
-
-            .letter-table {
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
-                margin: 0;
-            }
-
-            .letter-table td {
-                padding: 0;
-                border: 0;
-                vertical-align: top;
-                font-size: 10.5pt;
-                line-height: 1.48;
-            }
-
-            .letter-table .number {
-                width: 7mm;
-                white-space: nowrap;
-            }
-
-            .letter-table .label {
-                width: 52mm;
-                padding-right: 2mm;
-            }
-
-            .letter-table .colon {
-                width: 4mm;
-                text-align: center;
-                white-space: nowrap;
-            }
-
-            .letter-table .value {
-                width: auto;
-                min-width: 0;
-            }
-
-            .letter-paragraph {
-                margin: 0 0 7px;
-                font-size: 10.5pt;
-                line-height: 1.48;
-            }
-
-            .letter-spacer {
-                height: 5px;
-            }
-
-            .witness-signature-space {
-                height: 20mm;
-                flex-shrink: 0;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .declaration-signature {
-                width: 62mm;
-                margin: 4mm 0 4mm auto;
-                text-align: center;
-                font-size: 10.5pt;
-                line-height: 1.48;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .declaration-signature-space {
-                height: 20mm;
-            }
-
-            .witness-grid {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                column-gap: 12mm;
-                row-gap: 5mm;
-                margin-top: 2mm;
-            }
-
-            .witness-card {
-                min-height: 34mm;
-                display: flex;
-                flex-direction: column;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .witness-name {
-                font-size: 10.5pt;
-                line-height: 1.4;
-            }
-
-            .page-break {
-                break-before: page;
-                page-break-before: always;
-            }
-
-            @media print {
-                .letter-table td {
-                    font-size: 10.5pt;
+            /* ===== Cetak ===== */
+            @media print{
+                @page{size:A4;margin:9mm 0 10mm}
+                html,body{margin:0;padding:0;background:#fff}
+                .toolbar{display:none !important}
+                .paper{
+                    width:244mm;min-height:0;height:auto;margin:0;
+                    padding:0 17mm;box-shadow:none;overflow:visible;zoom:.86
                 }
-
-                .letter-paragraph {
-                    font-size: 10.5pt;
-                }
-            }
-
-            .signature{
-                width:62mm;
-                margin-left:auto;
-                margin-top:4mm;
-                text-align:center;
-                font-size:8.5pt;
-                line-height:1.25;
-            }
-
-            .signature img{
-                display:block;
-                width:38mm;
-                height:18mm;
-                object-fit:contain;
-                margin:1mm auto;
-            }
-
-            @media print {
-                @page {
-                    size: A4;
-                    margin: 0;
-                }
-
-                html,
-                body {
-                    margin: 0;
-                    padding: 0;
-                    background: #fff;
-                }
-
-                .toolbar {
-                    display: none !important;
-                }
-
-                .paper {
-                    width: 244mm;
-                    min-height: 345mm;
-                    height: 345mm;
-                    margin: 0;
-                    padding: 9mm 17mm 7mm;
-                    box-shadow: none;
-                    overflow: hidden;
-                    zoom: 0.86;
-                }
-
-                .signature {
-                    margin-top: 3mm !important;
-                    font-size: 8pt !important;
-                    line-height: 1.2 !important;
-                }
-
-                .signature img {
-                    width: 34mm !important;
-                    height: 16mm !important;
-                    margin: 1mm auto !important;
-                }
-            }
-
-            /* ==============================
-            Surat - Table Style Without Border
-            ============================== */
-
-            .letter-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 0;
-            }
-
-            .letter-table td {
-                padding: 0;
-                border: none;
-                vertical-align: top;
-                font-size: 11pt;
-                line-height: 1.55;
-            }
-
-            .letter-table .number {
-                width: 7mm;
-                white-space: nowrap;
-            }
-
-            .letter-table .label {
-                width: 52mm;
-                padding-right: 2mm;
-            }
-
-            .letter-table .colon {
-                width: 5mm;
-                text-align: center;
-            }
-
-            .letter-table .value {
-                width: auto;
-            }
-
-            .letter-table .continuation {
-                padding-left: 5mm;
-            }
-
-            .letter-paragraph {
-                margin: 0 0 7px;
-                font-size: 11pt;
-                line-height: 1.55;
-            }
-
-            @media print {
-                .letter-table td {
-                    font-size: 11pt;
-                }
-
-                .letter-paragraph {
-                    font-size: 11pt;
-                }
-
-                .signature-date-row {
-                    margin: 4mm 0 3mm;
-                    text-align: right;
-                    font-size: 10.5pt;
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                }
-
-                .tte-signatures {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                    column-gap: 12mm;
-                    row-gap: 6mm;
-                    align-items: start;
-                    margin-top: 4mm;
-                }
-
-                .signer-block {
-                    min-width: 0;
-                    text-align: center;
-                    font-size: 8.5pt;
-                    line-height: 1.3;
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                }
-
-                .signer-block.lurah-only {
-                    grid-column: 2;
-                }
-
-                .signer-block.camat-after-lurah {
-                    grid-column: 2;
-                }
-
-                .signer-space {
-                    height: 16mm;
-                }
-
-                .tte-qr {
-                    width: 24mm;
-                    height: 24mm;
-                    margin: 2mm auto;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .tte-qr canvas,
-                .tte-qr img {
-                    display: block;
-                    width: 24mm !important;
-                    height: 24mm !important;
-                    margin: 0 auto;
-                }
-
-                .signer-name {
-                    font-weight: 700;
-                    overflow-wrap: anywhere;
-                }
-
-                .signer-note {
-                    margin-top: 1mm;
-                    font-size: 7pt;
-                    font-style: italic;
-                }
-
-                @media print {
-                    .tte-signatures,
-                    .signer-block,
-                    .signature-date-row {
-                        break-inside: avoid;
-                        page-break-inside: avoid;
-                    }
-
-                    .paper {
-                        height: auto;
-                        min-height: 345mm;
-                        overflow: visible;
-                    }
-                }
+                .signature{margin-top:3mm !important;font-size:8pt !important;line-height:1.2 !important}
+                .signature img{width:34mm !important;height:16mm !important;margin:1mm auto !important}
             }
         </style>
     </head>
@@ -821,82 +554,88 @@
                 <div class="nomor">Nomor: {{ $permohonan->nomor_surat ?? '(belum diterbitkan)' }}</div>
             </div>
             <div class="isi">
-                {!! $renderSuratContent($suratUntukRender) !!}            </div>
-            @if($signatureDate)
-                <div class="signature-date-row">
-                    {{ $signatureDate }}
-                </div>
-            @endif
+                {!! $renderSuratContent($suratUntukRender) !!}
+            </div>
 
-            @if(in_array($alurTte, ['lurah_saja', 'lurah_dan_camat'], true))
-                <div class="tte-signatures">
+            <div class="closing-block">
+                @if($signatureDate)
+                    <div class="signature-date-row">
+                        {{ $signatureDate }}
+                    </div>
+                @endif
 
-                    @if($signatureHasApplicant)
-                        <div class="signer-block applicant-signature">
-                            <div>{{ $signatureApplicantTitle }}</div>
-                            <div class="signer-space"></div>
-                            <div class="signer-name">
-                                {{ $signatureApplicantName }}
+                @if(in_array($alurTte, ['lurah_saja', 'lurah_dan_camat'], true))
+                    <div class="tte-signatures">
+
+                        @if($signatureHasApplicant)
+                            <div class="signer-block applicant-signature">
+                                <div>{{ $signatureApplicantTitle }}</div>
+                                <div class="signer-space"></div>
+                                <div class="signer-name">
+                                    {{ $signatureApplicantName }}
+                                </div>
                             </div>
-                        </div>
-                    @endif
-
-                    {{-- TTE Lurah --}}
-                    <div class="signer-block signer-lurah
-                        {{ !$signatureHasApplicant && $alurTte === 'lurah_saja' ? 'lurah-only' : '' }}">
-
-                        <div>
-                            LURAH {{ $kelurahanName }}
-                        </div>
-
-                        @if($verificationUrl)
-                            <div id="tte-qr-lurah" class="tte-qr"></div>
                         @endif
 
-                        <div class="signer-name">
-                            {{ $lurahName }}
-                        </div>
-
-                        <div>NIP. {{ $lurahNip }}</div>
-
-                        <div class="signer-note">
-                            Simulasi TTE Lurah
-                        </div>
-                    </div>
-
-                    {{-- TTE Camat hanya untuk layanan lurah_dan_camat --}}
-                    @if($alurTte === 'lurah_dan_camat')
-                        <div class="signer-block signer-camat
-                            {{ $signatureHasApplicant ? 'camat-after-lurah' : '' }}">
-
-                            @if(config('penandatangan.atasan'))
-                                <div>
-                                    a.n. {{ config('penandatangan.atasan') }}
-                                </div>
-                            @endif
+                        {{-- TTE Lurah --}}
+                        <div class="signer-block signer-lurah
+                            {{ !$signatureHasApplicant && $alurTte === 'lurah_saja' ? 'lurah-only' : '' }}">
 
                             <div>
-                                {{ $camatJabatan }}
+                                LURAH {{ $kelurahanName }}
                             </div>
 
                             @if($verificationUrl)
-                                <div id="tte-qr-camat" class="tte-qr"></div>
+                                <div id="tte-qr-lurah" class="tte-qr"></div>
                             @endif
 
                             <div class="signer-name">
-                                {{ $camatName }}
+                                {{ $lurahName }}
                             </div>
 
-                            <div>NIP. {{ $camatNip }}</div>
+                            <div>NIP. {{ $lurahNip }}</div>
 
                             <div class="signer-note">
-                                Simulasi TTE Camat
+                                Simulasi TTE Lurah
                             </div>
                         </div>
-                    @endif
 
-                </div>
+                        {{-- TTE Camat hanya untuk layanan lurah_dan_camat --}}
+                        @if($alurTte === 'lurah_dan_camat')
+                            <div class="signer-block signer-camat
+                                {{ $signatureHasApplicant ? 'camat-after-lurah' : '' }}">
 
+                                @if(config('penandatangan.atasan'))
+                                    <div>
+                                        a.n. {{ config('penandatangan.atasan') }}
+                                    </div>
+                                @endif
+
+                                <div>
+                                    {{ $camatJabatan }}
+                                </div>
+
+                                @if($verificationUrl)
+                                    <div id="tte-qr-camat" class="tte-qr"></div>
+                                @endif
+
+                                <div class="signer-name">
+                                    {{ $camatName }}
+                                </div>
+
+                                <div>NIP. {{ $camatNip }}</div>
+
+                                <div class="signer-note">
+                                    Simulasi TTE Camat
+                                </div>
+                            </div>
+                        @endif
+
+                    </div>
+                @endif
+            </div>
+
+            @if(in_array($alurTte, ['lurah_saja', 'lurah_dan_camat'], true))
                 @if($verificationUrl)
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -927,7 +666,6 @@
                     </script>
                 @endif
             @endif
-        </div>
         @else
         <div
             style="max-width:600px;
