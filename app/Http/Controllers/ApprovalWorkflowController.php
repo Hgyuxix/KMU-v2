@@ -6,7 +6,9 @@ use App\Models\AuditLog;
 use App\Models\DocumentReview;
 use App\Models\DokumenPersyaratan;
 use App\Models\Permohonan;
+use App\Models\User;
 use App\Services\ApprovalStageService;
+use App\Services\NikEncryptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +38,8 @@ class ApprovalWorkflowController extends Controller
     public function show(
         Request $request,
         Permohonan $permohonan,
-        ApprovalStageService $workflow
+        ApprovalStageService $workflow,
+        NikEncryptionService $nikEncryptionService
     ) {
         // Authorize before loading the rest of the document and audit history.
         abort_unless($workflow->canView($request->user(), $permohonan), 403);
@@ -59,11 +62,59 @@ class ApprovalWorkflowController extends Controller
             ->all();
 
         $canAct = $workflow->canAct($request->user(), $permohonan);
+        $nikPlain = $nikEncryptionService->decrypt($permohonan->nik);
+        $suratFields = config('surat.' . $permohonan->layanan_id, []);
+        $verificationSummary = null;
+        $verificationContext = match ($permohonan->current_stage) {
+            'lurah_review' => [
+                'stage' => 'kasi_pemerintahan_review',
+                'role' => 'kasi_pemerintahan',
+                'label' => 'Kasi Pemerintahan',
+                'prefix' => 'kasi_pemerintahan',
+            ],
+            'camat_review' => [
+                'stage' => 'sekcam_review',
+                'role' => 'sekcam',
+                'label' => 'Sekcam',
+                'prefix' => 'sekcam',
+            ],
+            default => null,
+        };
+
+        if ($verificationContext !== null) {
+            $supersededIds = $permohonan->dokumenPersyaratans
+                ->pluck('menggantikan_id')
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $activeDocuments = $permohonan->dokumenPersyaratans
+                ->reject(fn ($document) => in_array((int) $document->id, $supersededIds, true))
+                ->values();
+            $reviewerId = $permohonan->{$verificationContext['prefix'] . '_oleh'};
+            $reviewer = $reviewerId ? User::find($reviewerId) : null;
+            $approvedDocumentCount = $activeDocuments->filter(
+                fn ($document) => $document->documentReviews
+                    ->firstWhere('stage', $verificationContext['stage'])
+                    ?->status === 'sesuai'
+            )->count();
+
+            $verificationSummary = [
+                'stage' => $verificationContext['stage'],
+                'stage_label' => $verificationContext['label'],
+                'reviewer_name' => $reviewer?->name ?? 'Pemeriksa tidak tersedia',
+                'reviewed_at' => $permohonan->{$verificationContext['prefix'] . '_at'},
+                'approved_document_count' => $approvedDocumentCount,
+                'total_document_count' => $activeDocuments->count(),
+            ];
+        }
 
         return view('workflow.show', compact(
             'permohonan',
             'canAct',
-            'documentFilesAvailable'
+            'documentFilesAvailable',
+            'nikPlain',
+            'suratFields',
+            'verificationSummary'
         ));
     }
 

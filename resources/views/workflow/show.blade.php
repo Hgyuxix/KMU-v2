@@ -88,6 +88,18 @@
         .workflow-meta-full { grid-column:1 / -1; }
         .workflow-meta-label { color:#8193a3; font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
         .workflow-meta-value { margin-top:3px; color:#17324d; font-size:12px; font-weight:650; line-height:1.45; }
+        .workflow-data-section { padding:14px 17px; border-top:1px solid #e8eef4; }
+        .workflow-data-section-title { margin:0 0 11px; color:#48627a; font-size:11px; font-weight:800; }
+        .workflow-data-group + .workflow-data-group { margin-top:16px; }
+        .workflow-data-group-title { margin:0 0 9px; color:#17324d; font-size:12px; font-weight:800; }
+        .workflow-data-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px 14px; }
+        .workflow-data-item { min-width:0; }
+        .workflow-data-value { margin-top:3px; color:#28445e; font-size:12px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-wrap; }
+        .workflow-data-table-wrap { max-width:100%; overflow-x:auto; }
+        .workflow-data-table { width:100%; border-collapse:collapse; font-size:11px; }
+        .workflow-data-table th,.workflow-data-table td { padding:8px 7px; border-bottom:1px solid #e8eef4; text-align:left; vertical-align:top; }
+        .workflow-data-table th { color:#60788d; font-size:9px; letter-spacing:.05em; text-transform:uppercase; }
+        .workflow-data-note { margin:9px 0 0; color:#48627a; font-size:11px; font-weight:700; }
 
         .workflow-actions { padding:16px 17px; display:grid; gap:12px; }
         .workflow-actions p { margin:0; color:#6e8295; font-size:11px; line-height:1.55; }
@@ -108,6 +120,8 @@
         @media (max-width: 700px) {
             .workflow-page { width:min(100% - 24px, 1440px); padding-top:18px; }
             .workflow-topbar { flex-direction:column; }
+            .workflow-data-grid { grid-template-columns:1fr; }
+            .workflow-meta-grid { grid-template-columns:1fr; }
             .workflow-user { justify-content:flex-start; }
             .workflow-canvas, .workflow-image-wrap { min-height:390px; height:390px; }
             .workflow-image-wrap img { max-height:340px; }
@@ -266,6 +280,13 @@
         <div class="workflow-alert error">{{ $errors->first() }}</div>
     @endif
 
+    @php
+        $isTteStage = in_array($permohonan->current_stage, ['lurah_review', 'camat_review'], true);
+        $documentReviewStage = $isTteStage
+            ? ($verificationSummary['stage'] ?? null)
+            : $permohonan->current_stage;
+    @endphp
+
     <div class="workflow-layout">
         <section class="workflow-viewer" id="workflow-viewer">
             <div class="workflow-viewer-head">
@@ -278,7 +299,7 @@
                     <div class="workflow-counter" id="active-counter">0 / 0</div>
                 </div>
 
-                @if($canAct)
+                @if($canAct && !$isTteStage)
                     <div class="workflow-decision" id="decision-actions">
                         <form data-decision-form data-status="sesuai" method="POST">
                             @csrf
@@ -292,6 +313,8 @@
                         </form>
                     </div>
                     <div class="workflow-disabled-note" id="decision-note">Pilih status berkas. Setelah disimpan, otomatis pindah ke dokumen berikutnya.</div>
+                @elseif($canAct && $isTteStage)
+                    <div class="workflow-disabled-note">Dokumen dapat dibuka untuk dilihat. Penandaan per dokumen dilakukan pada tahap verifikasi sebelumnya.</div>
                 @else
                     <div class="workflow-disabled-note">Tahap ini hanya dapat dilihat pada akun Anda.</div>
                 @endif
@@ -336,10 +359,8 @@
                             $ext = strtolower(pathinfo($dokumen->file_original_name, PATHINFO_EXTENSION));
                             $isPdf = $ext === 'pdf';
 
-                            $currentStage = $permohonan->current_stage;
-
                             $currentReview = $dokumen->documentReviews
-                                ->firstWhere('stage', $currentStage);
+                                ->firstWhere('stage', $documentReviewStage);
 
                             $status = $currentReview?->status;
                             $actionStatus = $status ?? 'belum_dicek';
@@ -405,10 +426,45 @@
                 </div>
             </section>
 
+            @if($isTteStage)
+                <section class="workflow-card">
+                    <div class="workflow-card-head">
+                        <div class="workflow-card-kicker">Verifikasi Tahap Sebelumnya</div>
+                        <div class="workflow-card-title">Ringkasan Verifikasi</div>
+                    </div>
+                    @if($verificationSummary)
+                        <div class="workflow-meta-grid">
+                            <div>
+                                <div class="workflow-meta-label">Pemeriksa</div>
+                                <div class="workflow-meta-value">{{ $verificationSummary['reviewer_name'] }}</div>
+                            </div>
+                            <div>
+                                <div class="workflow-meta-label">Tahap</div>
+                                <div class="workflow-meta-value">{{ $verificationSummary['stage_label'] }}</div>
+                            </div>
+                            <div class="workflow-meta-full">
+                                <div class="workflow-meta-label">Waktu</div>
+                                <div class="workflow-meta-value">{{ $verificationSummary['reviewed_at']?->translatedFormat('d F Y H:i') ?? 'Waktu pemeriksaan tidak tercatat' }}</div>
+                            </div>
+                            <div class="workflow-meta-full">
+                                <div class="workflow-meta-label">Hasil</div>
+                                <div class="workflow-meta-value">
+                                    {{ $verificationSummary['approved_document_count'] }} dari {{ $verificationSummary['total_document_count'] }} dokumen dinyatakan sesuai
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="workflow-actions">
+                            <p>Data verifikasi tahap sebelumnya belum tersedia.</p>
+                        </div>
+                    @endif
+                </section>
+            @endif
+
             <section class="workflow-card">
                 <div class="workflow-card-head">
-                    <div class="workflow-card-kicker">Pemohon</div>
-                    <div class="workflow-card-title">Detail Pemohon</div>
+                    <div class="workflow-card-kicker">Data Pengajuan</div>
+                    <div class="workflow-card-title">Data yang Diajukan</div>
                 </div>
                 <div class="workflow-meta-grid">
                     <div class="workflow-meta-full">
@@ -418,6 +474,10 @@
                     <div>
                         <div class="workflow-meta-label">Nama</div>
                         <div class="workflow-meta-value">{{ $permohonan->nama_lengkap }}</div>
+                    </div>
+                    <div>
+                        <div class="workflow-meta-label">NIK</div>
+                        <div class="workflow-meta-value">{{ $nikPlain }}</div>
                     </div>
                     <div>
                         <div class="workflow-meta-label">Kelurahan</div>
@@ -433,20 +493,169 @@
                     </div>
                     <div>
                         <div class="workflow-meta-label">Nomor KK</div>
-                        <div class="workflow-meta-value">{{ $permohonan->no_kk ? '••••••••••••' . substr($permohonan->no_kk, -4) : '—' }}</div>
+                        <div class="workflow-meta-value">{{ $permohonan->no_kk ?: '—' }}</div>
                     </div>
                     <div>
                         <div class="workflow-meta-label">Petugas input</div>
                         <div class="workflow-meta-value">{{ $permohonan->pembuat->name ?? '—' }}</div>
                     </div>
                 </div>
+
+                @php
+                    $submittedSuratData = is_array($permohonan->data_surat)
+                        ? $permohonan->data_surat
+                        : [];
+                    $configuredSuratFields = is_array($suratFields) ? $suratFields : [];
+                    $groupedSuratFields = [];
+                    foreach ($configuredSuratFields as $fieldKey => $fieldConfig) {
+                        if (!is_array($fieldConfig)) continue;
+                        $groupedSuratFields[$fieldConfig['group'] ?? 'Data Surat'][$fieldKey] = $fieldConfig;
+                    }
+                    $otherSuratData = array_diff_key($submittedSuratData, $configuredSuratFields);
+                @endphp
+
+                @if($groupedSuratFields !== [])
+                    <div class="workflow-data-section">
+                        <h3 class="workflow-data-section-title">Data Surat</h3>
+                        @foreach($groupedSuratFields as $groupTitle => $groupFields)
+                            @php
+                                $groupHasValues = collect(array_keys($groupFields))
+                                    ->contains(fn ($key) => array_key_exists($key, $submittedSuratData));
+                            @endphp
+                            @if($groupHasValues)
+                                <section class="workflow-data-group">
+                                    <h4 class="workflow-data-group-title">{{ $groupTitle }}</h4>
+                                    <div class="workflow-data-grid">
+                                        @foreach($groupFields as $fieldKey => $fieldConfig)
+                                            @continue(!array_key_exists($fieldKey, $submittedSuratData))
+                                            @php
+                                                $fieldValue = $submittedSuratData[$fieldKey];
+                                                $fieldLabel = $fieldConfig['label'] ?? str($fieldKey)->replace('_', ' ')->title();
+                                                $fieldType = $fieldConfig['type'] ?? 'text';
+                                            @endphp
+                                            @if($fieldType === 'repeatable' && $fieldKey === 'ahli_waris')
+                                                @php
+                                                    $heirFields = $fieldConfig['fields'] ?? [];
+                                                    $heirRows = [];
+                                                    if (is_array($fieldValue)) {
+                                                        $heirRows = array_values(array_filter($fieldValue, 'is_array'));
+                                                    } elseif (is_string($fieldValue) && trim($fieldValue) !== '') {
+                                                        foreach (preg_split('/\r\n|\r|\n/', trim($fieldValue)) as $legacyLine) {
+                                                            $legacyParts = array_map('trim', explode('|', $legacyLine));
+                                                            if (count($legacyParts) < 2) continue;
+                                                            $legacyGender = match ($legacyParts[1] ?? '') {
+                                                                'L' => 'Laki-laki',
+                                                                'P' => 'Perempuan',
+                                                                default => $legacyParts[1] ?? '',
+                                                            };
+                                                            $heirRows[] = [
+                                                                'nama' => $legacyParts[0] ?? '',
+                                                                'jenis_kelamin' => $legacyGender,
+                                                                'alamat' => $legacyParts[2] ?? '',
+                                                                'hubungan' => $legacyParts[3] ?? '',
+                                                            ];
+                                                        }
+                                                    }
+                                                @endphp
+                                                <div class="workflow-data-item workflow-meta-full">
+                                                    <div class="workflow-meta-label">{{ $fieldLabel }}</div>
+                                                    <div class="workflow-data-table-wrap">
+                                                        <table class="workflow-data-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>{{ $heirFields['nama']['label'] ?? 'Nama' }}</th>
+                                                                    <th>L/P · {{ $heirFields['jenis_kelamin']['label'] ?? 'Jenis Kelamin' }}</th>
+                                                                    <th>{{ $heirFields['alamat']['label'] ?? 'Alamat' }}</th>
+                                                                    <th>{{ $heirFields['hubungan']['label'] ?? 'Hubungan' }}</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @forelse($heirRows as $heir)
+                                                                    @php
+                                                                        $heirGender = match ($heir['jenis_kelamin'] ?? '') {
+                                                                            'Laki-laki', 'L' => 'L',
+                                                                            'Perempuan', 'P' => 'P',
+                                                                            default => $heir['jenis_kelamin'] ?? '—',
+                                                                        };
+                                                                    @endphp
+                                                                    <tr>
+                                                                        <td>{{ $heir['nama'] ?? '—' }}</td>
+                                                                        <td>{{ $heirGender }}</td>
+                                                                        <td>{{ $heir['alamat'] ?? '—' }}</td>
+                                                                        <td>{{ $heir['hubungan'] ?? '—' }}</td>
+                                                                    </tr>
+                                                                @empty
+                                                                    <tr><td colspan="4">—</td></tr>
+                                                                @endforelse
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <p class="workflow-data-note">Jumlah KTP yang dibutuhkan: {{ count($heirRows) }}</p>
+                                                </div>
+                                            @else
+                                                @php
+                                                    if ($fieldType === 'date' && is_string($fieldValue) && trim($fieldValue) !== '') {
+                                                        $timestamp = strtotime($fieldValue);
+                                                        $fieldValue = $timestamp === false ? $fieldValue : date('d-m-Y', $timestamp);
+                                                    }
+                                                    $displayValue = is_array($fieldValue)
+                                                        ? collect(\Illuminate\Support\Arr::flatten($fieldValue))->filter(fn ($value) => is_scalar($value))->implode(', ')
+                                                        : (is_bool($fieldValue) ? ($fieldValue ? 'Ya' : 'Tidak') : $fieldValue);
+                                                @endphp
+                                                <div class="workflow-data-item">
+                                                    <div class="workflow-meta-label">{{ $fieldLabel }}</div>
+                                                    <div class="workflow-data-value">{{ $displayValue === null || $displayValue === '' ? '—' : $displayValue }}</div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </section>
+                            @endif
+                        @endforeach
+
+                        @if($otherSuratData !== [])
+                            <section class="workflow-data-group">
+                                <h4 class="workflow-data-group-title">Lainnya</h4>
+                                <div class="workflow-data-grid">
+                                    @foreach($otherSuratData as $fieldKey => $fieldValue)
+                                        @php
+                                            $displayValue = is_array($fieldValue)
+                                                ? collect(\Illuminate\Support\Arr::flatten($fieldValue))->filter(fn ($value) => is_scalar($value))->implode(', ')
+                                                : (is_bool($fieldValue) ? ($fieldValue ? 'Ya' : 'Tidak') : $fieldValue);
+                                        @endphp
+                                        <div class="workflow-data-item">
+                                            <div class="workflow-meta-label">{{ str($fieldKey)->replace('_', ' ')->title() }}</div>
+                                            <div class="workflow-data-value">{{ $displayValue === null || $displayValue === '' ? '—' : $displayValue }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </section>
+                        @endif
+                    </div>
+                @elseif($otherSuratData !== [])
+                    <div class="workflow-data-section">
+                        <h3 class="workflow-data-section-title">Lainnya</h3>
+                        <div class="workflow-data-grid">
+                            @foreach($otherSuratData as $fieldKey => $fieldValue)
+                                @php
+                                    $displayValue = is_array($fieldValue)
+                                        ? collect(\Illuminate\Support\Arr::flatten($fieldValue))->filter(fn ($value) => is_scalar($value))->implode(', ')
+                                        : (is_bool($fieldValue) ? ($fieldValue ? 'Ya' : 'Tidak') : $fieldValue);
+                                @endphp
+                                <div class="workflow-data-item">
+                                    <div class="workflow-meta-label">{{ str($fieldKey)->replace('_', ' ')->title() }}</div>
+                                    <div class="workflow-data-value">{{ $displayValue === null || $displayValue === '' ? '—' : $displayValue }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </section>
 
             @if($canAct)
                 @php
                     $stage = $permohonan->current_stage;
                     $alurTte = $permohonan->layanan?->alur_tte;
-                    $isTteStage = in_array($stage, ['lurah_review', 'camat_review'], true);
 
                     if ($stage === 'lurah_review') {
                         $nextRecipient = $alurTte === 'lurah_dan_camat' ? 'Kecamatan' : 'FO';
@@ -480,7 +689,11 @@
                         <div class="workflow-card-title">{{ $isTteStage ? 'Persetujuan & TTE' : 'Persetujuan Tahap' }}</div>
                     </div>
                     <div class="workflow-actions">
-                        <p>Setelah seluruh dokumen wajib dinyatakan sesuai, Anda dapat {{ $isTteStage ? 'membubuhkan tanda tangan elektronik untuk tahap ini.' : 'menyetujui tahap ini.' }}</p>
+                        <p>{{ $isTteStage ? 'Periksa ringkasan verifikasi dan dokumen terlampir sebelum membubuhkan tanda tangan elektronik.' : 'Setelah seluruh dokumen wajib dinyatakan sesuai, Anda dapat menyetujui tahap ini.' }}</p>
+
+                        <a href="{{ route('permohonan.preview', $permohonan) }}" target="_blank" rel="noopener noreferrer" class="workflow-stage-action" style="background:#eaf3fb;color:#0d5ea6;border-color:#cbe4ff;text-decoration:none;">
+                            Buka Pratinjau Surat
+                        </a>
 
                         <form id="workflow-approve-form" class="workflow-stage-approve-form" method="POST" action="{{ route('workflow.approve', $permohonan) }}" @if(!$isTteStage) onsubmit="return confirm('Setujui permohonan pada tahap ini?')" @endif>
                             @csrf @method('PATCH')

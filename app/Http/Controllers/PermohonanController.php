@@ -300,6 +300,17 @@ class PermohonanController extends Controller
                 true
             )
             || $permohonan->current_stage === 'fo_ttd_warga'
+            || (
+                $workflowReviewer
+                && $permohonan->status === 'diajukan'
+                && in_array($permohonan->current_stage, [
+                    'kasi_pemerintahan_review',
+                    'lurah_review',
+                    'kasi_umum_review',
+                    'sekcam_review',
+                    'camat_review',
+                ], true)
+            )
         ) {
             $surat = $suratGenerator
                 ->generate($permohonan);

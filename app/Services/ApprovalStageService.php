@@ -148,9 +148,17 @@ class ApprovalStageService
             $locked = Permohonan::query()->lockForUpdate()->findOrFail($permohonan->id);
             abort_unless($this->canAct($user, $locked), 403);
             $locked->load(['layanan.persyaratans', 'dokumenPersyaratans']);
-            $this->assertRequiredDocumentsReady($locked);
-
             $stage = $locked->current_stage;
+            $requiresStageReview = !in_array(
+                $stage,
+                ['lurah_review', 'camat_review'],
+                true
+            );
+            $this->assertRequiredDocumentsReady(
+                $locked,
+                requireReviewed: $requiresStageReview
+            );
+
             $trackingPrefix = match ($stage) {
                 'kasi_pemerintahan_review' => 'kasi_pemerintahan',
                 'lurah_review' => 'lurah',
