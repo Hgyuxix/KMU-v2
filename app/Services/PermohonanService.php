@@ -8,7 +8,6 @@ use App\Models\DocumentReview;
 use App\Models\Layanan;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -16,8 +15,6 @@ use Illuminate\Validation\ValidationException;
 
 class PermohonanService
 {
-    private const SERVICE_FOURTEEN_MAX_HEIRS = 20;
-
     public function __construct(
         private PermohonanDocumentService $documentService
     ) {
@@ -31,13 +28,6 @@ class PermohonanService
         $layanan->load([
             'persyaratans' => fn ($query) => $query->where('aktif', true),
         ]);
-        if ((int) $layanan->id === 14) {
-            $this->validateServiceFourteenRequestLimits(
-                $request,
-                $layanan,
-                'persyaratan'
-            );
-        }
         [$ocrToken, $ocrFile, $ocrPersyaratan] =
             $this->resolveOcrData($request, $layanan);
 
@@ -144,14 +134,6 @@ class PermohonanService
             $permohonan,
             $isFoDraft ? null : $revisionStage
         );
-        if ((int) $layanan->id === 14) {
-            $this->validateServiceFourteenRequestLimits(
-                $request,
-                $layanan,
-                'persyaratan_tambahan'
-            );
-        }
-
         $messages = (int) $layanan->id === 7
             ? $this->nikOrangTuaValidationMessages()
             : [];
@@ -525,7 +507,6 @@ class PermohonanService
             'required',
             'array',
             'min:1',
-            'max:' . self::SERVICE_FOURTEEN_MAX_HEIRS,
         ];
         $rules['data_surat.ahli_waris.*'] = [
             'required',
@@ -589,57 +570,6 @@ class PermohonanService
         return count(array_filter($heirs, 'is_array'));
     }
 
-    private function validateServiceFourteenRequestLimits(
-        Request $request,
-        Layanan $layanan,
-        string $fileInput
-    ): void {
-        $errors = [];
-        $heirs = $request->input('data_surat.ahli_waris');
-
-        if (
-            is_array($heirs)
-            && count($heirs) > self::SERVICE_FOURTEEN_MAX_HEIRS
-        ) {
-            $errors['data_surat.ahli_waris'] = sprintf(
-                'Jumlah ahli waris tidak boleh lebih dari %d.',
-                self::SERVICE_FOURTEEN_MAX_HEIRS
-            );
-        }
-
-        $ktpRequirement = $this->serviceFourteenKtpRequirement($layanan);
-        $uploadedFiles = $request->file(
-            $fileInput . '.' . $ktpRequirement->id,
-            []
-        );
-        if ($this->countUploadedFiles($uploadedFiles) > self::SERVICE_FOURTEEN_MAX_HEIRS) {
-            $errors[$fileInput . '.' . $ktpRequirement->id] = sprintf(
-                'Jumlah file KTP tidak boleh lebih dari %d dalam satu pengiriman.',
-                self::SERVICE_FOURTEEN_MAX_HEIRS
-            );
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
-    }
-
-    private function countUploadedFiles($files): int
-    {
-        if ($files instanceof UploadedFile) {
-            return 1;
-        }
-
-        if (!is_array($files)) {
-            return 0;
-        }
-
-        return array_sum(array_map(
-            fn ($file) => $this->countUploadedFiles($file),
-            $files
-        ));
-    }
-
     private function isServiceFourteenKtpRequirement($persyaratan): bool
     {
         $name = strtolower((string) ($persyaratan->nama ?? ''));
@@ -692,10 +622,9 @@ class PermohonanService
             ? [
                 'required',
                 'array',
-                'max:' . self::SERVICE_FOURTEEN_MAX_HEIRS,
                 'size:' . $needed,
             ]
-            : ['nullable', 'array', 'max:' . self::SERVICE_FOURTEEN_MAX_HEIRS, 'size:0'];
+            : ['nullable', 'array', 'size:0'];
         $rules[$key . '.*'] = [
             'file',
             'mimes:' . $this->getAllowedExtensions($persyaratan),

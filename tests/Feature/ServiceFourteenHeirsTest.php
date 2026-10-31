@@ -193,7 +193,7 @@ class ServiceFourteenHeirsTest extends TestCase
         }
     }
 
-    public function test_submit_rejects_more_than_twenty_heirs_and_ktp_files(): void
+    public function test_submit_accepts_more_than_twenty_heirs_and_matching_ktps(): void
     {
         [, $fo, $service, $ktpRequirement] = $this->context();
         $heirs = array_map(
@@ -212,13 +212,17 @@ class ServiceFourteenHeirsTest extends TestCase
                 $files,
                 $ktpRequirement
             ))
-            ->assertRedirect(route('permohonan.create', $service))
-            ->assertSessionHasErrors([
-                'data_surat.ahli_waris',
-                'persyaratan.' . $ktpRequirement->id,
-            ]);
+            ->assertRedirect(route('kelurahan.index'))
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseMissing('permohonans', ['layanan_id' => 14]);
+        $application = Permohonan::query()
+            ->where('layanan_id', 14)
+            ->firstOrFail();
+        $this->assertCount(21, $application->data_surat['ahli_waris']);
+        $this->assertSame(21, DokumenPersyaratan::query()
+            ->where('permohonan_id', $application->id)
+            ->where('persyaratan_id', $ktpRequirement->id)
+            ->count());
     }
 
     public function test_edit_prefills_structured_heirs_and_legacy_rows(): void
