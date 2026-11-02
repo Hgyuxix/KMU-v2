@@ -48,8 +48,8 @@ class TemplateSuratSeeder extends Seeder
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-                No :
-                Tanggal :
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
 
                 Magelang, {{ tanggal }}
 
@@ -141,8 +141,8 @@ class TemplateSuratSeeder extends Seeder
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-                No :
-                Tanggal :
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
 
                 Magelang, {{ tanggal }}
 
@@ -175,8 +175,8 @@ class TemplateSuratSeeder extends Seeder
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-                No :
-                Tanggal :
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
 
                 Magelang, {{ tanggal }}
 
@@ -209,8 +209,8 @@ class TemplateSuratSeeder extends Seeder
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-                No :
-                Tanggal :
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
 
                 Magelang, {{ tanggal }}
 
@@ -257,8 +257,8 @@ class TemplateSuratSeeder extends Seeder
                 {{ nama_lengkap }}
 
                 Tercatat di registrasi Kelurahan
-                Nomor : ....
-                Tanggal : ....
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
                 TEXT
             ],
 
@@ -334,8 +334,8 @@ class TemplateSuratSeeder extends Seeder
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
-                No :
-                Tanggal :
+                Nomor : {{ nomor_surat }}
+                Tanggal : {{ tanggal }}
 
                 Magelang, {{ tanggal }}
 
