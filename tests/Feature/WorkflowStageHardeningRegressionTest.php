@@ -154,8 +154,8 @@ class WorkflowStageHardeningRegressionTest extends TestCase
             [
                 10,
                 'Surat Pernyataan Beda Nama',
-                ['alamat' => 'Jalan Pemohon 2', 'nama_ktp' => 'Nama pada KTP', 'tanggal_lahir_dokumen' => '2020-03-04'],
-                ['Data Pemohon (tambahan)', 'Alamat Pemohon', 'Dokumen KTP', 'Nama sesuai KTP'],
+                ['alamat' => 'Jalan Pemohon 2', 'nama_kk' => 'Nama pada KK', 'nama_lain' => 'Nama pembanding'],
+                ['Data Pemohon (tambahan)', 'Alamat Pemohon', 'Dokumen KK', 'Nama sesuai KK', 'Nama pada Dokumen Pembanding Lain'],
             ],
             [
                 14,

@@ -50,7 +50,7 @@
                 <div class="stat-note">Menunggu perbaikan pengajuan</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Disetujui</div>
+                <div class="stat-label">Selesai</div>
                 <div class="stat-value">{{ $stats->disetujui }}</div>
                 <div class="stat-note">Surat resmi terbit</div>
             </div>
@@ -73,7 +73,7 @@
                         <select id="status" name="status">
                             <option value="">Semua status</option>
                             <option value="diajukan" @selected(request('status') === 'diajukan')>Diajukan</option>
-                            <option value="disetujui" @selected(request('status') === 'disetujui')>Disetujui</option>
+                            <option value="disetujui" @selected(request('status') === 'disetujui')>Selesai</option>
                             <option value="revisi" @selected(request('status') === 'revisi')>Revisi</option>
                             <option value="selesai" @selected(request('status') === 'selesai')>Selesai</option>
                         </select>
@@ -117,7 +117,7 @@
                                             @case('disetujui') ✓ @break
                                             @case('selesai') ✓ @break
                                         @endswitch
-                                        {{ ucfirst($permohonan->status) }}
+                                        {{ $permohonan->status === 'disetujui' ? 'Selesai' : ucfirst($permohonan->status) }}
                                     </span>
                                     @if($permohonan->status === 'revisi' && $permohonan->catatan_revisi)
                                         <div class="revision-note">

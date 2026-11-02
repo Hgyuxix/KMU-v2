@@ -87,7 +87,8 @@
         .workflow-meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px 17px; }
         .workflow-meta-full { grid-column:1 / -1; }
         .workflow-meta-label { color:#8193a3; font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
-        .workflow-meta-value { margin-top:3px; color:#17324d; font-size:12px; font-weight:650; line-height:1.45; }
+        .workflow-meta-value { margin-top:3px; color:#17324d; font-size:12px; font-weight:650; line-height:1.45; overflow-wrap:anywhere; }
+        .document-review-meta { overflow-wrap:anywhere; }
         .workflow-data-section { padding:14px 17px; border-top:1px solid #e8eef4; }
         .workflow-data-section-title { margin:0 0 11px; color:#48627a; font-size:11px; font-weight:800; }
         .workflow-data-group + .workflow-data-group { margin-top:16px; }
@@ -97,7 +98,7 @@
         .workflow-data-value { margin-top:3px; color:#28445e; font-size:12px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-wrap; }
         .workflow-data-table-wrap { max-width:100%; overflow-x:auto; }
         .workflow-data-table { width:100%; border-collapse:collapse; font-size:11px; }
-        .workflow-data-table th,.workflow-data-table td { padding:8px 7px; border-bottom:1px solid #e8eef4; text-align:left; vertical-align:top; }
+        .workflow-data-table th,.workflow-data-table td { padding:8px 7px; border-bottom:1px solid #e8eef4; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
         .workflow-data-table th { color:#60788d; font-size:9px; letter-spacing:.05em; text-transform:uppercase; }
         .workflow-data-note { margin:9px 0 0; color:#48627a; font-size:11px; font-weight:700; }
 

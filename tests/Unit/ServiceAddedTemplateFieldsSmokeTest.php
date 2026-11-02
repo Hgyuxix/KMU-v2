@@ -50,6 +50,24 @@ class ServiceAddedTemplateFieldsSmokeTest extends TestCase
         }
     }
 
+    public function test_service_one_keperluan_and_service_eleven_automatic_business_address_fields(): void
+    {
+        $this->assertSame('Keperluan', config('surat.1.keperluan.label'));
+        $this->assertTrue(config('surat.1.keperluan.required'));
+        $this->assertArrayHasKey('keterangan_lain', config('surat.1'));
+
+        $templates = $this->staticTemplatesFromSeeder([1, 11]);
+        $this->assertStringContainsString('Keperluan : {{ keperluan }}', $templates[1]);
+
+        $serviceElevenFields = config('surat.11');
+        $this->assertArrayNotHasKey('alamat_usaha', $serviceElevenFields);
+        $this->assertArrayHasKey('rt_usaha', $serviceElevenFields);
+        $this->assertArrayHasKey('rw_usaha', $serviceElevenFields);
+        $this->assertStringContainsString('RT {{ rt_usaha }} RW {{ rw_usaha }}', $templates[11]);
+        $this->assertStringContainsString('Kel. {{ nama_kelurahan }} Kec. {{ nama_kecamatan }}', $templates[11]);
+        $this->assertStringNotContainsString('{{ alamat_usaha }}', $templates[11]);
+    }
+
     public function test_create_and_edit_render_each_configured_field_once_with_configured_control_type(): void
     {
         $this->withoutVite();
@@ -175,13 +193,13 @@ class ServiceAddedTemplateFieldsSmokeTest extends TestCase
         }
     }
 
-    private function staticTemplatesFromSeeder(): array
+    private function staticTemplatesFromSeeder(array $serviceIds = self::SERVICE_IDS): array
     {
         $path = base_path('database/seeders/TemplateSuratSeeder.php');
         $lines = file($path, FILE_IGNORE_NEW_LINES);
         $templates = [];
 
-        foreach (self::SERVICE_IDS as $id) {
+        foreach ($serviceIds as $id) {
             $entryStart = null;
             foreach ($lines as $index => $line) {
                 if (preg_match('/^\s*' . $id . '\s*=>\s*\[$/', $line)) {

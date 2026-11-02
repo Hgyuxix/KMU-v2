@@ -140,19 +140,21 @@ class FormClarityGroupHelpRenderingTest extends TestCase
     public function test_service_ten_has_neutral_per_document_labels_and_proper_grouping(): void
     {
         $fields = config('surat.10');
-        $this->assertSame('Nama sesuai KTP', $fields['nama_ktp']['label']);
-        $this->assertSame('Nomor KTP', $fields['nomor_ktp']['label']);
         $this->assertSame('Nama sesuai KK', $fields['nama_kk']['label']);
-        $this->assertSame('Nomor KK', $fields['nomor_kk']['label']);
-        $this->assertSame('Nama sesuai Dokumen Pembanding', $fields['nama_lain']['label']);
+        $this->assertSame(
+            'Nama pada Dokumen Pembanding Lain (misal sertifikat/ijazah; BUKAN KTP atau KK)',
+            $fields['nama_lain']['label']
+        );
         $this->assertSame('Jenis Dokumen Pembanding', $fields['dokumen_perbedaan']['label']);
         $this->assertSame('Nomor Dokumen Pembanding', $fields['nomor_dokumen_perbedaan']['label']);
         $this->assertSame('Nama yang Benar', $fields['nama_yang_benar']['label']);
 
-        $this->assertSame('Dokumen KTP', $fields['nama_ktp']['group']);
         $this->assertSame('Dokumen KK', $fields['nama_kk']['group']);
         $this->assertSame('Dokumen Pembanding (opsional)', $fields['nama_lain']['group']);
         $this->assertSame('Pernyataan Nama yang Benar', $fields['nama_yang_benar']['group']);
+        $this->assertArrayNotHasKey('nama_ktp', $fields);
+        $this->assertArrayNotHasKey('nomor_ktp', $fields);
+        $this->assertArrayNotHasKey('nomor_kk', $fields);
 
         // Check neutral wording (does not claim KTP or KK as source of truth)
         $allLabels = array_column($fields, 'label');

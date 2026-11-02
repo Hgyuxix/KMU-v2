@@ -32,6 +32,9 @@ class ServiceElevenUsahaDurationTest extends TestCase
         $this->assertSame('date', $fields['tanggal_berdiri_usaha']['type']);
         $this->assertTrue($fields['tanggal_berdiri_usaha']['required']);
         $this->assertArrayNotHasKey('lama_usaha', $fields);
+        $this->assertArrayNotHasKey('alamat_usaha', $fields);
+        $this->assertArrayHasKey('rt_usaha', $fields);
+        $this->assertArrayHasKey('rw_usaha', $fields);
     }
 
     public function test_start_date_is_required_by_submit_and_revision_rules(): void

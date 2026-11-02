@@ -65,6 +65,7 @@ return [
         'keperluan' => [
             'label' => 'Keperluan',
             'type' => 'textarea',
+            'required' => true,
         ],
 
         'berlaku_mulai' => [
@@ -78,8 +79,10 @@ return [
         ],
 
         'keterangan_lain' => [
-            'label' => 'Keterangan Lain-lain',
+            'label' => 'Keterangan Tambahan (opsional)',
             'type' => 'textarea',
+            'required' => false,
+            'help' => 'Kosongkan jika tidak ada. Kalimat "benar warga Kelurahan ... dan kurang mampu" sudah otomatis tercetak.',
         ],
     ],
 
@@ -610,20 +613,6 @@ return [
             'help' => 'Pekerjaan atau profesi pemohon saat ini.',
         ],
 
-        'nama_ktp' => [
-            'group' => 'Dokumen KTP',
-            'label' => 'Nama sesuai KTP',
-            'type' => 'text',
-            'help' => 'Penulisan nama lengkap sebagaimana tercantum pada KTP.',
-        ],
-
-        'nomor_ktp' => [
-            'group' => 'Dokumen KTP',
-            'label' => 'Nomor KTP',
-            'type' => 'text',
-            'help' => '16 digit Nomor Induk Kependudukan pada KTP.',
-        ],
-
         'nama_kk' => [
             'group' => 'Dokumen KK',
             'label' => 'Nama sesuai KK',
@@ -631,16 +620,9 @@ return [
             'help' => 'Penulisan nama lengkap sebagaimana tercantum pada Kartu Keluarga.',
         ],
 
-        'nomor_kk' => [
-            'group' => 'Dokumen KK',
-            'label' => 'Nomor KK',
-            'type' => 'text',
-            'help' => '16 digit nomor Kartu Keluarga.',
-        ],
-
         'nama_lain' => [
             'group' => 'Dokumen Pembanding (opsional)',
-            'label' => 'Nama sesuai Dokumen Pembanding',
+            'label' => 'Nama pada Dokumen Pembanding Lain (misal sertifikat/ijazah; BUKAN KTP atau KK)',
             'type' => 'text',
             'required' => false,
             'help' => 'Nama yang tercantum pada dokumen pembanding (kosongkan jika tidak ada).',
@@ -759,11 +741,6 @@ return [
             'label' => 'Tanggal Berdiri Usaha',
             'type' => 'date',
             'required' => true,
-        ],
-
-        'alamat_usaha' => [
-            'label' => 'Alamat Usaha',
-            'type' => 'textarea',
         ],
 
         'nomor_surat_rt_rw' => [

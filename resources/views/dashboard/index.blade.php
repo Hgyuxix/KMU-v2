@@ -36,9 +36,9 @@
                     <div class="stat-note">Dikembalikan ke kelurahan</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Disetujui</div>
+                    <div class="stat-label">Selesai</div>
                     <div class="stat-value">{{ $stats?->disetujui ?? 0 }}</div>
-                    <div class="stat-note">Telah disetujui kecamatan</div>
+                    <div class="stat-note">Telah selesai diproses kecamatan</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Selesai</div>
@@ -93,7 +93,7 @@
                             Revisi
                         </option>
                         <option value="disetujui" @selected(request('status') === 'disetujui')>
-                            Disetujui
+                            Selesai
                         </option>
                         <option value="selesai" @selected(request('status') === 'selesai')>
                             Selesai
@@ -145,7 +145,7 @@
                                         @case('disetujui') ✓ @break
                                         @case('selesai') ✓ @break
                                     @endswitch
-                                    {{ ucfirst($permohonan->status) }}
+                                    {{ $permohonan->status === 'disetujui' ? 'Selesai' : ucfirst($permohonan->status) }}
                                 </span>
                             </td>
                             <td>{{ $permohonan->created_at?->format('d/m/Y H:i') ?? '—' }}</td>

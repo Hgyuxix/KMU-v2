@@ -642,6 +642,7 @@ textarea,
 .section-box select,
 .section-box textarea {
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
     border: 1px solid #cbd8e4;
     border-radius: 8px;
@@ -653,6 +654,16 @@ textarea,
     padding: 10px 12px;
     box-shadow: inset 0 1px 1px rgba(15, 43, 67, 0.02);
     transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+textarea {
+    overflow-wrap: anywhere;
+    resize: vertical;
+}
+
+.grid-2 > *,
+.form-field-group > * {
+    min-width: 0;
 }
 
 input::placeholder,

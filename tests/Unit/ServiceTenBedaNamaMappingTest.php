@@ -74,10 +74,10 @@ TEXT;
         );
 
         foreach ([
-            '/KTP\s*:\s*NAMA-KTP-ALPHA/',
-            '/Nomor\s*:\s*NOMOR-KTP-101/',
+            '/KTP\s*:\s*Pemohon Fixture/',
+            '/Nomor\s*:\s*3371010101900001/',
             '/KK\s*:\s*NAMA-KK-BETA/',
-            '/Nomor\s*:\s*NOMOR-KK-202/',
+            '/Nomor\s*:\s*NOMOR-KK-AUTO/',
             '/Akta Kelahiran\s*:\s*NAMA-DOKUMEN-GAMMA/',
             '/Nomor\s*:\s*NOMOR-DOKUMEN-303/',
             '/Nama yang benar\s*:\s*NAMA-BENAR-DELTA/',
@@ -88,17 +88,23 @@ TEXT;
         }
 
         foreach ([
-            'NAMA-KTP-ALPHA', 'NOMOR-KTP-101',
-            'NAMA-KK-BETA', 'NOMOR-KK-202',
-            'NAMA-DOKUMEN-GAMMA', 'NOMOR-DOKUMEN-303',
-            'NAMA-BENAR-DELTA',
-        ] as $value) {
-            $this->assertSame(1, substr_count($result, $value));
+            'Pemohon Fixture' => 2,
+            '3371010101900001' => 2,
+            'NAMA-KK-BETA' => 1,
+            'NOMOR-KK-AUTO' => 1,
+            'NAMA-DOKUMEN-GAMMA' => 1,
+            'NOMOR-DOKUMEN-303' => 1,
+            'NAMA-BENAR-DELTA' => 1,
+        ] as $value => $count) {
+            $this->assertSame($count, substr_count($result, $value));
         }
 
         $this->assertStringNotContainsString('{{', $result);
         $this->assertStringNotContainsString('}}', $result);
         $this->assertSame(array_keys(config('surat.10')), array_keys($data));
+        $this->assertArrayNotHasKey('nama_ktp', config('surat.10'));
+        $this->assertArrayNotHasKey('nomor_ktp', config('surat.10'));
+        $this->assertArrayNotHasKey('nomor_kk', config('surat.10'));
         $this->assertArrayHasKey('nama_lain', $data);
         $this->assertArrayHasKey('dokumen_perbedaan', $data);
         $this->assertArrayHasKey('nama_yang_benar', $data);
@@ -146,10 +152,7 @@ TEXT;
             'nomor_dokumen_perbedaan',
             'nama_lain',
             'dokumen_perbedaan',
-            'nama_ktp',
-            'nomor_ktp',
             'nama_kk',
-            'nomor_kk',
             'optional_select_test',
             'required_select_test',
         ] as $field) {
@@ -167,7 +170,7 @@ TEXT;
                 }
             }
 
-            foreach (['nama_ktp', 'nomor_ktp', 'nama_kk', 'nomor_kk'] as $field) {
+            foreach (['nama_kk'] as $field) {
                 foreach ([null, ''] as $value) {
                     $this->assertRulePasses($rules['data_surat.' . $field], $field, $value, false);
                 }
@@ -206,9 +209,11 @@ TEXT;
             );
         }
 
-        $this->assertStringContainsString('name="data_surat[nama_ktp]"', $createHtml);
         $this->assertStringContainsString('name="data_surat[nama_kk]"', $createHtml);
         $this->assertStringContainsString('name="data_surat[nama_yang_benar]"', $createHtml);
+        $this->assertStringNotContainsString('name="data_surat[nama_ktp]"', $createHtml);
+        $this->assertStringNotContainsString('name="data_surat[nomor_ktp]"', $createHtml);
+        $this->assertStringNotContainsString('name="data_surat[nomor_kk]"', $createHtml);
         foreach (['nama_lain', 'dokumen_perbedaan', 'nomor_dokumen_perbedaan'] as $optionalField) {
             $this->assertStringNotContainsString(
                 ' required',
@@ -216,7 +221,7 @@ TEXT;
                 "Create should render data_surat[$optionalField] as optional."
             );
         }
-        foreach (['nama_ktp', 'nomor_ktp', 'nama_kk', 'nomor_kk'] as $requiredField) {
+        foreach (['nama_kk'] as $requiredField) {
             $this->assertStringContainsString(
                 ' required',
                 $this->fieldHtml($createHtml, $requiredField),
@@ -244,7 +249,7 @@ TEXT;
             );
         }
 
-        foreach (['NAMA-KTP-ALPHA', 'NOMOR-KTP-101', 'NAMA-KK-BETA', 'NOMOR-KK-202', 'NAMA-DOKUMEN-GAMMA', 'NAMA-BENAR-DELTA'] as $value) {
+        foreach (['NAMA-KK-BETA', 'NAMA-DOKUMEN-GAMMA', 'NAMA-BENAR-DELTA'] as $value) {
             $this->assertStringContainsString('value="' . $value . '"', $editHtml);
         }
         foreach (['nama_lain', 'dokumen_perbedaan', 'nomor_dokumen_perbedaan'] as $optionalField) {
@@ -254,7 +259,7 @@ TEXT;
                 "Edit should render data_surat[$optionalField] as optional."
             );
         }
-        foreach (['nama_ktp', 'nomor_ktp', 'nama_kk', 'nomor_kk'] as $requiredField) {
+        foreach (['nama_kk'] as $requiredField) {
             $this->assertStringContainsString(
                 ' required',
                 $this->fieldHtml($editHtml, $requiredField),
@@ -278,20 +283,19 @@ TEXT;
 
     public function test_legacy_service_ten_payload_keys_remain_readable(): void
     {
-        $legacyData = [
-            'nama_lain' => 'NAMA-DOKUMEN-LAMA',
-            'dokumen_perbedaan' => 'Dokumen Lama',
-            'nama_yang_benar' => 'NAMA-BENAR-LAMA',
-            'nomor_dokumen_perbedaan' => 'NOMOR-DOKUMEN-LAMA',
+        $legacyData = $this->serviceTenData() + [
+            'nama_ktp' => 'NAMA-KTP-LAMA',
+            'nomor_ktp' => 'NOMOR-KTP-LAMA',
+            'nomor_kk' => 'NOMOR-KK-LAMA',
         ];
-        $template = '{{ dokumen_perbedaan }}|{{ nama_sertifikat }}|{{ nomor_sertifikat }}|{{ nama_yang_benar }}';
+        $template = 'KTP {{ nama_ktp }}|{{ nomor_ktp }}|KK {{ nama_kk }}|{{ nomor_kk }}|{{ nama_sertifikat }}';
 
         $result = app(SuratGenerator::class)->generate(
             $this->makePermohonan(10, $template, $legacyData)
         );
 
         $this->assertSame(
-            'Dokumen Lama|NAMA-DOKUMEN-LAMA|NOMOR-DOKUMEN-LAMA|NAMA-BENAR-LAMA',
+            'KTP Pemohon Fixture|3371010101900001|KK NAMA-KK-BETA|NOMOR-KK-AUTO|NAMA-DOKUMEN-GAMMA',
             $result
         );
     }
@@ -307,7 +311,7 @@ TEXT;
             $this->makePermohonan(10, self::SERVICE_TEN_TEMPLATE, $data)
         );
 
-        $this->assertMatchesRegularExpression('/KTP\s*:\s*NAMA-KTP-ALPHA/', $result);
+        $this->assertMatchesRegularExpression('/KTP\s*:\s*Pemohon Fixture/', $result);
         $this->assertMatchesRegularExpression('/KK\s*:\s*NAMA-KK-BETA/', $result);
         $this->assertMatchesRegularExpression('/Nama yang benar\s*:\s*NAMA-BENAR-DELTA/', $result);
         $this->assertStringNotContainsString('NAMA-DOKUMEN-GAMMA', $result);
@@ -322,10 +326,7 @@ TEXT;
         return [
             'alamat' => 'ALAMAT-PEMOHON',
             'pekerjaan' => 'PEKERJAAN-PEMOHON',
-            'nama_ktp' => 'NAMA-KTP-ALPHA',
-            'nomor_ktp' => 'NOMOR-KTP-101',
             'nama_kk' => 'NAMA-KK-BETA',
-            'nomor_kk' => 'NOMOR-KK-202',
             'nama_lain' => 'NAMA-DOKUMEN-GAMMA',
             'dokumen_perbedaan' => 'Akta Kelahiran',
             'nama_yang_benar' => 'NAMA-BENAR-DELTA',
@@ -376,6 +377,7 @@ TEXT;
             'rw' => '02',
             'data_surat' => json_encode($data, JSON_THROW_ON_ERROR),
         ]);
+        $permohonan->no_kk = 'NOMOR-KK-AUTO';
         $permohonan->setRelation('layanan', $layanan);
         $permohonan->setRelation('kelurahan', $kelurahan);
 

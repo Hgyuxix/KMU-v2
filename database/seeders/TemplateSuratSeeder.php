@@ -42,9 +42,9 @@ class TemplateSuratSeeder extends Seeder
 
                 Kota : {{ kota }}
                 Bukti Diri : KK/KTP No. {{ nik }}
-                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan KIP
+                Keperluan : {{ keperluan }}
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang dan kurang mampu
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang dan kurang mampu {{ keterangan_lain }}
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
@@ -299,7 +299,7 @@ class TemplateSuratSeeder extends Seeder
 
                 Materai 10.000
 
-                (....................................)
+                ({{ nama_lengkap }})
 
                 Mengetahui
 
@@ -330,7 +330,7 @@ class TemplateSuratSeeder extends Seeder
                 Bukti Diri : KK/KTP No. {{ nik }}
                 Keperluan : Kelengkapan Administrasi Permohonan Pengajuan KUR
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Bahwa ybs mempunyai usaha "{{ nama_usaha }}" kurang lebih selama {{ lama_usaha }} di wilayah RT {{ rt_usaha }} RW {{ rw_usaha }} Kel. {{ nama_kelurahan }} Kec. Magelang Utara Kota Magelang menurut surat pengantar RT RW No. {{ nomor_surat_rt_rw }} Tanggal {{ tanggal_surat_rt_rw }}
+                Keterangan lain-lain : Bahwa ybs mempunyai usaha "{{ nama_usaha }}" kurang lebih selama {{ lama_usaha }} di wilayah RT {{ rt_usaha }} RW {{ rw_usaha }} Kel. {{ nama_kelurahan }} Kec. {{ nama_kecamatan }} Kota Magelang menurut surat pengantar RT RW No. {{ nomor_surat_rt_rw }} Tanggal {{ tanggal_surat_rt_rw }}
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
