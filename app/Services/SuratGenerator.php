@@ -238,6 +238,10 @@ class SuratGenerator
         // Layanan 10 mempertahankan key payload lama, tetapi template
         // menggunakan nama placeholder yang khusus untuk dokumen pembanding.
         if ((int) $permohonan->layanan_id === 10) {
+            $replacements['{{ nama_ktp }}'] = (string) $permohonan->nama_lengkap;
+            $replacements['{{ nomor_ktp }}'] = (string) $nik;
+            $replacements['{{ nomor_kk }}'] = (string) ($permohonan->no_kk ?? '');
+
             $serviceTenPlaceholders = [
                 'nama_lain' => 'nama_sertifikat',
                 'nomor_dokumen_perbedaan' => 'nomor_sertifikat',
@@ -280,6 +284,18 @@ class SuratGenerator
             }
         } else {
             $templateContent = $template->isi_template;
+        }
+
+        if ((int) $permohonan->layanan_id === 1) {
+            $keteranganLain = trim((string) ($data['keterangan_lain'] ?? ''));
+
+            if ($keteranganLain === '') {
+                $templateContent = preg_replace(
+                    '/^[ \t]*\{\{\s*keterangan_lain\s*\}\}[ \t]*\r?\n?/im',
+                    '',
+                    $templateContent
+                ) ?? $templateContent;
+            }
         }
 
         // Pertahankan key lama untuk data layanan 14 dan petakan hanya
@@ -405,38 +421,50 @@ class SuratGenerator
         return $rows;
     }
 
+    private function heirCell($value): string
+    {
+        // Tab/newline di dalam data dilebur supaya tidak merusak pemisah.
+        $value = trim((string) preg_replace('/\s+/u', ' ', (string) $value));
+
+        return $value === '' ? '-' : $value;
+    }
+
     private function buildAhliWarisText(array $rows): string
     {
         if (empty($rows)) {
             return 'Belum ada data ahli waris.';
         }
 
-        $output = [];
-        $output[] = 'No | Nama | L/P | Alamat | Hubungan Dengan Alm.';
-        $output[] = str_repeat('-', 78);
+        $output = ['[[HEIRS_TABLE_BEGIN]]'];
 
-        foreach ($rows as $index => $row) {
-            $output[] = ($index + 1) . ' | ' . implode(' | ', $row);
+        foreach (array_values($rows) as $row) {
+            $output[] = implode("\t", [
+                $this->heirCell($row[0] ?? ''),
+                $this->heirCell($row[1] ?? ''),
+                $this->heirCell($row[2] ?? ''),
+                $this->heirCell($row[3] ?? ''),
+            ]);
         }
+
+        $output[] = '[[HEIRS_TABLE_END]]';
 
         return implode("\n", $output);
     }
 
-    /**
-     * Blok "Para Ahli Waris" pada form client:
-     *   Istri : 1) ........................................
-     *   Anak  : 2) ........................................
-     */
     private function buildAhliWarisTtdText(array $rows): string
     {
-        $output = [];
+        $output = ['[[HEIRS_SIGN_BEGIN]]'];
 
-        foreach ($rows as $index => $row) {
-            $hubungan = $row[3] !== '-' ? $row[3] : 'Ahli Waris';
+        foreach (array_values($rows) as $row) {
+            $hubungan = $this->heirCell($row[3] ?? '');
+            if ($hubungan === '-') {
+                $hubungan = 'Ahli Waris';
+            }
 
-            $output[] = $hubungan . ' : ' . ($index + 1) .
-                ') ........................................';
+            $output[] = $hubungan . "\t" . $this->heirCell($row[0] ?? '');
         }
+
+        $output[] = '[[HEIRS_SIGN_END]]';
 
         return implode("\n", $output);
     }

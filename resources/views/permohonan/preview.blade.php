@@ -116,6 +116,20 @@
                 color:#92400e;font-size:10pt;font-weight:700;text-align:center
             }
 
+            .heirs-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:2mm 0;font-size:10pt}
+            .heirs-table th,.heirs-table td{border:.3mm solid #111;padding:1mm 1.5mm;vertical-align:top;overflow-wrap:anywhere}
+            .heirs-table thead{display:table-header-group}
+            .heirs-table tr{break-inside:avoid;page-break-inside:avoid}
+            .heirs-table .c-no{width:9mm;text-align:center}
+            .heirs-table .c-lp{width:11mm;text-align:center}
+
+            .heirs-sign{width:100%;border-collapse:collapse;table-layout:fixed;margin:2mm 0;font-size:10.5pt}
+            .heirs-sign td{padding:1mm 0;vertical-align:top;min-height:12mm;height:12mm;overflow-wrap:anywhere}
+            .heirs-sign tr{break-inside:avoid;page-break-inside:avoid}
+            .heirs-sign .hs-left{width:58%;padding-right:4mm}
+            .heirs-sign .hs-right{width:42%}
+            .hs-meterai{margin-top:1mm;font-size:8pt;font-style:italic}
+
             /* ===== Cetak ===== */
             @media print{
                 @page{size:A4;margin:9mm 0 10mm}
@@ -344,6 +358,63 @@
 
                 foreach ($lines as $line) {
                     $line = trim($line);
+                    if ($line === '[[HEIRS_TABLE_BEGIN]]' || $line === '[[HEIRS_SIGN_BEGIN]]') {
+                        $closeTable();
+                        $specialBlock = $line === '[[HEIRS_TABLE_BEGIN]]' ? 'heirs_table' : 'heirs_sign';
+                        $specialLines = [];
+                        continue;
+                    }
+
+                    if (
+                        ($line === '[[HEIRS_TABLE_END]]' && $specialBlock === 'heirs_table') ||
+                        ($line === '[[HEIRS_SIGN_END]]' && $specialBlock === 'heirs_sign')
+                    ) {
+                        $rowsData = array_values(array_filter($specialLines, fn ($l) => $l !== ''));
+
+                        if ($specialBlock === 'heirs_table') {
+                            $html .= '<table class="heirs-table"><thead><tr>'
+                                . '<th class="c-no">No</th><th>Nama</th><th class="c-lp">L/P</th>'
+                                . '<th>Alamat</th><th>Hubungan Dengan Alm.</th></tr></thead><tbody>';
+
+                            foreach ($rowsData as $i => $l) {
+                                $c = array_pad(explode("\t", $l), 4, '-');
+                                $g = mb_strtolower($c[1]);
+                                $gender = in_array($g, ['laki-laki', 'l'], true) ? 'L'
+                                    : (in_array($g, ['perempuan', 'p'], true) ? 'P' : $c[1]);
+
+                                $html .= '<tr><td class="c-no">' . ($i + 1) . '</td>'
+                                    . '<td>' . e($c[0]) . '</td>'
+                                    . '<td class="c-lp">' . e($gender) . '</td>'
+                                    . '<td>' . e($c[2]) . '</td>'
+                                    . '<td>' . e($c[3]) . '</td></tr>';
+                            }
+
+                            $html .= '</tbody></table>';
+                        } else {
+                            $html .= '<table class="heirs-sign"><tbody>';
+                            $last = count($rowsData) - 1;
+
+                            foreach ($rowsData as $i => $l) {
+                                $c = array_pad(explode("\t", $l), 2, '-');
+                                $n = $i + 1;
+
+                                $html .= '<tr><td class="hs-left">' . $n . '. ' . e($c[0]) . ' : ' . e($c[1]) . '</td>'
+                                    . '<td class="hs-right">' . $n . ') (........................)';
+
+                                if ($i === $last) {
+                                    $html .= '<div class="hs-meterai">*Tempel Meterai 10.000 di sini</div>';
+                                }
+
+                                $html .= '</td></tr>';
+                            }
+
+                            $html .= '</tbody></table>';
+                        }
+
+                        $specialBlock = null;
+                        $specialLines = [];
+                        continue;
+                    }
                     if (in_array($line, [
                         '[[DECLARANT_SIGNATURE_BEGIN]]',
                         '[[WITNESS_GRID_BEGIN]]',
@@ -673,6 +744,7 @@
                     </script>
                 @endif
             @endif
+        </div>
         @else
         <div
             style="max-width:600px;
