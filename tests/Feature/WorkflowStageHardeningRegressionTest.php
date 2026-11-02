@@ -499,6 +499,7 @@ class WorkflowStageHardeningRegressionTest extends TestCase
                 $case['next_stage'],
                 $permohonan->fresh()->current_stage
             );
+            $this->assertNotEmpty($permohonan->fresh()->nomor_surat);
             $this->assertDatabaseMissing('document_reviews', [
                 'dokumen_persyaratan_id' => $document->id,
                 'stage' => $case['stage'],
@@ -684,6 +685,238 @@ class WorkflowStageHardeningRegressionTest extends TestCase
             ->get(route('permohonan.preview', $permohonan))
             ->assertOk()
             ->assertViewIs('permohonan.preview');
+    }
+
+    public function test_fo_can_print_finalization_letter_without_draft_banner_and_other_kelurahan_is_forbidden(): void
+    {
+        $kelurahan = Kelurahan::create(['nama' => 'Kelurahan Cetak']);
+        $otherKelurahan = Kelurahan::create(['nama' => 'Kelurahan Lain']);
+        $fo = User::factory()->create([
+            'role' => 'fo',
+            'kelurahan_id' => $kelurahan->id,
+            'is_active' => true,
+        ]);
+        $otherFo = User::factory()->create([
+            'role' => 'fo',
+            'kelurahan_id' => $otherKelurahan->id,
+            'is_active' => true,
+        ]);
+        $layanan = Layanan::create([
+            'nama' => 'Layanan Finalisasi',
+            'aktif' => true,
+            'alur_tte' => 'lurah_saja',
+        ]);
+        TemplateSurat::create([
+            'layanan_id' => $layanan->id,
+            'judul' => 'Surat Finalisasi',
+            'isi_template' => 'Surat untuk {{ nama_lengkap }}',
+            'aktif' => true,
+        ]);
+        $permohonan = $this->createPermohonan(
+            $layanan,
+            $kelurahan,
+            'fo_finalisasi'
+        );
+        $permohonan->update([
+            'nomor_surat' => '470/0001/KMU/2026',
+            'nik' => app(NikEncryptionService::class)->encrypt('3371010101800001'),
+        ]);
+
+        $this->actingAs($fo)
+            ->get(route('permohonan.preview', $permohonan))
+            ->assertOk()
+            ->assertSee('Cetak Surat')
+            ->assertDontSee('DRAFT: surat ini belum ditandatangani');
+
+        $otherRequest = $this->actingAs($otherFo)
+            ->get(route('permohonan.preview', $permohonan));
+        $otherRequest->assertForbidden();
+    }
+
+    public function test_verification_finds_finalization_number_and_shows_waiting_summary_without_nik(): void
+    {
+        $kelurahan = Kelurahan::create(['nama' => 'Kelurahan Verifikasi']);
+        $layanan = Layanan::create([
+            'nama' => 'Layanan Verifikasi',
+            'aktif' => true,
+            'alur_tte' => 'lurah_saja',
+        ]);
+        $permohonan = $this->createPermohonan(
+            $layanan,
+            $kelurahan,
+            'fo_finalisasi'
+        );
+        $permohonan->update([
+            'nomor_surat' => '470/0022/KMU/2026',
+            'nik' => app(NikEncryptionService::class)->encrypt('3371010101800001'),
+            'lurah_at' => Carbon::parse('2026-03-12 10:30:00'),
+        ]);
+
+        $this->get(route('verifikasi.show', $permohonan->nomor_surat))
+            ->assertOk()
+            ->assertSee('Menunggu penyerahan/arsip')
+            ->assertSee('470/0022/KMU/2026')
+            ->assertSee('Layanan Verifikasi')
+            ->assertSee('Warga Uji')
+            ->assertSee('12 Maret 2026')
+            ->assertDontSee('3371010101800001');
+    }
+
+    public function test_revision_clears_a_number_that_was_already_issued(): void
+    {
+        $kelurahan = Kelurahan::create(['nama' => 'Kelurahan Revisi Nomor']);
+        $lurah = User::factory()->create([
+            'role' => 'lurah',
+            'kelurahan_id' => $kelurahan->id,
+            'is_active' => true,
+        ]);
+        $layanan = Layanan::create([
+            'nama' => 'Layanan Revisi Nomor',
+            'aktif' => true,
+            'alur_tte' => 'lurah_saja',
+        ]);
+        $permohonan = $this->createPermohonan(
+            $layanan,
+            $kelurahan,
+            'lurah_review'
+        );
+        $permohonan->update(['nomor_surat' => '470/0003/KMU/2026']);
+
+        $this->actingAs($lurah)
+            ->patch(route('workflow.revisi', $permohonan), [
+                'catatan_revisi' => 'Mohon koreksi data.',
+            ])
+            ->assertRedirect(route('workflow.index'));
+
+        $this->assertNull($permohonan->fresh()->nomor_surat);
+    }
+
+    public function test_fo_can_upload_and_replace_private_finalization_archive(): void
+    {
+        [$fo, $layanan, $kelurahan, $persyaratan] = $this->createSignatureRequirement();
+        $permohonan = $this->createPermohonan($layanan, $kelurahan, 'fo_finalisasi');
+        $firstPdf = UploadedFile::fake()->createWithContent(
+            'scan-pertama.pdf',
+            "%PDF-1.4\n%%EOF"
+        );
+
+        $this->actingAs($fo)
+            ->post(route('kelurahan.pengajuan.arsip-surat.upload', $permohonan), [
+                'arsip_surat' => $firstPdf,
+            ])
+            ->assertRedirect(route('kelurahan.index'))
+            ->assertSessionHasNoErrors();
+
+        $firstArchive = $permohonan->dokumenPersyaratans()
+            ->where('jenis', 'arsip_surat')
+            ->sole();
+        $this->assertSame('fo_finalisasi', $permohonan->fresh()->current_stage);
+        $this->assertSame($persyaratan->id, $firstArchive->persyaratan_id);
+        $this->assertTrue(Storage::disk('local')->exists($firstArchive->file_path));
+        $this->assertDatabaseHas('audit_logs', [
+            'permohonan_id' => $permohonan->id,
+            'dokumen_persyaratan_id' => $firstArchive->id,
+            'aksi' => 'arsip_surat_diunggah',
+        ]);
+        $this->actingAs($fo)
+            ->get(route('kelurahan.index'))
+            ->assertOk()
+            ->assertSee('Cetak Surat')
+            ->assertSee('Unggah Arsip')
+            ->assertSee('scan-pertama.pdf');
+        $this->get(route('dokumen.file', $firstArchive->uuid))->assertOk();
+
+        $secondPdf = UploadedFile::fake()->createWithContent(
+            'scan-kedua.pdf',
+            "%PDF-1.4\n%%EOF"
+        );
+        $this->post(route('kelurahan.pengajuan.arsip-surat.upload', $permohonan), [
+            'arsip_surat' => $secondPdf,
+        ])
+            ->assertRedirect(route('kelurahan.index'))
+            ->assertSessionHasNoErrors();
+
+        $secondArchive = $permohonan->dokumenPersyaratans()
+            ->where('jenis', 'arsip_surat')
+            ->whereDoesntHave('dokumenPengganti')
+            ->sole();
+        $this->assertSame('fo_finalisasi', $permohonan->fresh()->current_stage);
+        $this->assertSame($firstArchive->id, $secondArchive->menggantikan_id);
+        $this->assertTrue(Storage::disk('local')->exists($firstArchive->file_path));
+        $this->assertTrue(Storage::disk('local')->exists($secondArchive->file_path));
+
+        $this->get(route('kelurahan.index'))
+            ->assertOk()
+            ->assertSee('scan-kedua.pdf')
+            ->assertDontSee('scan-pertama.pdf');
+        $this->get(route('dokumen.file', $secondArchive->uuid))->assertOk();
+
+        $otherKelurahan = Kelurahan::create(['nama' => 'Kelurahan Tanpa Akses Arsip']);
+        $otherFo = User::factory()->create([
+            'role' => 'fo',
+            'kelurahan_id' => $otherKelurahan->id,
+            'is_active' => true,
+        ]);
+        $this->actingAs($otherFo)
+            ->get(route('dokumen.file', $secondArchive->uuid))
+            ->assertForbidden();
+    }
+
+    public function test_archive_upload_rejects_invalid_file_stage_and_other_kelurahan(): void
+    {
+        [$fo, $layanan, $kelurahan] = $this->createSignatureRequirement();
+        $permohonan = $this->createPermohonan($layanan, $kelurahan, 'fo_finalisasi');
+
+        $this->actingAs($fo)
+            ->from(route('kelurahan.index'))
+            ->post(route('kelurahan.pengajuan.arsip-surat.upload', $permohonan), [
+                'arsip_surat' => UploadedFile::fake()->createWithContent(
+                    'scan.txt',
+                    'not an allowed file type'
+                ),
+            ])
+            ->assertRedirect(route('kelurahan.index'))
+            ->assertSessionHasErrors('arsip_surat');
+
+        $permohonan->update(['current_stage' => 'lurah_review']);
+        $this->post(route('kelurahan.pengajuan.arsip-surat.upload', $permohonan), [
+            'arsip_surat' => UploadedFile::fake()->createWithContent(
+                'scan.pdf',
+                "%PDF-1.4\n%%EOF"
+            ),
+        ])->assertForbidden();
+
+        $permohonan->update(['current_stage' => 'fo_finalisasi']);
+        $otherKelurahan = Kelurahan::create(['nama' => 'Kelurahan Arsip Lain']);
+        $otherFo = User::factory()->create([
+            'role' => 'fo',
+            'kelurahan_id' => $otherKelurahan->id,
+            'is_active' => true,
+        ]);
+        $this->actingAs($otherFo)
+            ->post(route('kelurahan.pengajuan.arsip-surat.upload', $permohonan), [
+                'arsip_surat' => UploadedFile::fake()->createWithContent(
+                    'scan.pdf',
+                    "%PDF-1.4\n%%EOF"
+                ),
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_fo_can_finish_finalization_without_uploading_an_archive(): void
+    {
+        [$fo, $layanan, $kelurahan] = $this->createSignatureRequirement();
+        $permohonan = $this->createPermohonan($layanan, $kelurahan, 'fo_finalisasi');
+        $permohonan->update(['nomor_surat' => '470/0004/KMU/2026']);
+
+        $this->actingAs($fo)
+            ->patch(route('workflow.finalize', $permohonan))
+            ->assertRedirect(route('kelurahan.index'));
+
+        $this->assertSame('selesai', $permohonan->fresh()->status);
+        $this->assertSame('selesai', $permohonan->fresh()->current_stage);
+        $this->assertSame('470/0004/KMU/2026', $permohonan->fresh()->nomor_surat);
+        $this->assertSame(0, $permohonan->dokumenPersyaratans()->count());
     }
 
     public function test_valid_citizen_signature_upload_moves_application_to_review(): void

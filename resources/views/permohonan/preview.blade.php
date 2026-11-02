@@ -150,7 +150,13 @@
         @php
         $alurTte = $permohonan->layanan->alur_tte ?? 'tanpa_tte';
         $layananId = (int) $permohonan->layanan_id;
-        $isDraftPreview = !in_array($permohonan->status, ['disetujui', 'selesai'], true);
+        $isFoFinalization = $permohonan->status === 'diajukan'
+            && $permohonan->current_stage === 'fo_finalisasi'
+            && filled($permohonan->nomor_surat);
+        $isDraftPreview = !in_array($permohonan->status, ['disetujui', 'selesai'], true)
+            && !$isFoFinalization;
+        $canPrint = in_array($permohonan->status, ['disetujui', 'selesai'], true)
+            || $isFoFinalization;
 
         $kelurahanName = $permohonan->kelurahan?->nama
             ?? '[NAMA KELURAHAN BELUM DIISI]';
@@ -607,12 +613,12 @@
 
         <div class="toolbar">
             <h2>Preview Surat · {{ $permohonan->layanan->nama }}</h2>
-            @if(in_array($permohonan->status, ['disetujui', 'selesai']))
+            @if($canPrint)
                 <button class="btn" onclick="window.print()">🖨 Cetak Surat</button>
             @endif
         </div>
 
-        @if(in_array($permohonan->status, ['disetujui', 'selesai']) || filled($surat))
+        @if($canPrint || filled($surat))
         <div class="paper">
             @if($isDraftPreview)
                 <div class="draft-banner">

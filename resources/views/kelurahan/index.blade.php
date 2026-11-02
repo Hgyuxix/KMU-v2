@@ -140,11 +140,35 @@
                                         </a>
 
                                     @elseif($permohonan->current_stage === 'fo_finalisasi' && auth()->user()->role === 'fo')
-                                        <form method="POST" action="{{ route('workflow.finalize', $permohonan) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button class="table-link" type="submit">Finalisasi →</button>
-                                        </form>
+                                        <div style="display:grid;gap:8px;min-width:190px">
+                                            <a
+                                                class="table-link"
+                                                href="{{ route('permohonan.preview', $permohonan) }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                            >
+                                                Cetak Surat ↗
+                                            </a>
+                                            @if($arsip = $permohonan->dokumenPersyaratans->first())
+                                                <a class="table-link" href="{{ route('dokumen.file', $arsip->uuid) }}">
+                                                    Arsip: {{ $arsip->file_original_name }}
+                                                </a>
+                                            @endif
+                                            <form method="POST" action="{{ route('kelurahan.pengajuan.arsip-surat.upload', $permohonan) }}" enctype="multipart/form-data">
+                                                @csrf
+                                                <label for="arsip-surat-{{ $permohonan->id }}">Unggah scan (opsional)</label>
+                                                <input id="arsip-surat-{{ $permohonan->id }}" type="file" name="arsip_surat" accept=".pdf,.jpg,.png" required>
+                                                @error('arsip_surat')
+                                                    <div class="revision-note">{{ $message }}</div>
+                                                @enderror
+                                                <button class="table-link" type="submit">Unggah Arsip</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('workflow.finalize', $permohonan) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button class="table-link" type="submit">Selesai →</button>
+                                            </form>
+                                        </div>
 
                                     @else
                                         <a

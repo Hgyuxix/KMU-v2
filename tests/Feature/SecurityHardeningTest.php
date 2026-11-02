@@ -311,7 +311,7 @@ class SecurityHardeningTest extends TestCase
         $permohonan = Permohonan::create([
             'layanan_id' => $layanan->id, 'kelurahan_id' => $kelurahan->id,
             'nama_lengkap' => 'Warga Tanpa TTE', 'tanggal_lahir' => '1995-05-05',
-            'nik' => 'encrypted_nik_sample', 'rt' => '01', 'rw' => '02',
+            'nik' => app(NikEncryptionService::class)->encrypt('3371010101800001'), 'rt' => '01', 'rw' => '02',
             'status' => 'diajukan', 'current_stage' => 'kasi_pemerintahan_review',
         ]);
         $document = DokumenPersyaratan::create([
@@ -366,7 +366,7 @@ class SecurityHardeningTest extends TestCase
         $permohonan = Permohonan::create([
             'layanan_id' => $layanan->id, 'kelurahan_id' => $kelurahan->id,
             'nama_lengkap' => 'Warga Lurah', 'tanggal_lahir' => '1995-05-05',
-            'nik' => 'encrypted_nik_sample', 'rt' => '01', 'rw' => '02',
+            'nik' => app(NikEncryptionService::class)->encrypt('3371010101800001'), 'rt' => '01', 'rw' => '02',
             'status' => 'diajukan', 'current_stage' => 'kasi_pemerintahan_review',
         ]);
         $document = DokumenPersyaratan::create([

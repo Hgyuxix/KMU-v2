@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\Layanan;
 use App\Models\Permohonan;
+use App\Models\Persyaratan;
 use App\Services\ApprovalStageService;
 use App\Services\NikEncryptionService;
 use App\Services\PermohonanDocumentService;
@@ -18,7 +19,12 @@ class PermohonanController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Permohonan::with('layanan')
+        $query = Permohonan::with([
+            'layanan',
+            'dokumenPersyaratans' => fn ($query) => $query
+                ->where('jenis', 'arsip_surat')
+                ->whereDoesntHave('dokumenPengganti'),
+        ])
             ->where(
                 'kelurahan_id',
                 $request->user()->kelurahan_id
@@ -259,6 +265,115 @@ class PermohonanController extends Controller
             );
     }
 
+    public function uploadArsipSurat(
+        Request $request,
+        Permohonan $permohonan,
+        PermohonanDocumentService $documentService
+    ) {
+        abort_unless(
+            $request->user()->role === 'fo' &&
+            (int) $request->user()->kelurahan_id === (int) $permohonan->kelurahan_id &&
+            $permohonan->status === 'diajukan' &&
+            $permohonan->current_stage === 'fo_finalisasi',
+            403
+        );
+
+        $permohonan->load([
+            'layanan.persyaratans' => fn ($query) => $query->where('aktif', true),
+        ]);
+        $persyaratan = $permohonan->layanan->persyaratans
+            ->sortByDesc('butuh_ttd_warga')
+            ->first();
+
+        if (!$persyaratan) {
+            $persyaratanId = $permohonan->dokumenPersyaratans()
+                ->value('persyaratan_id');
+            $persyaratan = $persyaratanId
+                ? Persyaratan::query()->find($persyaratanId)
+                : null;
+        }
+
+        abort_if(
+            !$persyaratan,
+            422,
+            'Tidak ada persyaratan dokumen untuk mengaitkan arsip surat.'
+        );
+
+        $maxSize = min((int) ($persyaratan->maks_size ?: 10240), 10240);
+        $validated = $request->validate([
+            'arsip_surat' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:' . $maxSize],
+        ]);
+
+        $operationId = $documentService->beginFileOperation();
+
+        try {
+            DB::transaction(function () use (
+                $request,
+                $permohonan,
+                $documentService,
+                $validated,
+                $persyaratan
+            ) {
+                $locked = Permohonan::query()
+                    ->lockForUpdate()
+                    ->findOrFail($permohonan->id);
+
+                abort_unless(
+                    $request->user()->role === 'fo' &&
+                    (int) $request->user()->kelurahan_id === (int) $locked->kelurahan_id &&
+                    $locked->status === 'diajukan' &&
+                    $locked->current_stage === 'fo_finalisasi',
+                    403
+                );
+
+                $lockedRequirement = Persyaratan::query()
+                    ->where('layanan_id', $locked->layanan_id)
+                    ->whereKey($persyaratan->id)
+                    ->first();
+
+                abort_if(
+                    !$lockedRequirement,
+                    422,
+                    'Tidak ada persyaratan dokumen untuk mengaitkan arsip surat.'
+                );
+
+                $previousArchive = $locked->dokumenPersyaratans()
+                    ->where('jenis', 'arsip_surat')
+                    ->whereDoesntHave('dokumenPengganti')
+                    ->lockForUpdate()
+                    ->first();
+
+                $archive = $documentService->store(
+                    $locked,
+                    (int) $lockedRequirement->id,
+                    $validated['arsip_surat'],
+                    'arsip-surat',
+                    'arsip_surat',
+                    $previousArchive
+                );
+
+                $auditLog = new AuditLog();
+                $auditLog->permohonan_id = $locked->id;
+                $auditLog->dokumen_persyaratan_id = $archive->id;
+                $auditLog->user_id = $request->user()->id;
+                $auditLog->aksi = 'arsip_surat_diunggah';
+                $auditLog->status_sebelum = $previousArchive ? 'arsip_surat' : null;
+                $auditLog->status_sesudah = 'arsip_surat';
+                $auditLog->catatan = 'Arsip surat bertanda tangan diunggah oleh FO.';
+                $auditLog->save();
+            });
+
+            $documentService->commitFileOperation($operationId);
+        } catch (Throwable $exception) {
+            $documentService->rollbackFileOperation($operationId);
+            throw $exception;
+        }
+
+        return redirect()
+            ->route('kelurahan.index')
+            ->with('success', 'Arsip surat berhasil diunggah.');
+    }
+
     public function preview(
         Request $request,
         Permohonan $permohonan,
@@ -300,6 +415,11 @@ class PermohonanController extends Controller
                 true
             )
             || $permohonan->current_stage === 'fo_ttd_warga'
+            || (
+                $permohonan->status === 'diajukan'
+                && $permohonan->current_stage === 'fo_finalisasi'
+                && filled($permohonan->nomor_surat)
+            )
             || (
                 $workflowReviewer
                 && $permohonan->status === 'diajukan'

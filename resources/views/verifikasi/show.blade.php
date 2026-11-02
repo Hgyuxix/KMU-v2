@@ -11,9 +11,15 @@
         <div style="max-width:420px;width:100%;margin:20px;background:#fff;border:1px solid #e5e9f0;border-radius:16px;padding:32px;text-align:center">
             <img src="{{ asset('assets/logo-kota-magelang.png') }}" alt="Logo Kota Magelang" style="height:48px;margin-bottom:16px">
             @if($permohonan)
-                <div style="width:56px;height:56px;border-radius:999px;background:#eaf8f0;color:#087443;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">✓</div>
-                <h1 style="font-size:19px;margin:0 0 6px">Surat Ini Sah</h1>
-                <p style="color:#64748b;font-size:13px;margin:0 0 20px">Dokumen resmi diterbitkan oleh Kecamatan Magelang Utara.</p>
+                @if($menungguArsip)
+                    <div style="width:56px;height:56px;border-radius:999px;background:#fff7ed;color:#c2410c;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">…</div>
+                    <h1 style="font-size:19px;margin:0 0 6px">Menunggu penyerahan/arsip</h1>
+                    <p style="color:#64748b;font-size:13px;margin:0 0 20px">Nomor surat telah diterbitkan dan menunggu penyerahan kepada pemohon.</p>
+                @else
+                    <div style="width:56px;height:56px;border-radius:999px;background:#eaf8f0;color:#087443;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">✓</div>
+                    <h1 style="font-size:19px;margin:0 0 6px">Surat Ini Sah</h1>
+                    <p style="color:#64748b;font-size:13px;margin:0 0 20px">Dokumen resmi diterbitkan oleh Kecamatan Magelang Utara.</p>
+                @endif
                 <div style="text-align:left;border-top:1px solid #edf0f4;padding-top:16px;display:grid;gap:12px">
                     <div>
                         <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Nomor Surat</span>
@@ -26,20 +32,27 @@
                         <strong>{{ $permohonan->layanan->nama }}</strong>
                     </div>
                     <div>
+                        <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Nama Pemohon</span>
+                        <br>
+                        <strong>{{ $permohonan->nama_lengkap }}</strong>
+                    </div>
+                    <div>
                         <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Kelurahan Pengaju</span>
                         <br>
                         <strong>{{ $permohonan->kelurahan->nama ?? '-' }}</strong>
                     </div>
                     <div>
-                        <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Tanggal Terbit</span>
+                        <span style="font-size:11px;color:#7b8798;text-transform:uppercase">{{ $menungguArsip ? 'Tanggal Penerbitan Nomor' : 'Tanggal Terbit' }}</span>
                         <br>
-                        <strong>{{ $permohonan->diproses_at?->translatedFormat('d F Y') }}</strong>
+                        <strong>{{ $tanggalSurat?->translatedFormat('d F Y') ?? '-' }}</strong>
                     </div>
-                    <div>
-                        <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Ditandatangani oleh</span>
-                        <br>
-                        <strong>{{ config('penandatangan.nama') }}, {{ config('penandatangan.jabatan') }}</strong>
-                    </div>
+                    @unless($menungguArsip)
+                        <div>
+                            <span style="font-size:11px;color:#7b8798;text-transform:uppercase">Ditandatangani oleh</span>
+                            <br>
+                            <strong>{{ config('penandatangan.nama') }}, {{ config('penandatangan.jabatan') }}</strong>
+                        </div>
+                    @endunless
                 </div>
 
             @else

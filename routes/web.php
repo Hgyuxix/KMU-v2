@@ -91,6 +91,11 @@ Route::middleware(['auth', 'active'])->group(function () {
             '/kelurahan/pengajuan/{permohonan}/ttd-warga',
             [PermohonanController::class, 'uploadTtdWarga']
         )->name('kelurahan.pengajuan.ttd-warga.upload');
+
+        Route::post(
+            '/kelurahan/pengajuan/{permohonan}/arsip-surat',
+            [PermohonanController::class, 'uploadArsipSurat']
+        )->name('kelurahan.pengajuan.arsip-surat.upload');
     });
 
     Route::middleware('role:kelurahan,kecamatan,fo,kasi_pemerintahan,lurah,kasi_umum,sekcam,camat')->group(function () {

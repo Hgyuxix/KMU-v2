@@ -181,11 +181,18 @@ class ApprovalStageService
                         'camat_review' => 'fo_finalisasi',
                     };
 
-            $locked->update([
+            $stageUpdate = [
                 $trackingPrefix . '_oleh' => $user->id,
                 $trackingPrefix . '_at' => now(),
                 'current_stage' => $nextStage,
-            ]);
+            ];
+
+            if ($nextStage === 'fo_finalisasi') {
+                $stageUpdate['nomor_surat'] = $locked->nomor_surat
+                    ?? SuratGenerator::buatNomorSurat($locked);
+            }
+
+            $locked->update($stageUpdate);
 
             if ($nextStage === 'selesai') {
                 $locked->update([
