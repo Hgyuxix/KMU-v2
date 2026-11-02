@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\NikEncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -41,6 +42,8 @@ class WorkflowStageHardeningRegressionTest extends TestCase
 
     protected function tearDown(): void
     {
+        Carbon::setTestNow();
+
         if (isset($this->temporaryStorageRoot) && File::isDirectory($this->temporaryStorageRoot)) {
             File::deleteDirectory($this->temporaryStorageRoot);
         }
@@ -317,6 +320,125 @@ class WorkflowStageHardeningRegressionTest extends TestCase
         $this->actingAs($reviewer)
             ->get(route('workflow.show', $permohonan))
             ->assertForbidden();
+    }
+
+    public function test_document_review_json_and_reloaded_page_show_the_latest_reviewer_and_time(): void
+    {
+        $kelurahan = Kelurahan::create(['nama' => 'Kelurahan Metadata Review']);
+        $reviewer = User::factory()->create([
+            'name' => 'Reviewer Metadata',
+            'role' => 'kasi_pemerintahan',
+            'kelurahan_id' => $kelurahan->id,
+            'is_active' => true,
+        ]);
+        $layanan = Layanan::create([
+            'nama' => 'Layanan Metadata Review',
+            'aktif' => true,
+            'alur_tte' => 'lurah_saja',
+        ]);
+        $persyaratan = Persyaratan::create([
+            'layanan_id' => $layanan->id,
+            'nama' => 'Identitas Metadata',
+            'wajib' => true,
+            'tipe_file' => 'pdf',
+            'maks_size' => 2048,
+        ]);
+        $permohonan = $this->createPermohonan(
+            $layanan,
+            $kelurahan,
+            'kasi_pemerintahan_review'
+        );
+        $permohonan->update([
+            'nik' => app(NikEncryptionService::class)->encrypt('3371010101800001'),
+        ]);
+        $document = DokumenPersyaratan::create([
+            'permohonan_id' => $permohonan->id,
+            'persyaratan_id' => $persyaratan->id,
+            'uuid' => (string) Str::uuid(),
+            'file_path' => 'dokumen/test/metadata-review.pdf',
+            'file_original_name' => 'metadata-review.pdf',
+        ]);
+
+        Carbon::setTestNow('2026-11-02 14:30:00');
+        $firstReviewedAt = now(config('app.timezone'))->translatedFormat('d F Y H:i');
+        $this->actingAs($reviewer)
+            ->patchJson(route('workflow.document.status', $document->uuid), [
+                'status' => 'sesuai',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'status' => 'sesuai',
+                'reviewer_name' => $reviewer->name,
+                'reviewed_at' => $firstReviewedAt,
+            ]);
+
+        Carbon::setTestNow('2026-11-02 14:35:00');
+        $latestReviewedAt = now(config('app.timezone'))->translatedFormat('d F Y H:i');
+        $this->actingAs($reviewer)
+            ->patchJson(route('workflow.document.status', $document->uuid), [
+                'status' => 'tidak_sesuai',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'status' => 'tidak_sesuai',
+                'reviewer_name' => $reviewer->name,
+                'reviewed_at' => $latestReviewedAt,
+            ]);
+
+        $this->actingAs($reviewer)
+            ->get(route('workflow.show', $permohonan))
+            ->assertOk()
+            ->assertSee('Tidak sesuai')
+            ->assertSee($reviewer->name)
+            ->assertSee($latestReviewedAt)
+            ->assertDontSee('Belum ditinjau')
+            ->assertDontSee('Belum ada waktu pemeriksaan');
+    }
+
+    public function test_reviewer_outside_kelurahan_scope_cannot_update_document_review(): void
+    {
+        $kelurahanA = Kelurahan::create(['nama' => 'Kelurahan Metadata Scope A']);
+        $kelurahanB = Kelurahan::create(['nama' => 'Kelurahan Metadata Scope B']);
+        $reviewer = User::factory()->create([
+            'role' => 'kasi_pemerintahan',
+            'kelurahan_id' => $kelurahanA->id,
+            'is_active' => true,
+        ]);
+        $layanan = Layanan::create([
+            'nama' => 'Layanan Metadata Scope',
+            'aktif' => true,
+            'alur_tte' => 'lurah_saja',
+        ]);
+        $persyaratan = Persyaratan::create([
+            'layanan_id' => $layanan->id,
+            'nama' => 'Identitas Scope',
+            'wajib' => true,
+            'tipe_file' => 'pdf',
+            'maks_size' => 2048,
+        ]);
+        $permohonan = $this->createPermohonan(
+            $layanan,
+            $kelurahanB,
+            'kasi_pemerintahan_review'
+        );
+        $document = DokumenPersyaratan::create([
+            'permohonan_id' => $permohonan->id,
+            'persyaratan_id' => $persyaratan->id,
+            'uuid' => (string) Str::uuid(),
+            'file_path' => 'dokumen/test/metadata-scope.pdf',
+            'file_original_name' => 'metadata-scope.pdf',
+        ]);
+
+        $this->actingAs($reviewer)
+            ->patchJson(route('workflow.document.status', $document->uuid), [
+                'status' => 'sesuai',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('document_reviews', [
+            'dokumen_persyaratan_id' => $document->id,
+            'stage' => 'kasi_pemerintahan_review',
+        ]);
     }
 
     public function test_lurah_and_camat_can_approve_without_current_stage_document_reviews(): void

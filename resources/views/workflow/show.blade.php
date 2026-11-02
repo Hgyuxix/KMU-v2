@@ -405,22 +405,23 @@
                             @endif
                         </button>
 
-                        @if($currentReview)
-                            <div class="document-review-meta">
-                                Reviewer:
-                                <strong>{{ $reviewer?->name
-                                    ?? ($currentReview->reviewed_by !== null
-                                        ? 'Reviewer tidak tersedia'
-                                        : ($currentReview->status === 'belum_dicek'
-                                            ? 'Belum ditinjau'
-                                            : 'Reviewer tidak tercatat')) }}</strong>
-                                <br>
-                                {{ $currentReview->reviewed_at?->translatedFormat('d F Y H:i')
-                                    ?? ($currentReview->status === 'belum_dicek'
-                                        ? 'Belum ada waktu pemeriksaan'
-                                        : 'Waktu pemeriksaan tidak tercatat') }}
-                            </div>
-                        @endif
+                        <div
+                            id="document-review-meta-{{ $dokumen->uuid }}"
+                            class="document-review-meta"
+                        >
+                            Reviewer:
+                            <strong data-reviewer-name>{{ $reviewer?->name
+                                ?? ($currentReview?->reviewed_by !== null
+                                    ? 'Reviewer tidak tersedia'
+                                    : ($currentReview === null || $currentReview->status === 'belum_dicek'
+                                        ? 'Belum ditinjau'
+                                        : 'Reviewer tidak tercatat')) }}</strong>
+                            <br>
+                            <span data-reviewed-at>{{ $currentReview?->reviewed_at?->translatedFormat('d F Y H:i')
+                                ?? ($currentReview === null || $currentReview->status === 'belum_dicek'
+                                    ? 'Belum ada waktu pemeriksaan'
+                                    : 'Waktu pemeriksaan tidak tercatat') }}</span>
+                        </div>
                     @empty
                         <div style="padding:22px 16px;color:#748798;font-size:12px">Belum ada dokumen yang dilampirkan.</div>
                     @endforelse
@@ -811,6 +812,19 @@
         doc.appendChild(badge);
     }
 
+    function updateReviewMetadata(doc, reviewerName, reviewedAt) {
+        const metadata = document.getElementById(`document-review-meta-${doc.dataset.id}`);
+        const reviewer = metadata?.querySelector('[data-reviewer-name]');
+        const time = metadata?.querySelector('[data-reviewed-at]');
+
+        if (!reviewer || !time) {
+            throw new Error('Review metadata container is unavailable.');
+        }
+
+        reviewer.textContent = reviewerName;
+        time.textContent = reviewedAt;
+    }
+
     function setActive(index) {
         if (!docs.length) return;
         currentIndex = Math.max(0, Math.min(index, docs.length - 1));
@@ -868,14 +882,24 @@
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value || '',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html,application/xhtml+xml'
+                    'Accept': 'application/json'
                 },
                 body: formData,
                 credentials: 'same-origin'
             });
 
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            updateStatusBadge(doc, status);
+            const result = await response.json();
+            if (
+                typeof result.status !== 'string'
+                || typeof result.reviewer_name !== 'string'
+                || typeof result.reviewed_at !== 'string'
+            ) {
+                throw new Error('Review response is incomplete.');
+            }
+
+            updateStatusBadge(doc, result.status);
+            updateReviewMetadata(doc, result.reviewer_name, result.reviewed_at);
 
             const nextIndex = currentIndex < docs.length - 1 ? currentIndex + 1 : currentIndex;
             busy = false;

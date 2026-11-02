@@ -183,7 +183,7 @@ class ApprovalWorkflowController extends Controller
             'status' => ['required', 'in:sesuai,tidak_sesuai'],
         ]);
 
-        DB::transaction(function () use ($request, $uuid, $data, $workflow): void {
+        $review = DB::transaction(function () use ($request, $uuid, $data, $workflow) {
             $documentSnapshot = DokumenPersyaratan::query()
                 ->where('uuid', $uuid)
                 ->firstOrFail();
@@ -239,7 +239,20 @@ class ApprovalWorkflowController extends Controller
                 $auditLog->stage = $stage;
                 $auditLog->save();
             }
+
+            return $review->fresh(['reviewer']);
         });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => $review->status,
+                'reviewer_name' => $review->reviewer?->name
+                    ?? $request->user()->name,
+                'reviewed_at' => $review->reviewed_at
+                    ?->timezone(config('app.timezone'))
+                    ->translatedFormat('d F Y H:i'),
+            ]);
+        }
 
         return back()->with('success', 'Status dokumen diperbarui.');
     }
