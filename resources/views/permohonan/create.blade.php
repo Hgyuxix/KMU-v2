@@ -308,8 +308,8 @@
                                                 @endphp
                                                 <div class="form-group" style="grid-column:1/-1">
                                                     <label>{{ $config['label'] }} <span>*</span></label>
-                                                    <div class="hint" style="margin-bottom:10px">{{ $config['help'] ?? 'Tambahkan satu record untuk setiap ahli waris. Isi nama, jenis kelamin, alamat, dan hubungan dengan almarhum/almarhumah.' }} Maksimal 20 ahli waris.</div>
-                                                    <div id="service-14-heirs" data-next-index="{{ count($serviceFourteenHeirRows) }}" data-max-count="20">
+                                                    <div class="hint" style="margin-bottom:10px">{{ $config['help'] ?? 'Tambahkan satu record untuk setiap ahli waris. Isi nama, jenis kelamin, alamat, dan hubungan dengan almarhum/almarhumah.' }}</div>
+                                                    <div id="service-14-heirs" data-next-index="{{ count($serviceFourteenHeirRows) }}">
                                                         @foreach($serviceFourteenHeirRows as $index => $heir)
                                                             <fieldset data-heir-row style="border:1px solid #d8e2eb;border-radius:8px;padding:12px;margin:0 0 12px">
                                                                 <legend>Ahli Waris {{ $loop->iteration }}</legend>
@@ -783,7 +783,6 @@
 
                 function syncCount() {
                     var count = container.querySelectorAll('[data-heir-row]').length;
-                    if (addButton) addButton.disabled = count >= Number(container.dataset.maxCount || 20);
                     var ocrToken = document.getElementById('ocr-ktp-token')?.value || '';
                     var ocrTarget = document.getElementById('ocr-ktp-target')?.value || '';
                     document.querySelectorAll('[data-service-fourteen-ktp-count]').forEach(function (counter) {
@@ -804,7 +803,6 @@
                 }
 
                 addButton?.addEventListener('click', function () {
-                    if (container.querySelectorAll('[data-heir-row]').length >= Number(container.dataset.maxCount || 20)) return;
                     var index = Number(container.dataset.nextIndex || 0);
                     container.dataset.nextIndex = index + 1;
                     container.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', String(index)));

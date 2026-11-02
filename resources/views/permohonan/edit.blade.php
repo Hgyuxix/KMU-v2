@@ -418,8 +418,8 @@
 
                                         <div class="form-group" style="grid-column:1/-1">
                                             <label>{{ $config['label'] }} <span>*</span></label>
-                                            <div class="hint" style="margin-bottom:10px">{{ $config['help'] ?? 'Satu record untuk setiap ahli waris. Data lama tetap dipertahankan saat revisi.' }} Maksimal 20 ahli waris.</div>
-                                            <div id="service-14-heirs" data-next-index="{{ $serviceFourteenNextHeirIndex }}" data-max-count="20">
+                                            <div class="hint" style="margin-bottom:10px">{{ $config['help'] ?? 'Satu record untuk setiap ahli waris. Data lama tetap dipertahankan saat revisi.' }}</div>
+                                            <div id="service-14-heirs" data-next-index="{{ $serviceFourteenNextHeirIndex }}">
                                                 @foreach($serviceFourteenHeirRows as $index => $heir)
                                                     <fieldset data-heir-row style="border:1px solid #d8e2eb;border-radius:8px;padding:12px;margin:0 0 12px">
                                                         <legend>Ahli Waris {{ $loop->iteration }}</legend>
@@ -973,7 +973,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function syncCounts() {
         const heirCount = container.querySelectorAll('[data-heir-row]').length;
-        if (addButton) addButton.disabled = heirCount >= Number(container.dataset.maxCount || 20);
 
         document.querySelectorAll('[data-service-fourteen-ktp-count]').forEach(function (counter) {
             counter.textContent = heirCount;
@@ -999,7 +998,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     addButton?.addEventListener('click', function () {
-        if (container.querySelectorAll('[data-heir-row]').length >= Number(container.dataset.maxCount || 20)) return;
         const index = Number(container.dataset.nextIndex || 0);
         container.dataset.nextIndex = index + 1;
         container.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', String(index)));
