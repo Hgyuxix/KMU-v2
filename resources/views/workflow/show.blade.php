@@ -409,18 +409,23 @@
                             id="document-review-meta-{{ $dokumen->uuid }}"
                             class="document-review-meta"
                         >
-                            Reviewer:
-                            <strong data-reviewer-name>{{ $reviewer?->name
-                                ?? ($currentReview?->reviewed_by !== null
-                                    ? 'Reviewer tidak tersedia'
-                                    : ($currentReview === null || $currentReview->status === 'belum_dicek'
-                                        ? 'Belum ditinjau'
-                                        : 'Reviewer tidak tercatat')) }}</strong>
-                            <br>
-                            <span data-reviewed-at>{{ $currentReview?->reviewed_at?->translatedFormat('d F Y H:i')
-                                ?? ($currentReview === null || $currentReview->status === 'belum_dicek'
-                                    ? 'Belum ada waktu pemeriksaan'
-                                    : 'Waktu pemeriksaan tidak tercatat') }}</span>
+                            @if($currentReview !== null)
+                                Reviewer:
+                                <strong data-reviewer-name>{{ $reviewer?->name
+                                    ?? ($currentReview->reviewed_by !== null
+                                        ? 'Reviewer tidak tersedia'
+                                        : ($currentReview->status === 'belum_dicek'
+                                            ? 'Belum ditinjau'
+                                            : 'Reviewer tidak tercatat')) }}</strong>
+                                <br>
+                                <span data-reviewed-at>{{ $currentReview->reviewed_at?->translatedFormat('d F Y H:i')
+                                    ?? ($currentReview->status === 'belum_dicek'
+                                        ? 'Belum ada waktu pemeriksaan'
+                                        : 'Waktu pemeriksaan tidak tercatat') }}</span>
+                            @else
+                                <strong data-reviewer-name></strong>
+                                <span data-reviewed-at></span>
+                            @endif
                         </div>
                     @empty
                         <div style="padding:22px 16px;color:#748798;font-size:12px">Belum ada dokumen yang dilampirkan.</div>
@@ -479,7 +484,7 @@
                     </div>
                     <div>
                         <div class="workflow-meta-label">NIK</div>
-                        <div class="workflow-meta-value">{{ $nikPlain }}</div>
+                        <div class="workflow-meta-value">{{ $nikPlain ?: '-' }}</div>
                     </div>
                     <div>
                         <div class="workflow-meta-label">Kelurahan</div>

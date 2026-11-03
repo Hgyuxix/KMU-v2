@@ -69,6 +69,7 @@ class DummySuratPrintTest extends TestCase
         $nik = app(NikEncryptionService::class)->encrypt('3371010101010001'); // sesuaikan nama method bila beda
         $index = [];
         $problems = [];
+        $applicationNumber = 0;
 
         foreach (Layanan::with('templateSurat')->orderBy('id')->get() as $layanan) {
             if (!$layanan->templateSurat) {
@@ -84,13 +85,14 @@ class DummySuratPrintTest extends TestCase
             foreach ($alurVariants as $alur) {
                 $layanan->alur_tte = $alur;
                 $layanan->save();
+                $applicationNumber++;
 
                 $data = [];
                 foreach ((config('surat')[$layanan->id] ?? []) as $key => $def) {
                     $data[$key] = $this->dummyValue($key, $def);
                 }
 
-                Permohonan::unguarded(function () use (&$p, $layanan, $nik, $data) {
+                Permohonan::unguarded(function () use (&$p, $layanan, $nik, $data, $applicationNumber) {
                     $p = Permohonan::create([
                         'layanan_id'    => $layanan->id,
                         'kelurahan_id'  => \App\Models\Kelurahan::query()->value('id'),
@@ -101,7 +103,7 @@ class DummySuratPrintTest extends TestCase
                         'rw'            => '002',
                         'status'        => 'selesai',
                         'current_stage' => 'selesai',
-                        'nomor_surat'   => '470/' . str_pad((string) $layanan->id, 4, '0', STR_PAD_LEFT) . '/KMU/2026',
+                        'nomor_surat'   => '470/' . str_pad((string) $applicationNumber, 4, '0', STR_PAD_LEFT) . '/KMU/2026',
                         'data_surat'    => $data,
                     ]);
                 });

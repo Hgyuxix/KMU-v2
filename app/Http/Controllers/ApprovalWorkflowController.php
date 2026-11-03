@@ -11,7 +11,9 @@ use App\Services\ApprovalStageService;
 use App\Services\NikEncryptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ApprovalWorkflowController extends Controller
 {
@@ -62,7 +64,14 @@ class ApprovalWorkflowController extends Controller
             ->all();
 
         $canAct = $workflow->canAct($request->user(), $permohonan);
-        $nikPlain = $nikEncryptionService->decrypt($permohonan->nik);
+        try {
+            $nikPlain = $nikEncryptionService->decrypt($permohonan->nik);
+        } catch (RuntimeException) {
+            Log::warning('Unable to decrypt NIK on workflow detail.', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+            $nikPlain = null;
+        }
         $suratFields = config('surat.' . $permohonan->layanan_id, []);
         $verificationSummary = null;
         $verificationContext = match ($permohonan->current_stage) {

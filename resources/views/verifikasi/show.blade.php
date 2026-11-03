@@ -44,7 +44,7 @@
                     <div>
                         <span style="font-size:11px;color:#7b8798;text-transform:uppercase">{{ $menungguArsip ? 'Tanggal Penerbitan Nomor' : 'Tanggal Terbit' }}</span>
                         <br>
-                        <strong>{{ $tanggalSurat?->translatedFormat('d F Y') ?? '-' }}</strong>
+                        <strong>{{ $tanggalSurat?->locale('id')->translatedFormat('d F Y') ?? '-' }}</strong>
                     </div>
                     @unless($menungguArsip)
                         <div>

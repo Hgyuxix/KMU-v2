@@ -113,6 +113,26 @@ class DocumentReviewAndAvailabilityTest extends TestCase
             ->assertDontSee('Waktu pemeriksaan tidak tercatat');
     }
 
+    public function test_workflow_shows_placeholder_when_nik_cannot_be_decrypted(): void
+    {
+        [$kelurahan, $permohonan] = $this->createPermohonan(
+            'kasi_pemerintahan_review'
+        );
+        $rawNik = '3371010101800001';
+        $permohonan->update(['nik' => $rawNik]);
+        $reviewer = User::factory()->create([
+            'role' => 'kasi_pemerintahan',
+            'kelurahan_id' => $kelurahan->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($reviewer)
+            ->get(route('workflow.show', $permohonan))
+            ->assertOk()
+            ->assertSee('workflow-meta-value">-</div>', false)
+            ->assertDontSee($rawNik);
+    }
+
     public function test_dashboard_keeps_a_previous_stage_review_in_history_only(): void
     {
         [$kelurahan, $permohonan, $requirements] = $this->createPermohonan(
