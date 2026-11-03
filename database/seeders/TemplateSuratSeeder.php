@@ -44,7 +44,8 @@ class TemplateSuratSeeder extends Seeder
                 Bukti Diri : KK/KTP No. {{ nik }}
                 Keperluan : {{ keperluan }}
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang dan kurang mampu {{ keterangan_lain }}
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang dan kurang mampu.
+                {{ keterangan_lain }}
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
@@ -135,9 +136,9 @@ class TemplateSuratSeeder extends Seeder
 
                 Kota : {{ kota }}
                 Bukti Diri : KK/KTP No. {{ nik }}
-                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan Perceraian an. {{ nama_lengkap }} dan {{ nama_pasangan }} ke Pengadilan Agama Kota Magelang
+                Keperluan : Kelengkapan Administrasi Permohonan Pengajuan Perceraian an. {{ nama_lengkap }} dan {{ nama_pasangan }} ke Pengadilan Agama Kota Magelang.
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang.
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
@@ -171,7 +172,7 @@ class TemplateSuratSeeder extends Seeder
                 Bukti Diri : KK/KTP No. {{ nik }}
                 Keperluan : Persyaratan Pengajuan Usulan Permohonan Bantuan Santunan Kematian an. Alm. {{ nama_almarhum }}
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Bahwa Alm. {{ nama_almarhum }} Benar-benar bertempat tinggal di {{ alamat_almarhum }} RT {{ rt_almarhum }} RW {{ rw_almarhum }} Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang
+                Keterangan lain-lain : Bahwa Alm. {{ nama_almarhum }} Benar-benar bertempat tinggal di {{ alamat_almarhum }} RT {{ rt_almarhum }} RW {{ rw_almarhum }} Kelurahan {{ nama_kelurahan }} Kecamatan Magelang Utara Kota Magelang.
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
@@ -205,7 +206,7 @@ class TemplateSuratSeeder extends Seeder
                 Bukti Diri : KK/KTP No. {{ nik }}
                 Keperluan : Surat kuasa pengambilan pensiun an. {{ nama_pemberi_kuasa }}
                 Berlaku Mulai : {{ berlaku_mulai }} s/d {{ berlaku_sampai }}
-                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan Kramat Selatan Kecamatan Magelang Utara Kota Magelang, an. {{ nama_pemberi_kuasa }} benar masih hidup dan sudah lanjut usia
+                Keterangan lain-lain : Yang bersangkutan benar warga Kelurahan Kramat Selatan Kecamatan Magelang Utara Kota Magelang, an. {{ nama_pemberi_kuasa }} benar masih hidup dan sudah lanjut usia.
 
                 Demikian untuk menjadikan maklum bagi yang berkepentingan.
 
@@ -242,7 +243,7 @@ class TemplateSuratSeeder extends Seeder
                 Jenis Kelamin : {{ jenis_kelamin_anak }}
                 Alamat : {{ alamat_anak }}
 
-                adalah benar berstatus sebagai warga kami yang bekerja sebagai {{ pekerjaan }} dan berpenghasilan per bulan rata-rata : {{ penghasilan_per_bulan }}
+                Adalah benar berstatus sebagai warga kami yang bekerja sebagai {{ pekerjaan }} dan berpenghasilan per bulan rata-rata Rp {{ penghasilan_per_bulan }}.
 
                 Demikian surat keterangan ini dibuat dengan sebenar-benarnya dan data yang diisikan sesuai kondisi yang sesungguhnya berdasarkan keterangan dari yang bersangkutan untuk keperluan {{ keperluan }}.
 
@@ -250,11 +251,12 @@ class TemplateSuratSeeder extends Seeder
 
                 Magelang, {{ tanggal }}
 
+                [[DECLARANT_SIGNATURE_BEGIN]]
                 Yang Membuat Pernyataan
-
+                [[RUANG_TTD_PERNYATAAN]]
                 Materai 10000
-
                 {{ nama_lengkap }}
+                [[DECLARANT_SIGNATURE_END]]
 
                 Tercatat di registrasi Kelurahan
                 Nomor : {{ nomor_surat }}
@@ -371,7 +373,6 @@ class TemplateSuratSeeder extends Seeder
                 Demikian Surat Keterangan Ahli Waris ini kami berikan untuk dapat dipergunakan seperlunya.
 
                 Para Ahli Waris :
-                Meterai 10.000
 
                 {{ ahli_waris_ttd }}
 
