@@ -321,10 +321,14 @@ class ServiceFourteenHeirsTest extends TestCase
             $this->heir('Siti', 'Perempuan', 'Alamat Siti', 'Istri'),
         ]));
 
-        $this->assertStringContainsString('Budi | L | Alamat Budi | Anak Kandung', $result);
-        $this->assertStringContainsString('Siti | P | Alamat Siti | Istri', $result);
-        $this->assertStringContainsString('Anak Kandung : 1)', $result);
-        $this->assertStringContainsString('Istri : 2)', $result);
+        $this->assertStringContainsString(
+            "[[HEIRS_TABLE_BEGIN]]\nBudi\tL\tAlamat Budi\tAnak Kandung\nSiti\tP\tAlamat Siti\tIstri\n[[HEIRS_TABLE_END]]",
+            $result
+        );
+        $this->assertStringContainsString(
+            "[[HEIRS_SIGN_BEGIN]]\nAnak Kandung\tBudi\nIstri\tSiti\n[[HEIRS_SIGN_END]]",
+            $result
+        );
         $this->assertStringNotContainsString('{{', $result);
         $this->assertStringNotContainsString('}}', $result);
     }
@@ -332,11 +336,14 @@ class ServiceFourteenHeirsTest extends TestCase
     public function test_generator_keeps_legacy_string_printable_without_unresolved_placeholders(): void
     {
         $result = app(SuratGenerator::class)->generate(
-            $this->generatorApplication("Dewi Lama | P | Jalan Lama | Istri")
+            $this->generatorApplication('Dewi Lama | P | Jalan Lama | Istri')
         );
 
-        $this->assertStringContainsString('Dewi Lama | P | Jalan Lama | Istri', $result);
-        $this->assertStringContainsString('Istri : 1)', $result);
+        $this->assertStringContainsString(
+            "[[HEIRS_TABLE_BEGIN]]\nDewi Lama\tP\tJalan Lama\tIstri\n[[HEIRS_TABLE_END]]",
+            $result
+        );
+        $this->assertStringContainsString("[[HEIRS_SIGN_BEGIN]]\nIstri\tDewi Lama\n[[HEIRS_SIGN_END]]", $result);
         $this->assertStringNotContainsString('{{', $result);
         $this->assertStringNotContainsString('}}', $result);
     }
