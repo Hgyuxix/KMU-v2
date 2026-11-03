@@ -297,22 +297,19 @@ class TemplateSuratSeeder extends Seeder
 
                 Magelang, {{ tanggal }}
 
+                [[DECLARANT_SIGNATURE_BEGIN]]
                 Yang membuat pernyataan
-
                 Materai 10.000
-
+                [[RUANG_TTD_PERNYATAAN]]
                 ({{ nama_lengkap }})
+                [[DECLARANT_SIGNATURE_END]]
 
                 Mengetahui
 
+                [[WITNESS_GRID_BEGIN]]
                 Ketua RT
-                (..................................)
-
                 Ketua RW
-                (..................................)
-
-                Lurah {{ nama_kelurahan }}
-                {{ nama_lurah }}
+                [[WITNESS_GRID_END]]
                 TEXT
             ],
 
