@@ -77,7 +77,7 @@ TEXT;
             '/KTP\s*:\s*Pemohon Fixture/',
             '/Nomor\s*:\s*3371010101900001/',
             '/KK\s*:\s*NAMA-KK-BETA/',
-            '/Nomor\s*:\s*NOMOR-KK-AUTO/',
+            '/Nomor\s*:\s*3371010101010001/',
             '/Akta Kelahiran\s*:\s*NAMA-DOKUMEN-GAMMA/',
             '/Nomor\s*:\s*NOMOR-DOKUMEN-303/',
             '/Nama yang benar\s*:\s*NAMA-BENAR-DELTA/',
@@ -91,7 +91,7 @@ TEXT;
             'Pemohon Fixture' => 2,
             '3371010101900001' => 2,
             'NAMA-KK-BETA' => 1,
-            'NOMOR-KK-AUTO' => 1,
+            '3371010101010001' => 1,
             'NAMA-DOKUMEN-GAMMA' => 1,
             'NOMOR-DOKUMEN-303' => 1,
             'NAMA-BENAR-DELTA' => 1,
@@ -143,7 +143,9 @@ TEXT;
             null
         );
 
-        $revisionRules = [];
+        $citizenRulesMethod = new ReflectionMethod(PermohonanService::class, 'buildCitizenRules');
+        $citizenRulesMethod->setAccessible(true);
+        $revisionRules = $citizenRulesMethod->invoke($service, $layanan);
         $revisionRulesMethod = new ReflectionMethod(PermohonanService::class, 'addRevisionFieldRules');
         $revisionRulesMethod->setAccessible(true);
         $revisionRulesMethod->invokeArgs($service, [&$revisionRules, $layanan]);
@@ -162,6 +164,19 @@ TEXT;
                 "Store and revision rules should match for $field."
             );
         }
+
+        foreach ([$storeRules, $revisionRules] as $rules) {
+            $this->assertCitizenRulePasses($rules['no_kk'], null, false);
+            $this->assertCitizenRulePasses($rules['no_kk'], '3371010101010001', true);
+            $this->assertCitizenRulePasses($rules['no_kk'], '12345', false);
+        }
+
+        $otherService = new Layanan();
+        $otherService->id = 11;
+        $otherServiceRules = $citizenRulesMethod->invoke($service, $otherService);
+        $this->assertCitizenRulePasses($otherServiceRules['no_kk'], null, true);
+        $this->assertCitizenRulePasses($otherServiceRules['no_kk'], '3371010101010001', true);
+        $this->assertCitizenRulePasses($otherServiceRules['no_kk'], '12345', false);
 
         foreach ([$storeRules, $revisionRules] as $rules) {
             foreach (['nama_lain', 'dokumen_perbedaan', 'nomor_dokumen_perbedaan'] as $field) {
@@ -211,6 +226,9 @@ TEXT;
 
         $this->assertStringContainsString('name="data_surat[nama_kk]"', $createHtml);
         $this->assertStringContainsString('name="data_surat[nama_yang_benar]"', $createHtml);
+        $this->assertStringContainsString('pattern="[0-9]{16}"', $this->citizenFieldHtml($createHtml, 'no_kk'));
+        $this->assertStringContainsString(' required', $this->citizenFieldHtml($createHtml, 'no_kk'));
+        $this->assertStringContainsString('Nomor Kartu Keluarga <span>*</span>', $createHtml);
         $this->assertStringNotContainsString('name="data_surat[nama_ktp]"', $createHtml);
         $this->assertStringNotContainsString('name="data_surat[nomor_ktp]"', $createHtml);
         $this->assertStringNotContainsString('name="data_surat[nomor_kk]"', $createHtml);
@@ -252,6 +270,9 @@ TEXT;
         foreach (['NAMA-KK-BETA', 'NAMA-DOKUMEN-GAMMA', 'NAMA-BENAR-DELTA'] as $value) {
             $this->assertStringContainsString('value="' . $value . '"', $editHtml);
         }
+        $this->assertStringContainsString('pattern="[0-9]{16}"', $this->citizenFieldHtml($editHtml, 'no_kk'));
+        $this->assertStringContainsString(' required', $this->citizenFieldHtml($editHtml, 'no_kk'));
+        $this->assertStringContainsString('Nomor Kartu Keluarga <span>*</span>', $editHtml);
         foreach (['nama_lain', 'dokumen_perbedaan', 'nomor_dokumen_perbedaan'] as $optionalField) {
             $this->assertStringNotContainsString(
                 ' required',
@@ -269,6 +290,41 @@ TEXT;
 
         $this->assertStringNotContainsString('name="data_surat[nama_sertifikat]"', $createHtml);
         $this->assertStringNotContainsString('name="data_surat[nama_sertifikat]"', $editHtml);
+    }
+
+    public function test_no_kk_remains_optional_in_create_and_edit_for_other_services(): void
+    {
+        $this->withoutVite();
+        $layanan = $this->makeLayanan();
+        $layanan->id = 11;
+        $fields = config('surat.11', []);
+
+        $createHtml = view('permohonan.create', [
+            'layanan' => $layanan,
+            'fields' => $fields,
+            'ocrKtpPersyaratans' => collect(),
+            'errors' => new ViewErrorBag(),
+        ])->render();
+
+        $this->assertStringNotContainsString(' required', $this->citizenFieldHtml($createHtml, 'no_kk'));
+        $this->assertStringNotContainsString('Nomor Kartu Keluarga <span>*</span>', $createHtml);
+        $this->assertStringContainsString('pattern="[0-9]{16}"', $this->citizenFieldHtml($createHtml, 'no_kk'));
+
+        $permohonan = $this->makePermohonan(11, self::SERVICE_TEN_TEMPLATE, $this->serviceTenData());
+        $editHtml = view('permohonan.edit', [
+            'layanan' => $layanan,
+            'permohonan' => $permohonan,
+            'fields' => $fields,
+            'errors' => new ViewErrorBag(),
+            'isFoDraft' => false,
+            'revisionRequirements' => collect(),
+            'activeRevisionDocuments' => collect(),
+            'revisionStage' => 'kasi_pemerintahan_review',
+        ])->render();
+
+        $this->assertStringNotContainsString(' required', $this->citizenFieldHtml($editHtml, 'no_kk'));
+        $this->assertStringNotContainsString('Nomor Kartu Keluarga <span>*</span>', $editHtml);
+        $this->assertStringContainsString('pattern="[0-9]{16}"', $this->citizenFieldHtml($editHtml, 'no_kk'));
     }
 
     public function test_service_ten_aliases_do_not_change_other_service_rendering(): void
@@ -295,7 +351,7 @@ TEXT;
         );
 
         $this->assertSame(
-            'KTP Pemohon Fixture|3371010101900001|KK NAMA-KK-BETA|NOMOR-KK-AUTO|NAMA-DOKUMEN-GAMMA',
+            'KTP Pemohon Fixture|3371010101900001|KK NAMA-KK-BETA|3371010101010001|NAMA-DOKUMEN-GAMMA',
             $result
         );
     }
@@ -377,7 +433,8 @@ TEXT;
             'rw' => '02',
             'data_surat' => json_encode($data, JSON_THROW_ON_ERROR),
         ]);
-        $permohonan->no_kk = 'NOMOR-KK-AUTO';
+        // Keep service 10 generator fixtures representative of its required 16-digit KK.
+        $permohonan->no_kk = '3371010101010001';
         $permohonan->setRelation('layanan', $layanan);
         $permohonan->setRelation('kelurahan', $kelurahan);
 
@@ -387,6 +444,13 @@ TEXT;
     private function fieldHtml(string $html, string $field): string
     {
         preg_match('/<input[^>]*name="data_surat\[' . preg_quote($field, '/') . '\]"[^>]*>/s', $html, $matches);
+
+        return $matches[0] ?? '';
+    }
+
+    private function citizenFieldHtml(string $html, string $field): string
+    {
+        preg_match('/<input[^>]*name="' . preg_quote($field, '/') . '"[^>]*>/s', $html, $matches);
 
         return $matches[0] ?? '';
     }
@@ -403,6 +467,20 @@ TEXT;
             $validator->passes(),
             "Unexpected validation result for data_surat.$field: "
                 . implode('; ', $validator->errors()->all())
+        );
+    }
+
+    private function assertCitizenRulePasses(array $rules, mixed $value, bool $expected): void
+    {
+        $validator = Validator::make(
+            $value === null ? [] : ['no_kk' => $value],
+            ['no_kk' => $rules]
+        );
+
+        $this->assertSame(
+            $expected,
+            $validator->passes(),
+            "Unexpected no_kk validation result: " . implode('; ', $validator->errors()->all())
         );
     }
 

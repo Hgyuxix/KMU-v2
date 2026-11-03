@@ -164,7 +164,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="no_kk">Nomor Kartu Keluarga</label>
+                    <label for="no_kk">Nomor Kartu Keluarga @if ((int) $permohonan->layanan_id === 10)<span>*</span>@endif</label>
                     <input
                         id="no_kk"
                         type="text"
@@ -173,9 +173,11 @@
                         maxlength="16"
                         minlength="16"
                         inputmode="numeric"
+                        pattern="[0-9]{16}"
                         autocomplete="off"
+                        @if ((int) $permohonan->layanan_id === 10) required @endif
                     >
-                    <div class="hint">Opsional, 16 digit. Disimpan terenkripsi.</div>
+                    <div class="hint">{{ (int) $permohonan->layanan_id === 10 ? 'Wajib diisi, 16 digit. Disimpan terenkripsi.' : 'Opsional, 16 digit. Disimpan terenkripsi.' }}</div>
                 </div>
 
                 <div class="form-group">

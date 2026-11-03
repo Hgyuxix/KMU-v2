@@ -360,7 +360,7 @@ class PermohonanService
         Layanan $layanan,
         $ocrPersyaratan
         ): array {
-        $rules = $this->buildCitizenRules();
+        $rules = $this->buildCitizenRules($layanan);
 
         foreach ($fields as $field => $config) {
             if ((int) $layanan->id === 14 && $field === 'ahli_waris') {
@@ -668,8 +668,12 @@ class PermohonanService
         ];
     }
 
-    private function buildCitizenRules(): array
-        {
+    private function buildCitizenRules(Layanan $layanan): array
+    {
+        $noKkRules = (int) $layanan->id === 10
+            ? ['required', 'digits:16']
+            : ['nullable', 'digits:16'];
+
         return [
             'nama_lengkap' => [
                 'required',
@@ -684,10 +688,7 @@ class PermohonanService
                 'required',
                 'digits:16',
             ],
-            'no_kk' => [
-                'nullable',
-                'digits:16',
-            ],
+            'no_kk' => $noKkRules,
             'rt' => [
                 'required',
                 'string',
@@ -909,7 +910,7 @@ class PermohonanService
         string $revisionStage,
         Collection $revisionRequirements
         ): array {
-        $rules = $this->buildCitizenRules();
+        $rules = $this->buildCitizenRules($layanan);
 
         $this->addRevisionFieldRules($rules, $layanan);
 

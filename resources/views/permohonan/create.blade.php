@@ -141,9 +141,9 @@
                             <div class="hint">16 digit. Data disimpan terenkripsi.</div>
                         </div>
                         <div class="form-group">
-                            <label for="no_kk">Nomor Kartu Keluarga</label>
-                            <input id="no_kk" type="text" name="no_kk" value="{{ old('no_kk') }}" maxlength="16" minlength="16" inputmode="numeric" autocomplete="off">
-                            <div class="hint">Opsional, 16 digit. Disimpan terenkripsi.</div>
+                            <label for="no_kk">Nomor Kartu Keluarga @if ((int) $layanan->id === 10)<span>*</span>@endif</label>
+                            <input id="no_kk" type="text" name="no_kk" value="{{ old('no_kk') }}" maxlength="16" minlength="16" inputmode="numeric" pattern="[0-9]{16}" autocomplete="off" @if ((int) $layanan->id === 10) required @endif>
+                            <div class="hint">{{ (int) $layanan->id === 10 ? 'Wajib diisi, 16 digit. Disimpan terenkripsi.' : 'Opsional, 16 digit. Disimpan terenkripsi.' }}</div>
                         </div>
                         <div class="form-group">
                             <label>Tanggal Lahir <span>*</span></label>
