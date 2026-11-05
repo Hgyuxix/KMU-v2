@@ -752,7 +752,8 @@ class WorkflowStageHardeningRegressionTest extends TestCase
             'lurah_at' => Carbon::parse('2026-03-12 10:30:00'),
         ]);
 
-        $this->get(route('verifikasi.show', $permohonan->nomor_surat))
+        $this->assertNotEmpty($permohonan->verifikasi_token);
+        $this->get(route('verifikasi.show', $permohonan->verifikasi_token))
             ->assertOk()
             ->assertSee('Menunggu penyerahan/arsip')
             ->assertSee('470/0022/KMU/2026')

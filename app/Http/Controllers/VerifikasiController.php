@@ -6,15 +6,10 @@ use App\Models\Permohonan;
 
 class VerifikasiController extends Controller
 {
-    public function show(string $nomorSurat)
+    public function show(string $token)
     {
-        $decodedNomorSurat = rawurldecode($nomorSurat);
-
         $permohonan = Permohonan::with(['layanan', 'kelurahan'])
-            ->where(function ($query) use ($nomorSurat, $decodedNomorSurat) {
-                $query->where('nomor_surat', $nomorSurat)
-                    ->orWhere('nomor_surat', $decodedNomorSurat);
-            })
+            ->where('verifikasi_token', $token)
             ->where(function ($query) {
                 $query->whereIn('status', ['disetujui', 'selesai'])
                     ->orWhere(function ($query) {
@@ -26,14 +21,25 @@ class VerifikasiController extends Controller
             })
             ->first();
 
-        return view('verifikasi.show', [
+        if (!$permohonan) {
+            return $this->unavailable();
+        }
+
+        return response()->view('verifikasi.show', [
             'permohonan' => $permohonan,
-            'nomorSurat' => $decodedNomorSurat,
             'menungguArsip' => $permohonan?->status === 'diajukan'
                 && $permohonan?->current_stage === 'fo_finalisasi',
             'tanggalSurat' => $permohonan?->current_stage === 'fo_finalisasi'
                 ? ($permohonan->camat_at ?? $permohonan->lurah_at ?? $permohonan->diproses_at ?? $permohonan->created_at)
                 : $permohonan?->diproses_at,
-        ]);
+        ])->header('Cache-Control', 'no-store')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    public function unavailable()
+    {
+        return response('Tidak ditemukan atau sudah tidak berlaku', 404)
+            ->header('Cache-Control', 'no-store')
+            ->header('Referrer-Policy', 'no-referrer');
     }
 }

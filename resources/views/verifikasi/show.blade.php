@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex,nofollow">
         <title>Verifikasi Surat — Kecamatan Magelang Utara</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -55,10 +56,6 @@
                     @endunless
                 </div>
 
-            @else
-                <div style="width:56px;height:56px;border-radius:999px;background:#fef2f2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">✕</div>
-                <h1 style="font-size:19px;margin:0 0 6px">Surat Tidak Ditemukan</h1>
-                <p style="color:#64748b;font-size:13px;margin:0">Nomor surat <strong>{{ $nomorSurat }}</strong> tidak terdaftar atau belum disetujui. Jika menurut Anda hal ini merupakan kekeliruan, silakan hubungi Kantor Kecamatan Magelang Utara.</p>
             @endif
 
         </div>

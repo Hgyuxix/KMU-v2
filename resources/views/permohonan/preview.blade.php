@@ -182,8 +182,8 @@
             'CAMAT MAGELANG UTARA'
         );
 
-        $verificationUrl = filled($permohonan->nomor_surat)
-            ? route('verifikasi.show', $permohonan->nomor_surat)
+        $verificationUrl = filled($permohonan->verifikasi_token)
+            ? route('verifikasi.show', $permohonan->verifikasi_token)
             : null;
 
         $formData = $permohonan->data_surat ?? [];

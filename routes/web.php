@@ -28,9 +28,14 @@ Route::get('/layanan', [LayananController::class, 'index'])
     ->name('layanan.index');
 Route::get('/layanan/{layanan}', [LayananController::class, 'show'])
     ->name('layanan.show');
-Route::get('/verifikasi/{nomorSurat}', [VerifikasiController::class, 'show'])
-    ->where('nomorSurat', '.*')
+Route::get('/verifikasi/{token}', [VerifikasiController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{24}')
+    ->middleware('throttle:verification')
     ->name('verifikasi.show');
+Route::get('/verifikasi/{invalid}', [VerifikasiController::class, 'unavailable'])
+    ->where('invalid', '.*')
+    ->middleware('throttle:verification')
+    ->name('verifikasi.invalid');
 
 Route::middleware('guest')
     ->group(function () {

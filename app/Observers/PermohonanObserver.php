@@ -5,9 +5,40 @@ namespace App\Observers;
 use App\Models\AuditLog;
 use App\Models\Permohonan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use RuntimeException;
 
 class PermohonanObserver
 {
+    public function saving(Permohonan $permohonan): void
+    {
+        if (!$permohonan->isDirty('nomor_surat')) {
+            return;
+        }
+
+        if (!filled($permohonan->nomor_surat)) {
+            $permohonan->verifikasi_token = null;
+
+            return;
+        }
+
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $token = Str::random(24);
+
+            if (!Permohonan::query()
+                ->where('verifikasi_token', $token)
+                ->exists()) {
+                $permohonan->verifikasi_token = $token;
+
+                return;
+            }
+        }
+
+        throw new RuntimeException(
+            'Unable to generate a unique verification token.'
+        );
+    }
+
     /**
      * Catat saat permohonan pertama kali dibuat.
      */
